@@ -5,12 +5,12 @@
   ...
 }:
 {
-  flake.images.hermes = config.flake.nixosConfigurations.hermes.config.system.build.sdImage;
-  flake.nixosConfigurations.hermes = lib.nixosSystem {
+  flake.images.veil = config.flake.nixosConfigurations.veil.config.system.build.sdImage;
+  flake.nixosConfigurations.veil = lib.nixosSystem {
     modules = [
       "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
       {
-        image.fileName = "nixos-25-11-aarch64-hermes.img";
+        image.fileName = "nixos-25-11-aarch64-veil.img";
         sdImage.compressImage = false;
         nixpkgs.hostPlatform.system = "aarch64-linux";
         system.stateVersion = "25.11";
