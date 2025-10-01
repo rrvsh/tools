@@ -29,6 +29,11 @@
             ];
           };
           security.sudo.wheelNeedsPassword = false;
+          networking.hostName = "veil";
+          networking.firewall.allowedTCPPorts = [
+            80
+            443
+          ];
         }
       )
     ];
