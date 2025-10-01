@@ -16,9 +16,6 @@
           sdImage.compressImage = false;
           nixpkgs.hostPlatform.system = "aarch64-linux";
           system.stateVersion = "25.11";
-          environment.systemPackages = with pkgs; [
-            nginx
-          ];
           services = {
             openssh.enable = true;
             nginx.enable = true;
@@ -32,10 +29,6 @@
             ];
           };
           security.sudo.wheelNeedsPassword = false;
-          systemd.services."nginx".preStart = ''
-            mkdir -p /var/www/veil
-            echo "<h1>Welcome to Veil!</h1>" > /var/www/veil/index.html
-          '';
         }
       )
     ];
