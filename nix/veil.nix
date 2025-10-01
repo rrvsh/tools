@@ -31,6 +31,7 @@
               "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n rafiq"
             ];
           };
+          security.sudo.wheelNeedsPassword = false;
           systemd.services."nginx".preStart = ''
             mkdir -p /var/www/veil
             echo "<h1>Welcome to Veil!</h1>" > /var/www/veil/index.html
