@@ -25,7 +25,12 @@
           services = {
             openssh.enable = true;
             nginx.enable = true;
-            nginx.virtualHosts."_".root = ../www/rrv.sh;
+            nginx.virtualHosts."rrv.sh" = {
+              addSSL = true;
+              useACMEHost = "rrv.sh";
+              acmeRoot = null; # needed for DNS validation
+              locations."/".root = ../www/rrv.sh;
+            };
           };
           users = {
             mutableUsers = false;
@@ -39,8 +44,20 @@
                 "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n rafiq"
               ];
             };
+            users.nginx.extraGroups = [ "acme" ];
           };
-          security.sudo.wheelNeedsPassword = false;
+          security = {
+            sudo.wheelNeedsPassword = false;
+            acme = {
+              acceptTerms = true;
+              defaults = {
+                email = "rafiq@rrv.sh";
+                dnsProvider = "cloudflare";
+                credentialFiles."CLOUDFLARE_DNS_API_TOKEN_FILE" = config.sops.secrets."keys/cloudflare".path;
+              };
+              certs."rrv.sh".extraDomainNames = [ "*.rrv.sh" ];
+            };
+          };
           networking.hostName = "veil";
           networking.firewall.allowedTCPPorts = [
             80
@@ -52,6 +69,7 @@
               neededForUsers = true;
               sopsFile = ./users.yaml;
             };
+            secrets."keys/cloudflare".sopsFile = ./keys.yaml;
           };
         }
       )
