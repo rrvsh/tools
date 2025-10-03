@@ -1,0 +1,7 @@
+keys:
+  - &rafiq age12l33pas8eptwjc7ewux3d8snyzfzwz0tn9qg5kw8le79fswmjgjqdjgyy6
+creation_rules:
+  - path_regex: \.(yaml)$
+    key_groups:
+    - age:
+      - *rafiq
