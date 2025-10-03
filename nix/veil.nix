@@ -19,7 +19,7 @@
           services = {
             openssh.enable = true;
             nginx.enable = true;
-            nginx.virtualHosts."_".root = "/var/www/veil";
+            nginx.virtualHosts."_".root = ../www/rrv.sh;
           };
           users.users.rafiq = {
             isNormalUser = true;
