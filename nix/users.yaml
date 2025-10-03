@@ -1,0 +1,18 @@
+rafiq:
+    password: ENC[AES256_GCM,data:8KAfatz+YSaNozd5VGo=,iv:LNRxt47iBKSWzMZuBHSxv/qDZ2h6JiTIPps7OK/o7uU=,tag:oiSfLyRVswb/wxSTE69QMA==,type:str]
+    hashedPassword: ENC[AES256_GCM,data:NogYQ3kR1TseC79HIXARrXhIncCnvxzf9zMF2QrUyTmojTffPXRGtMdjNpfMEFj5dkKfZujBL/QTIpPFFTm1py7Dreg5/9VSKQ==,iv:IwfZsrsJbLYG1ELte6aBHUtff6hIQu9rHT5tSvILIGQ=,tag:oav3paDcUY+cl4FJlZa90A==,type:str]
+sops:
+    age:
+        - recipient: age12l33pas8eptwjc7ewux3d8snyzfzwz0tn9qg5kw8le79fswmjgjqdjgyy6
+          enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBVd09tYkhKUkVjNTBRdld6
+            a1RkUnZqdnRqMlFTSGgwUFVCZlRhL0tLTnpVCjNXVjZldzNUOE9DQ0ZGejhWakY2
+            TmRIZnpobE0ydDhNSDdJQUp2U3pSTzgKLS0tIDkxU3Fxa2lMUkhZY0g1Wm02T2ZE
+            UkQwOWZtVXVPSGJiRk1qRHVHYkN2cDgKLiYiA0q5se/oHfGRqvHLn3gRRDfmefEZ
+            z2U2N1Tjt0QgCfYOOXVfPV9F36a7PpabFva5ElSazawHgvI+Bot6og==
+            -----END AGE ENCRYPTED FILE-----
+    lastmodified: "2025-07-07T08:56:26Z"
+    mac: ENC[AES256_GCM,data:2uGjIMxRgk7uWToQC4MrHpHFAt4bI7sEhaHvPU6Ae3bvRVH/TdJxZtikSPe95LEwReOuBmPajbcM580/d3Jt6VbA7nZzj1JduVscrRkSAFCzZp9Ti/mbOGITPJa6xWSGwVF1wSN3BnHXYIHDcKeSGtUdP7L7nBZr1KXPkok4NCo=,iv:+ELIes7lzb8M6CvOemAcyoq7Rx7L6NkNmHwntJN/RSc=,tag:ubyxO6VllH9cQK3VbvxiGg==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.10.2
