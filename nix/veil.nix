@@ -31,6 +31,10 @@
               acmeRoot = null; # needed for DNS validation
               locations."/".root = ../www/rrv.sh;
             };
+            tailscale = {
+              enable = true;
+              authKeyFile = config.sops.secrets."keys/tailscale".path;
+            };
           };
           users = {
             mutableUsers = false;
@@ -70,6 +74,7 @@
               sopsFile = ./users.yaml;
             };
             secrets."keys/cloudflare".sopsFile = ./keys.yaml;
+            secrets."keys/tailscale".sopsFile = ./keys.yaml;
           };
         }
       )
