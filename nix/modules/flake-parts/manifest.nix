@@ -58,6 +58,7 @@ let
         modules = [
           cfg.modules.nixos.default
           cfg.modules.nixos.secrets
+          cfg.modules.nixos.nix-config
         ]
         ++ (optional (hasAttr name cfg.modules.nixos) cfg.modules.nixos.${name})
         ++ (optional value.createImage cfg.modules.nixos.sd-image)
