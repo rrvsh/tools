@@ -12,10 +12,5 @@ in
         rrv-sh
       ];
     };
-    modules.nixos.veil =
-      { pkgs, config, ... }:
-      {
-        nixpkgs.hostPlatform.system = "aarch64-linux";
-      };
   };
 }
