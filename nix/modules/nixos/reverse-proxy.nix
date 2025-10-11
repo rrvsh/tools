@@ -17,6 +17,6 @@
         };
         certs."rrv.sh".extraDomainNames = [ "*.rrv.sh" ];
       };
-      sops.secrets."keys/cloudflare".sopsFile = ./keys.yaml;
+      sops.secrets."keys/cloudflare".sopsFile = ../../keys.yaml;
     };
 }
