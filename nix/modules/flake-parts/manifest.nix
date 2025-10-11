@@ -60,6 +60,7 @@ let
           cfg.modules.nixos.secrets
           cfg.modules.nixos.nix-config
           cfg.modules.nixos.users
+          cfg.modules.nixos.networking
         ]
         ++ (optional (hasAttr name cfg.modules.nixos) cfg.modules.nixos.${name})
         ++ (optional value.createImage cfg.modules.nixos.sd-image)
