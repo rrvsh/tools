@@ -8,6 +8,10 @@
           nh
           just
           sops
+          statix
+          deadnix
+          nixfmt-tree
+          zizmor
         ];
       };
     };
