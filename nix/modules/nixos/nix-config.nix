@@ -1,5 +1,4 @@
-{ ... }:
-{
+_: {
   flake.modules.nixos.nix-config = {
     system.stateVersion = "25.11";
     nix.settings = {

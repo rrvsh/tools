@@ -1,4 +1,4 @@
-name: Run Tests
+name: Run tests
 
 on:
   pull_request:
@@ -7,11 +7,15 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
 
       - name: Install Nix
-        uses: cachix/install-nix-action@v17
+        uses: cachix/install-nix-action@d64e0553100205688c0fb2fa16edb0fc8663c590
         with:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
