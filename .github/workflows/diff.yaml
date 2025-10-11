@@ -1,0 +1,84 @@
+name: NixOS config diff
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  diff:
+    name: Build & Diff NixOS configs
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [veil]
+
+    env:
+      FLAKE_ATTR: nixosConfigurations.${{ matrix.host }}.config.system.build.toplevel
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.sha }}
+
+    steps:
+      - name: Checkout (PR HEAD)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare worktree for BASE (main@base)
+        run: |
+          git worktree add --detach ../base "$BASE_SHA"
+          git rev-parse --short "$BASE_SHA"
+          git rev-parse --short "$HEAD_SHA"
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
+      - uses: docker/setup-qemu-action@v1
+
+      - name: Build HEAD toplevel
+        id: head
+        run: |
+          set -euo pipefail
+          OUT=$(nix build --accept-flake-config ".#${FLAKE_ATTR}" --print-out-paths)
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          nix build --accept-flake-config ".#${FLAKE_ATTR}" --json > head.json
+          DRV=$(jq -r '.[0].drvPath' head.json)
+          echo "drv=$DRV" >> "$GITHUB_OUTPUT"
+
+      - name: Build BASE toplevel
+        id: base
+        working-directory: ../base
+        run: |
+          set -euo pipefail
+          OUT=$(nix build --accept-flake-config ".#${FLAKE_ATTR}" --print-out-paths)
+          echo "out=$OUT" >> "$GITHUB_OUTPUT"
+          nix build --accept-flake-config ".#${FLAKE_ATTR}" --json > base.json
+          DRV=$(jq -r '.[0].drvPath' base.json)
+          echo "drv=$DRV" >> "$GITHUB_OUTPUT"
+
+      - name: Closure diff (nix store)
+        run: |
+          nix store diff-closures "${{ steps.base.outputs.out }}" "${{ steps.head.outputs.out }}" | tee closure.diff
+
+      - name: Closure diff (nvd)
+        run: |
+          nix run nixpkgs#nvd -- diff "${{ steps.base.outputs.out }}" "${{ steps.head.outputs.out }}" | tee nvd.diff
+
+      - name: Why diff (nix-diff)
+        run: |
+          nix run nixpkgs#nix-diff -- "${{ steps.base.outputs.drv }}" "${{ steps.head.outputs.drv }}" | tee drv.diff
+
+      - name: Summarize to Markdown
+        id: summary
+        run: |
+          {
+            echo "## NixOS diff for **${{ matrix.host }}**"
+            echo
+            echo "### Closure changes"
+            echo '```'
+            sed -n '1,200p' closure.diff
+            echo '```'
+            echo
+            echo "### nvd summary"
+            echo '```'
