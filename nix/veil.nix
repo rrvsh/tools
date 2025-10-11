@@ -2,18 +2,15 @@
 {
   flake = {
     manifest.hosts.nixos.veil = {
-      system = "aarch64-linux";
+      arch = "aarch64";
       createImage = true;
     };
     modules.nixos.veil = {
       imports = [
-        "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
         inputs.sops-nix.nixosModules.sops
         (
           { pkgs, config, ... }:
           {
-            image.fileName = "nixos-25-11-aarch64-veil.img";
-            sdImage.compressImage = false;
             nixpkgs.hostPlatform.system = "aarch64-linux";
             system.stateVersion = "25.11";
             nix.settings = {

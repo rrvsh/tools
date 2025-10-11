@@ -21,7 +21,7 @@ let
   cfg = config.flake;
   hostOptions = submodule {
     options = {
-      system = mkOption {
+      arch = mkOption {
         type = str;
         default = "";
         description = "The system architecture for this host.";
@@ -59,6 +59,7 @@ let
           cfg.modules.nixos.default
         ]
         ++ (optional (hasAttr name cfg.modules.nixos) cfg.modules.nixos.${name})
+        ++ (optional value.createImage cfg.modules.nixos.sd-image)
         ++ (value.modules or [ ]);
       }
     ) hosts;
