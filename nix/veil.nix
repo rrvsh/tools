@@ -1,11 +1,5 @@
+{ lib, inputs, ... }:
 {
-  lib,
-  inputs,
-  config,
-  ...
-}:
-{
-  flake.images.veil = config.flake.nixosConfigurations.veil.config.system.build.sdImage;
   flake.nixosConfigurations.veil = lib.nixosSystem {
     modules = [
       "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-aarch64.nix"
@@ -18,7 +12,10 @@
           nixpkgs.hostPlatform.system = "aarch64-linux";
           system.stateVersion = "25.11";
           nix.settings = {
-            experimental-features = [ "nix-command" "flakes" ];
+            experimental-features = [
+              "nix-command"
+              "flakes"
+            ];
             substituters = [ "https://nix-community.cachix.org" ];
             trusted-substituters = [ "https://nix-community.cachix.org" ];
             trusted-public-keys = [ "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=" ];
