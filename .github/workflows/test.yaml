@@ -17,3 +17,8 @@ jobs:
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
       - run: nix flake check --all-systems
+
+      - run: |
+          nix develop -c statix check
+          nix develop -c deadnix
+          nix develop -c treefmt --ci
