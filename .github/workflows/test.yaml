@@ -26,3 +26,5 @@ jobs:
           nix develop -c statix check
           nix develop -c deadnix
           nix develop -c treefmt --ci
+          nix develop -c zizmor .
+

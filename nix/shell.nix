@@ -11,6 +11,7 @@
           statix
           deadnix
           nixfmt-tree
+          zizmor
         ];
       };
     };
