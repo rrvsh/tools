@@ -9,3 +9,5 @@ user passwords are stored in the git repo using sops-nix for encryption and moun
 ssl is handled by lets encrypt via acme using DNS-01 validation thru cloudflare
 
 linting, formatting, and other checks are handled by various tools depending on the language, see Justfile or CI for more
+
+Each PR must include changes to `docs/`

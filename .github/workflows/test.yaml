@@ -9,8 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
           persist-credentials: false
 
@@ -20,11 +22,22 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - run: nix flake check --all-systems
+      - name: Evaluate flake outputs
+        run: nix flake check --all-systems
 
-      - run: |
+      - name: Run linting and formatting checks
+        run: |
           nix develop -c statix check
           nix develop -c deadnix
           nix develop -c treefmt --ci
           nix develop -c zizmor .
 
+      - name: Get all changed docs files
+        id: changed-markdown-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: docs/**
+
+      - name: Fail if no change to docs
+        if: steps.changed-markdown-files.outputs.any_changed == 'false'
+        run: exit 1
