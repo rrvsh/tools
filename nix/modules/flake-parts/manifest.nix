@@ -7,6 +7,7 @@
 let
   inherit (builtins) hasAttr mapAttrs;
   inherit (lib) nixosSystem;
+  inherit (inputs.nix-darwin.lib) darwinSystem;
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.options) mkOption;
   inherit (lib.lists) optional;
@@ -19,26 +20,26 @@ let
     str
     ;
   cfg = config.flake;
-  hostOptions = submodule {
-    options = {
-      arch = mkOption {
-        type = str;
-        default = "";
-        description = "The system architecture for this host.";
-      };
-      createImage = mkOption {
-        type = bool;
-        default = false;
-        description = ''
-          Whether to build an SD image for this host.
-          If true, it will appear in `config.flake.images`.
-        '';
-      };
-      modules = mkOption {
-        type = listOf deferredModule;
-        default = [ ];
-        description = "NixOS modules to import for this host.";
-      };
+  hostOptions = {
+    modules = mkOption {
+      type = listOf deferredModule;
+      default = [ ];
+      description = "Modules to import for this host.";
+    };
+  };
+  nixosOptions = {
+    arch = mkOption {
+      type = str;
+      default = "";
+      description = "The system architecture for this host.";
+    };
+    createImage = mkOption {
+      type = bool;
+      default = false;
+      description = ''
+        Whether to build an SD image for this host.
+        If true, it will appear in `config.flake.images`.
+      '';
     };
   };
   mkImages =
@@ -67,17 +68,42 @@ let
         ++ (value.modules or [ ]);
       }
     ) hosts;
+  mkDarwinConfigurations =
+    hosts:
+    mapAttrs (
+      name: value:
+      darwinSystem {
+        specialArgs = {
+          hostName = name;
+          hostConfig = value;
+        };
+        modules = [
+          cfg.modules.darwin.default
+        ]
+        ++ (optional (hasAttr name cfg.modules.darwin) cfg.modules.darwin.${name})
+        ++ (value.modules or [ ]);
+      }
+    ) hosts;
 in
 {
   imports = [ inputs.flake-parts.flakeModules.modules ];
   options.flake.manifest = {
     hosts.nixos = mkOption {
       default = { };
-      type = attrsOf hostOptions;
+      type = attrsOf (submodule {
+        options = hostOptions // nixosOptions;
+      });
+    };
+    hosts.darwin = mkOption {
+      default = { };
+      type = attrsOf (submodule {
+        options = hostOptions;
+      });
     };
   };
   config.flake = {
     nixosConfigurations = mkNixosConfigurations cfg.manifest.hosts.nixos;
+    darwinConfigurations = mkDarwinConfigurations cfg.manifest.hosts.darwin;
     images = mkImages cfg.manifest.hosts.nixos;
   };
 }
