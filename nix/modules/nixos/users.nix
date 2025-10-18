@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.paths) secrets;
+in
 {
   flake.modules.nixos.users =
     { config, ... }:
@@ -17,7 +21,7 @@
       };
       sops.secrets = {
         "rafiq/hashedPassword".neededForUsers = true;
-        "rafiq/hashedPassword".sopsFile = ../../users.yaml;
+        "rafiq/hashedPassword".sopsFile = secrets + /users.yaml;
       };
     };
 }

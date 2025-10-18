@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.paths) secrets;
+in
 {
   flake.modules.nixos.networking =
     { config, ... }:
@@ -9,6 +13,6 @@
           authKeyFile = config.sops.secrets."keys/tailscale".path;
         };
       };
-      sops.secrets."keys/tailscale".sopsFile = ../../keys.yaml;
+      sops.secrets."keys/tailscale".sopsFile = secrets + /keys.yaml;
     };
 }
