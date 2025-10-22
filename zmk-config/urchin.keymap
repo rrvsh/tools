@@ -4,6 +4,29 @@
 #include <dt-bindings/zmk/outputs.h>
 
 / {
+  combos {
+		compatible = "zmk,combos";
+    escape_left {
+      timeout-ms = <50>;
+      key-positions = <10 11 12 13>;
+      bindings = <&kp ESC>;
+    };
+    escape_right {
+      timeout-ms = <50>;
+      key-positions = <16 17 18 19>;
+      bindings = <&kp ESC>;
+    };
+    enter_left {
+      timeout-ms = <50>;
+      key-positions = <11 12>;
+      bindings = <&kp ENTER>;
+    };
+    enter_right {
+      timeout-ms = <50>;
+      key-positions = <17 18>;
+      bindings = <&kp ENTER>;
+    };
+  };
 	keymap {
 		compatible = "zmk,keymap";
 		default_layer {
