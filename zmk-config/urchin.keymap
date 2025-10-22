@@ -4,6 +4,16 @@
 #include <dt-bindings/zmk/outputs.h>
 
 / {
+  behaviors {
+    hrm: behavior_home_row_mod {
+      compatible = "zmk,behavior-hold-tap";
+      #binding-cells = <2>;
+      bindings = <&kp &kp>;
+      flavor = "tap-preferred";
+      tapping-term-ms = <200>;
+      quick-tap-ms = <150>;
+    };
+  };
   combos {
 		compatible = "zmk,combos";
     escape_left {
@@ -32,10 +42,28 @@
 		default_layer {
 			label = "alphabet";
 			bindings = <
-			&kp Q &kp W &kp E &kp R &kp T           &kp Y &kp U  &kp I     &kp O   &kp P 
-			&mt LCTRL A &mt LGUI S &mt LALT D &mt LSHIFT F &kp G           &kp H &mt RSHIFT J &mt RALT K &mt RGUI L &mt RCTRL SEMI
-			&kp Z &kp X &kp C &kp V &kp B           &kp N &kp M  &kp COMMA &kp DOT &kp SLASH
-							&none &kp SPACE           &kp BSPC &none
+			&kp Q &kp W &kp E &kp R &kp T &kp Y &kp U &kp I &kp O &kp P 
+			&hrm LCTRL A &hrm LGUI S &hrm LALT D &hrm LSHIFT F &kp G &kp H &hrm RSHIFT J &hrm RALT K &hrm RGUI L &hrm RCTRL SEMI
+			&kp Z &kp X &kp C &kp V &kp B &kp N &kp M &kp COMMA &kp DOT &kp SLASH
+			&bootloader &lt 2 SPACE &lt 1 BSPC &bootloader
+			>;
+		};
+    num_layer {
+			label = "numbers/symbols";
+			bindings = <
+			&kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6 &kp N7 &kp N8 &kp N9 &kp N0 
+			&hrm LCTRL A &hrm LGUI S &hrm LALT LBKT &hrm LSHIFT RBKT &kp CAPSLOCK &kp BSLH &hrm RSHIFT J &hrm RALT K &hrm RGUI L &hrm RCTRL SEMI
+			&kp LPAR &kp RPAR &kp EQUAL &kp PLUS &kp MINUS &kp PIPE &kp SQT &kp DQT &kp TILDE &kp GRAVE
+			&none &kp TAB &none &none
+			>;
+		};
+    nav_layer {
+			label = "navigation";
+			bindings = <
+			&kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp HOME &kp PG_DN &kp PG_UP &kp END &kp DEL
+			&hrm LCTRL A &hrm LGUI S &hrm LALT D &hrm LSHIFT F &kp G &kp LEFT &hrm RSHIFT DOWN &hrm RALT UP &hrm RGUI RIGHT &hrm RCTRL SEMI
+			&kp N1 &kp N2 &kp N3 &kp N4 &kp N5 &kp N6 &kp N7 &kp N8 &kp N9 &kp N0 
+			&none &none &none &none
 			>;
 		};
 	};
