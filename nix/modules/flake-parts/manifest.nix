@@ -13,6 +13,7 @@ let
   inherit (lib.lists) optional;
   inherit (lib.types)
     bool
+    raw
     attrsOf
     submodule
     listOf
@@ -20,6 +21,8 @@ let
     str
     ;
   cfg = config.flake;
+  userOptions = {
+  };
   hostOptions = {
     modules = mkOption {
       type = listOf deferredModule;
@@ -41,6 +44,16 @@ let
         If true, it will appear in `config.flake.images`.
       '';
     };
+  };
+  forAllUsers' = f: mapAttrs f config.flake.manifest.users;
+  globalCfg = hostName: hostConfig: {
+    useGlobalPkgs = true;
+    useUserPackages = true;
+    verbose = true;
+    backupFileExtension = "backup";
+    extraSpecialArgs = { inherit hostName hostConfig; };
+    sharedModules = [ cfg.modules.homeManager.default or { } ];
+    users = forAllUsers' (name: _: cfg.modules.homeManager.${name});
   };
   mkImages =
     hosts:
@@ -79,6 +92,8 @@ let
         };
         modules = [
           cfg.modules.darwin.default
+          inputs.home-manager.darwinModules.home-manager
+          { home-manager = globalCfg name value; }
         ]
         ++ (optional (hasAttr name cfg.modules.darwin) cfg.modules.darwin.${name})
         ++ (value.modules or [ ]);
@@ -86,19 +101,31 @@ let
     ) hosts;
 in
 {
-  imports = [ inputs.flake-parts.flakeModules.modules ];
-  options.flake.manifest = {
-    hosts.nixos = mkOption {
-      default = { };
-      type = attrsOf (submodule {
-        options = hostOptions // nixosOptions;
-      });
-    };
-    hosts.darwin = mkOption {
-      default = { };
-      type = attrsOf (submodule {
-        options = hostOptions;
-      });
+  imports = [
+    inputs.flake-parts.flakeModules.modules
+    inputs.home-manager.flakeModules.home-manager
+  ];
+  options.flake = {
+    self = mkOption { type = raw; };
+    manifest = {
+      users = mkOption {
+        default = { };
+        type = attrsOf (submodule {
+          options = userOptions;
+        });
+      };
+      hosts.nixos = mkOption {
+        default = { };
+        type = attrsOf (submodule {
+          options = hostOptions // nixosOptions;
+        });
+      };
+      hosts.darwin = mkOption {
+        default = { };
+        type = attrsOf (submodule {
+          options = hostOptions;
+        });
+      };
     };
   };
   config.flake = {
