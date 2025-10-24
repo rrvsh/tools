@@ -4,6 +4,8 @@ let
 in
 {
   flake.manifest = {
+    users.rafiq = { };
+    hosts.darwin.solomon = { };
     hosts.nixos = {
       veil = {
         arch = "aarch64";
