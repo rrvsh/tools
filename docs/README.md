@@ -13,3 +13,5 @@ linting, formatting, and other checks are handled by various tools depending on 
 Each PR must include changes to `docs/`
 
 The configuration option `flake.paths` contains relative paths to folders in the repository, such as `flake.paths.root` pointing to the repository root
+
+This flake exposes a template pkg-shell that auto initialises a nice devshell + package abstraction for you
