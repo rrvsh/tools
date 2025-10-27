@@ -7,7 +7,7 @@
         systems = import inputs.systems;
         flake = {
           dependencies = pkgs: with pkgs; [ hello ];
-          devDependencies = pkgs: with pkgs; [ vim ];
+          devDependencies = pkgs: with pkgs; [ just ];
         };
       }
     );
