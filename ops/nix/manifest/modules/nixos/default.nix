@@ -20,7 +20,6 @@ in
           authKeyFile = config.sops.secrets."keys/tailscale".path;
         };
       };
-      sops.secrets."keys/tailscale".sopsFile = secrets + /keys.yaml;
       system.stateVersion = "25.11";
       imports = [ inputs.sops-nix.nixosModules.sops ];
       security.sudo.wheelNeedsPassword = false;
@@ -36,12 +35,15 @@ in
           ];
         };
       };
-      sops.secrets = {
-        "rafiq/hashedPassword".neededForUsers = true;
-        "rafiq/hashedPassword".sopsFile = secrets + /users.yaml;
+      sops = {
+        secrets."keys/tailscale".sopsFile = secrets + /keys.yaml;
+        secrets = {
+          "rafiq/hashedPassword".neededForUsers = true;
+          "rafiq/hashedPassword".sopsFile = secrets + /users.yaml;
+        };
+        #FIXME: Don't hardcode the home path
+        age.sshKeyPaths = [ "/home/rafiq/.ssh/id_ed25519" ];
       };
-      #FIXME: Don't hardcode the home path
-      sops.age.sshKeyPaths = [ "/home/rafiq/.ssh/id_ed25519" ];
       nix.settings = {
         experimental-features = [
           "nix-command"
