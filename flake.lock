@@ -111,11 +111,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1751721838,
-        "narHash": "sha256-702c0fbgpUuEuQsduGJ9I5bSrCLYEG88SPuZXcSQqTs=",
+        "lastModified": 1761744898,
+        "narHash": "sha256-LLpyw6/lbdc3JMmXDnJ3+Pcib/BB/f8vsr+W9coWbVk=",
         "owner": "rrvsh",
         "repo": "rrv.sh",
-        "rev": "e00c1c2607b55f43ef74b5f555f62838f4fe5963",
+        "rev": "eec76b1545ee1d21ff0f163e9d7addc92b9dc789",
         "type": "github"
       },
       "original": {
