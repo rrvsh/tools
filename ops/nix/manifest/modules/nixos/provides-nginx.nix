@@ -5,37 +5,10 @@ let
   inherit (lib.attrsets) mapAttrsToList;
   inherit (cfg.paths) secrets;
   cfg = config.flake;
-
-  # collect needs.nginx enriched with node name
-  needsNginx = pipe cfg.manifest.nodes.nixos [
-    (
-      attrs:
-      mapAttrsToList (
-        nodeName: nodeValue: map (vHostConfig: vHostConfig // { node = nodeName; }) nodeValue.needs.nginx
-      ) attrs
-    )
-    concatLists
-  ];
-
-  # module that can be imported into a provider
-  providesNginxConfig = pipe needsNginx [
-    (map (needsConfig: {
-      ${needsConfig.domain} = {
-        addSSL = true;
-        useACMEHost = needsConfig.domain;
-        acmeRoot = null; # needed for DNS validation
-        locations."/" = {
-          proxyPass = "http://${needsConfig.node}:${toString needsConfig.port}";
-        };
-      };
-    }))
-    (xs: lib.foldl' (acc: x: acc // x) { } xs)
-  ];
-
 in
 {
   flake.modules.nixos.provides-nginx =
-    { config, ... }:
+    { config, hostName, ... }:
     {
       networking.firewall.allowedTCPPorts = [
         80
@@ -43,7 +16,30 @@ in
       ];
       services.nginx = {
         enable = true;
-        virtualHosts = providesNginxConfig;
+        virtualHosts = pipe cfg.manifest.nodes.nixos [
+          (
+            attrs:
+            mapAttrsToList (
+              nodeName: nodeValue: map (vHostConfig: vHostConfig // { node = nodeName; }) nodeValue.needs.nginx
+            ) attrs
+          )
+          concatLists
+          # collect needs.nginx enriched with node name
+          (map (needsConfig: {
+            ${needsConfig.domain} = {
+              addSSL = true;
+              useACMEHost = needsConfig.domain;
+              acmeRoot = null; # needed for DNS validation
+              locations."/" = {
+                proxyPass = "http://${
+                  if needsConfig.node == hostName then "localhost" else needsConfig.node
+                }:${toString needsConfig.port}";
+              };
+            };
+          }))
+          (xs: lib.foldl' (acc: x: acc // x) { } xs)
+          # module that can be imported into a provider
+        ];
       };
       users.users.nginx.extraGroups = [ "acme" ];
 
