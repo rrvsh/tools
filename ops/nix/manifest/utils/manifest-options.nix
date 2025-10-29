@@ -9,7 +9,16 @@ let
     deferredModule
     str
     bool
+    port
+    enum
     ;
+  reverseProxyOptions = {
+    options = {
+      domain = mkOption { type = str; };
+      port = mkOption { type = port; };
+      type = mkOption { type = enum [ "proxy" ]; };
+    };
+  };
   nixosOptions = {
     options = {
       arch = mkOption {
@@ -29,6 +38,10 @@ let
         type = listOf deferredModule;
         default = [ ];
         description = "Modules to import for this host.";
+      };
+      needs.nginx = mkOption {
+        type = listOf (submodule reverseProxyOptions);
+        default = [ ];
       };
     };
   };

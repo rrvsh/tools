@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.flake;
-  inherit (builtins) mapAttrs;
+  inherit (builtins) hasAttr mapAttrs;
   inherit (lib) nixosSystem;
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.lists) optional;
@@ -27,6 +27,7 @@ let
         modules = [
           cfg.modules.nixos.default
         ]
+        ++ (optional (hasAttr name cfg.modules.nixos) cfg.modules.nixos.${name})
         ++ (optional value.createImage cfg.modules.nixos.sd-image)
         ++ (value.modules or [ ]);
       }
