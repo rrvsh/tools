@@ -4,6 +4,7 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       (inputs.import-tree ./ops/nix)
       // {
+        debug = true;
         systems = import inputs.systems;
         flake = {
           inherit self;
