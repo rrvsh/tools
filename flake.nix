@@ -2,7 +2,7 @@
   outputs =
     { self, ... }@inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      (inputs.import-tree ./nix)
+      (inputs.import-tree ./ops/nix)
       // {
         systems = import inputs.systems;
         flake = {

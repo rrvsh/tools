@@ -1,3 +1,13 @@
+`docs/` should serve as all the documentation for the monorepo
+`ops/` contains:
+    - `nix/` -> the IaC that defines and builds all development shells, packages, system configurations, SD images, and more
+    - `sops/` -> secrets encyrypted with sops and age
+`src/` contains:
+    - source code for packages
+    - static sites
+    - media for desktop
+    - etc
+
 the flake uses import-tree to essentially import every file recursively in `nix/` excluding any files or directories that are in a directory beginning with an underscore such as `_packages`.
 
 machines are connected using tailscale with the auth key being stored using sops

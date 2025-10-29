@@ -13,6 +13,7 @@ format-gha:
 lint: lint-nix
 
 lint-nix:
+  statix check
   statix fix
   deadnix -e
 

@@ -12,8 +12,11 @@ in
     };
     secrets = mkOption {
       type = path;
-      readOnly = true;
-      default = root + "/sops";
+      default = root + "/ops/sops";
+    };
+    www = mkOption {
+      type = path;
+      default = root + "/src/www";
     };
   };
 }
