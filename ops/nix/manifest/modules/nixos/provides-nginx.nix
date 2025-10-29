@@ -20,7 +20,7 @@ let
   # module that can be imported into a provider
   providesNginxConfig = pipe needsNginx [
     (map (needsConfig: {
-      services.nginx.virtualHosts.${needsConfig.domain} = {
+      ${needsConfig.domain} = {
         addSSL = true;
         useACMEHost = needsConfig.domain;
         acmeRoot = null; # needed for DNS validation
@@ -36,13 +36,15 @@ in
 {
   flake.modules.nixos.provides-nginx =
     { config, ... }:
-    providesNginxConfig
-    // {
+    {
       networking.firewall.allowedTCPPorts = [
         80
         443
       ];
-      services.nginx.enable = true;
+      services.nginx = {
+        enable = true;
+        virtualHosts = providesNginxConfig;
+      };
       users.users.nginx.extraGroups = [ "acme" ];
 
       security.acme = {
