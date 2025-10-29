@@ -4,7 +4,7 @@ let
 in
 {
   flake.manifest = {
-    hosts.nixos = {
+    nodes.nixos = {
       veil = {
         arch = "aarch64";
         createImage = true;

@@ -2,7 +2,7 @@ check: format lint test
 
 nice: format lint
 
-format: format-nix format-gha
+format: format-nix
 
 format-nix:
   treefmt

@@ -11,12 +11,12 @@ let
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.lists) optional;
   mkImages =
-    hosts:
+    nodes:
     (mapAttrs (name: _: config.flake.nixosConfigurations.${name}.config.system.build.sdImage)) (
-      filterAttrs (_: value: value.createImage) hosts
+      filterAttrs (_: value: value.createImage) nodes
     );
   mkNixosConfigurations =
-    hosts:
+    nodes:
     mapAttrs (
       name: value:
       nixosSystem {
@@ -30,10 +30,10 @@ let
         ++ (optional value.createImage cfg.modules.nixos.sd-image)
         ++ (value.modules or [ ]);
       }
-    ) hosts;
+    ) nodes;
 in
 {
   imports = [ inputs.flake-parts.flakeModules.modules ];
-  flake.nixosConfigurations = mkNixosConfigurations cfg.manifest.hosts.nixos;
-  flake.images = mkImages cfg.manifest.hosts.nixos;
+  flake.nixosConfigurations = mkNixosConfigurations cfg.manifest.nodes.nixos;
+  flake.images = mkImages cfg.manifest.nodes.nixos;
 }

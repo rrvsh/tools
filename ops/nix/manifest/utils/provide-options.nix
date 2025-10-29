@@ -15,7 +15,7 @@ in
   options.flake = {
     self = mkOption { type = raw; };
     manifest = {
-      hosts.nixos = mkOption {
+      nodes.nixos = mkOption {
         default = { };
         type = attrsOf (submodule {
           options = {
