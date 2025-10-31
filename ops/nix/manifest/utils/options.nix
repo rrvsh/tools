@@ -5,12 +5,15 @@ let
   inherit (builtins) attrNames;
   inherit (lib.options) mkOption;
   inherit (lib.types)
+    deferredModule
     attrsOf
     submodule
     str
     bool
     path
     enum
+    listOf
+    port
     ;
 in
 {
@@ -30,6 +33,19 @@ in
             createImage = mkOption {
               type = bool;
               default = false;
+            };
+            proxies = mkOption {
+              type = listOf (submodule {
+                options = {
+                  domain = mkOption { type = str; };
+                  port = mkOption { type = port; };
+                };
+              });
+              default = [ ];
+            };
+            modules = mkOption {
+              type = listOf deferredModule;
+              default = [ ];
             };
           };
         });

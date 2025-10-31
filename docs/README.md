@@ -1,7 +1,7 @@
 ## current state
 
-`nodes.nixos.veil` has nginx setup.
-`manifest` has externals skeleton impl set up.
+`nodes.nixos.veil` has nginx setup and the `rrv.sh` website.
+`manifest` has externals and proxies skeleton impl set up.
 
 ## directory structure
 
