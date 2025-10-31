@@ -9,6 +9,9 @@ in
       addSSL = true;
     };
     nodes.nixos = {
+      nephalem = {
+        arch = "x86_64";
+      };
       veil = {
         arch = "aarch64";
         createImage = true;
