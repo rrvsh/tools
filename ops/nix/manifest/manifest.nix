@@ -12,6 +12,12 @@ in
         arch = "aarch64";
         createImage = true;
         modules = with cfg.modules.nixos; [ rrv-sh ];
+        proxies = [
+          {
+            domain = "rrv.sh";
+            port = 2309;
+          }
+        ];
       };
     };
   };

@@ -22,7 +22,7 @@ in
           hostName = name;
           hostConfig = value;
         };
-        modules = [ cfg.modules.nixos.default ];
+        modules = [ cfg.modules.nixos.default ] ++ value.modules;
       }
     ) manifest.nodes.nixos;
     images = (mapAttrs (name: _: cfg.nixosConfigurations.${name}.config.system.build.sdImage)) (

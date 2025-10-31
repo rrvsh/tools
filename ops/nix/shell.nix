@@ -4,13 +4,14 @@
     {
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs; [
+          deadnix
           gh
-          nh
+          git
           just
+          nh
+          nixfmt-tree
           sops
           statix
-          deadnix
-          nixfmt-tree
           zizmor
         ];
       };
