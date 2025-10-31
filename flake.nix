@@ -20,7 +20,5 @@
     import-tree.url = "github:vic/import-tree";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     systems.url = "github:nix-systems/default";
-    rrv-sh.url = "github:rrvsh/rrv.sh";
-    rrv-sh.inputs.nixpkgs.follows = "nixpkgs";
   };
 }

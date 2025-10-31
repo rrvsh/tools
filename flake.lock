@@ -99,29 +99,8 @@
         "import-tree": "import-tree",
         "nix-darwin": "nix-darwin",
         "nixpkgs": "nixpkgs",
-        "rrv-sh": "rrv-sh",
         "sops-nix": "sops-nix",
         "systems": "systems"
-      }
-    },
-    "rrv-sh": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1761744898,
-        "narHash": "sha256-LLpyw6/lbdc3JMmXDnJ3+Pcib/BB/f8vsr+W9coWbVk=",
-        "owner": "rrvsh",
-        "repo": "rrv.sh",
-        "rev": "eec76b1545ee1d21ff0f163e9d7addc92b9dc789",
-        "type": "github"
-      },
-      "original": {
-        "owner": "rrvsh",
-        "repo": "rrv.sh",
-        "type": "github"
       }
     },
     "sops-nix": {

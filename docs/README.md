@@ -1,27 +1,26 @@
-`docs/` should serve as all the documentation for the monorepo
-`ops/` contains:
-    - `nix/` -> the IaC that defines and builds all development shells, packages, system configurations, SD images, and more
-    - `sops/` -> secrets encyrypted with sops and age
-`src/` contains:
-    - source code for packages
-    - static sites
-    - media for desktop
-    - etc
+## current state
 
-the flake uses import-tree to essentially import every file recursively in `nix/` excluding any files or directories that are in a directory beginning with an underscore such as `_packages`.
+`nodes.nixos.veil` has nginx setup.
+`manifest` has externals skeleton impl set up.
 
-machines are connected using tailscale with the auth key being stored using sops
+## directory structure
 
-`veil` is a raspberry pi 4b that will serve as a reverse proxy to the network and other services. it currently hosts my website http://rrv.sh
+- `docs/` should contain:
+    - README.md -> instructions and information
+    - runbook.md -> commands and procedures
+- `ops/` should contain IaC:
+    - `nix/` contains Nix code that is consumed by `flake.nix` in the root directory
+    - `sops/` contains sops encrypted secrets with age
 
-user passwords are stored in the git repo using sops-nix for encryption and mounting
+## dev setup
 
-ssl is handled by lets encrypt via acme using DNS-01 validation thru cloudflare
+with `direnv`, run `direnv allow` and all dependencies will be in your shell.
 
-linting, formatting, and other checks are handled by various tools depending on the language, see Justfile or CI for more
+run:
 
-Each PR must include changes to `docs/`
+- `just nice` to format and lint
+- `just check` to test
 
-The configuration option `flake.paths` contains relative paths to folders in the repository, such as `flake.paths.root` pointing to the repository root
+## architecture
 
-This flake exposes a template pkg-shell that auto initialises a nice devshell + package abstraction for you
+`ops/nix/manifest/manifest.nix` describes the overview of the IaC. the rest construct the system configs.
