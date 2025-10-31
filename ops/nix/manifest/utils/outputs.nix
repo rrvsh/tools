@@ -35,6 +35,7 @@ let
 in
 {
   imports = [ inputs.flake-parts.flakeModules.modules ];
+  # IDEAL END STATE = flake = f manifest;
   flake.nixosConfigurations = mkNixosConfigurations cfg.manifest.nodes.nixos;
   flake.images = mkImages cfg.manifest.nodes.nixos;
 }
