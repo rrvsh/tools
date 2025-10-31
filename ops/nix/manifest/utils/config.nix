@@ -18,6 +18,7 @@ in
       name: value:
       nixosSystem {
         specialArgs = {
+          inherit manifest;
           hostName = name;
           hostConfig = value;
         };
