@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  cfg = config.flake;
+in
 {
   flake.manifest = {
     externals.nginx = {
@@ -7,6 +11,7 @@
       veil = {
         arch = "aarch64";
         createImage = true;
+        modules = with cfg.modules.nixos; [ rrv-sh ];
       };
     };
   };

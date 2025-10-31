@@ -7,7 +7,7 @@ let
     listToAttrs
     ;
   inherit (lib.attrsets) mapAttrsToList;
-  inherit (lib.modules) mkIf;
+  inherit (lib.modules) mkMerge mkIf;
   inherit (lib.trivial) pipe;
   mkVHostConfig =
     manifest:
@@ -31,12 +31,14 @@ in
 {
   flake.modules.nixos.default =
     { hostName, manifest, ... }:
-    mkIf (hostName == manifest.externals.nginx.node) {
-      networking.firewall.allowedTCPPorts = [
-        80 # HTTP
-        443 # HTTPS
-      ];
-      services.nginx.enable = true;
-      services.nginx.virtualHosts = mkVHostConfig manifest;
-    };
+    mkMerge [
+      (mkIf (hostName == manifest.externals.nginx.node) {
+        networking.firewall.allowedTCPPorts = [
+          80 # HTTP
+          443 # HTTPS
+        ];
+        services.nginx.enable = true;
+        services.nginx.virtualHosts = mkVHostConfig manifest;
+      })
+    ];
 }

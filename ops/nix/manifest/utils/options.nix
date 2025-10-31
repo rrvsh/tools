@@ -5,6 +5,7 @@ let
   inherit (builtins) attrNames;
   inherit (lib.options) mkOption;
   inherit (lib.types)
+    deferredModule
     attrsOf
     submodule
     str
@@ -40,6 +41,10 @@ in
                   port = mkOption { type = port; };
                 };
               });
+              default = [ ];
+            };
+            modules = mkOption {
+              type = listOf deferredModule;
               default = [ ];
             };
           };
