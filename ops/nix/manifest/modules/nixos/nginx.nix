@@ -22,6 +22,9 @@ let
       (map (proxy: {
         name = proxy.domain;
         value = {
+          inherit (manifest.externals.nginx) addSSL;
+          useACMEHost = if manifest.externals.nginx.addSSL then proxy.domain else null;
+          acmeRoot = null; # needed for DNS validation
           locations."/".proxyPass = "http://${
             if (proxy.node == manifest.externals.nginx.node) then "localhost" else proxy.node
           }:${toString proxy.port}";
