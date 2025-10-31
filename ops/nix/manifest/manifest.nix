@@ -6,6 +6,7 @@ in
   flake.manifest = {
     externals.nginx = {
       node = "veil";
+      addSSL = true;
     };
     nodes.nixos = {
       veil = {
