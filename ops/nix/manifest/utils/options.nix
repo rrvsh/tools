@@ -3,7 +3,7 @@ let
   cfg = config.flake;
   inherit (cfg.paths) root;
   inherit (builtins) attrNames;
-  inherit (lib.options) mkOption;
+  inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.types)
     deferredModule
     attrsOf
@@ -23,6 +23,7 @@ in
         type = submodule {
           options = {
             node = mkOption { type = enum (attrNames cfg.manifest.nodes.nixos); };
+            addSSL = mkEnableOption "";
           };
         };
       };
