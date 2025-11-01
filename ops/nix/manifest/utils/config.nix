@@ -9,7 +9,6 @@ let
   inherit (cfg) manifest;
   inherit (builtins) mapAttrs;
   inherit (lib) nixosSystem;
-  inherit (lib.attrsets) filterAttrs;
 in
 {
   imports = [ inputs.flake-parts.flakeModules.modules ];
@@ -25,8 +24,5 @@ in
         modules = [ cfg.modules.nixos.default ] ++ value.modules;
       }
     ) manifest.nodes.nixos;
-    images = (mapAttrs (name: _: cfg.nixosConfigurations.${name}.config.system.build.sdImage)) (
-      filterAttrs (_: value: value.createImage) manifest.nodes.nixos
-    );
   };
 }
