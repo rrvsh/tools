@@ -2,8 +2,7 @@
 let
   cfg = config.flake;
   inherit (cfg.paths) root;
-  inherit (builtins) attrNames;
-  inherit (lib.options) mkOption mkEnableOption;
+  inherit (lib.options) mkOption;
   inherit (lib.types)
     deferredModule
     attrsOf
@@ -11,7 +10,6 @@ let
     str
     bool
     path
-    enum
     listOf
     port
     ;
@@ -19,14 +17,6 @@ in
 {
   options.flake = {
     manifest = {
-      externals.nginx = mkOption {
-        type = submodule {
-          options = {
-            node = mkOption { type = enum (attrNames cfg.manifest.nodes.nixos); };
-            addSSL = mkEnableOption "";
-          };
-        };
-      };
       nodes.nixos = mkOption {
         type = attrsOf (submodule {
           options = {

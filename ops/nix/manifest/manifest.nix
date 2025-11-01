@@ -4,13 +4,18 @@ let
 in
 {
   flake.manifest = {
-    users.rafiq.primary = true;
-    options = {
-      sops.enable = true;
+    users.rafiq = {
+      primary = true;
+      email = "rafiq@rrv.sh";
     };
+    options.sops.enable = true;
     externals.nginx = {
       node = "veil";
-      addSSL = true;
+      ssl = {
+        enable = true;
+        dnsProvider = "cloudflare";
+        certs."rrv.sh".extraDomainNames = [ "*.rrv.sh" ];
+      };
     };
     nodes.nixos = {
       nephalem = {
