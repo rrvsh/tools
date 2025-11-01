@@ -1,0 +1,27 @@
+name: Check for changes to docs
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  ensure_docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Get all changed docs files
+        id: changed-markdown-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        with:
+          files: docs/**
+
+      - name: Fail if no change to docs
+        if: steps.changed-markdown-files.outputs.any_changed == 'false'
+        run: exit 1
