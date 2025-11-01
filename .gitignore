@@ -1,9 +1,3 @@
 tmp
-
-# Nix
-
 result
-
-# Direnv
-
 .direnv
