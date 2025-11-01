@@ -1,7 +1,6 @@
 ## current state
 
-`nodes.nixos.veil` has nginx with https setup and the `rrv.sh` website.
-`manifest` has externals and proxies skeleton impl set up.
+
 
 ## what this is
 
@@ -19,7 +18,8 @@ the end state of this is essentially to provide the backend to easily automating
 
 ### RULES
 
-- every file must be ATOMIC -> HARD REQUIREMENT!
+- every file must be ATOMIC -> HARD REQUIREMENT! includes all types of files
+- lists should be sorted if possible
 
 ## dev setup
 
