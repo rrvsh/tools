@@ -4,6 +4,7 @@ let
 in
 {
   flake.manifest = {
+    users.rafiq.primary = true;
     options = {
       sops.enable = true;
     };

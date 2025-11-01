@@ -1,4 +1,4 @@
-{ config, inputs, ... }:
+{ config, ... }:
 let
   inherit (config.flake.paths) secrets;
 in
@@ -11,7 +11,6 @@ in
       ...
     }:
     {
-      imports = [ inputs.sops-nix.nixosModules.sops ];
       networking.hostName = hostName;
       nix.settings = {
         experimental-features = [
@@ -33,16 +32,7 @@ in
           enable = true;
         };
       };
-      sops = {
-        age.sshKeyPaths = [ "/home/rafiq/.ssh/id_ed25519" ];
-        secrets = {
-          "keys/tailscale".sopsFile = secrets + /keys.yaml;
-          "rafiq/hashedPassword" = {
-            neededForUsers = true;
-            sopsFile = secrets + /users.yaml;
-          };
-        };
-      };
+      sops.secrets."keys/tailscale".sopsFile = secrets + /keys.yaml;
       system.stateVersion = "25.11";
       users = {
         groups.users.gid = 100;
