@@ -4,6 +4,9 @@ let
 in
 {
   flake.manifest = {
+    options = {
+      sops.enable = true;
+    };
     externals.nginx = {
       node = "veil";
       addSSL = true;
