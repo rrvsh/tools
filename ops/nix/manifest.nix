@@ -14,7 +14,6 @@
       veil = {
         type = "rpi4b";
         device = "/dev/mmcblk1";
-        createImage = true;
       };
     };
     externals.nginx = {
