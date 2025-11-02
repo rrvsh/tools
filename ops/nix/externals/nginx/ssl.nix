@@ -2,7 +2,7 @@
 let
   cfg = config.flake;
   modCfg = config.flake.manifest.externals.nginx;
-  inherit (cfg.manifest.helpers) admin;
+  inherit (cfg.manifest.users) admin;
   inherit (cfg.paths) secrets;
   inherit (lib.modules) mkMerge mkIf;
   inherit (lib.options) mkOption mkEnableOption;
@@ -28,7 +28,7 @@ in
           inherit (modCfg.ssl) certs;
         };
       })
-      (mkIf (modCfg.ssl.dnsProvider == "cloudflare" && cfg.manifest.options.sops.enable) {
+      (mkIf (modCfg.ssl.dnsProvider == "cloudflare" && cfg.manifest.users.sops.enable) {
         sops.secrets."keys/cloudflare".sopsFile = secrets + /keys.yaml;
         security.acme.defaults.credentialFiles."CLOUDFLARE_DNS_API_TOKEN_FILE" =
           config.sops.secrets."keys/cloudflare".path;

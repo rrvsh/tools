@@ -24,7 +24,6 @@ in
         trusted-substituters = [ "https://nix-community.cachix.org" ];
       };
       nixpkgs.hostPlatform.system = "${hostConfig.arch}-linux";
-      security.sudo.wheelNeedsPassword = false;
       services = {
         openssh.enable = true;
         tailscale = {
@@ -34,17 +33,5 @@ in
       };
       sops.secrets."keys/tailscale".sopsFile = secrets + /keys.yaml;
       system.stateVersion = "25.11";
-      users = {
-        groups.users.gid = 100;
-        mutableUsers = false;
-        users.rafiq = {
-          extraGroups = [ "wheel" ];
-          hashedPasswordFile = config.sops.secrets."rafiq/hashedPassword".path;
-          isNormalUser = true;
-          openssh.authorizedKeys.keys = [
-            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n rafiq"
-          ];
-        };
-      };
     };
 }
