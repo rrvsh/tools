@@ -8,7 +8,8 @@
     secrets.sops.enable = true;
     nodes.nixos = {
       veil = {
-        facter = ../facter/rpi4b.json;
+        type = "rpi4b";
+        device = "/dev/mmcblk1";
         createImage = true;
       };
     };
