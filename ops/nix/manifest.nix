@@ -1,7 +1,3 @@
-{ config, ... }:
-let
-  cfg = config.flake;
-in
 {
   flake = {
     users.users.rafiq = {
@@ -29,7 +25,7 @@ in
           node = "veil";
           domain = "rrv.sh";
           port = 2309;
-          apps = [ cfg.modules.nixos.rrv-sh ];
+          apps = [ "rrv-sh" ];
         }
       ];
     };

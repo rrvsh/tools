@@ -2,39 +2,31 @@
 let
   cfg = config.flake;
   inherit (builtins)
-    toString
-    map
-    listToAttrs
     attrNames
     foldl'
+    listToAttrs
+    map
+    toString
+    ;
+  inherit (lib.types)
+    enum
+    listOf
+    port
+    str
+    submodule
     ;
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkOption;
   inherit (lib.trivial) pipe;
-  inherit (lib.types)
-    listOf
-    deferredModule
-    submodule
-    str
-    port
-    enum
-    ;
-  proxyApps = foldl' (
-    acc: n:
-    acc
-    // {
-      n.node = (acc.${n.node} or [ ]) ++ n.apps;
-    }
-  ) { } cfg.externals.nginx.proxies;
 in
 {
   options.flake.externals.nginx.proxies = mkOption {
     type = listOf (submodule {
       options = {
-        node = mkOption { type = enum (attrNames cfg.nodes.nixos); };
+        apps = mkOption { type = enum (attrNames cfg.modules.nixos); };
         domain = mkOption { type = str; };
+        node = mkOption { type = enum (attrNames cfg.nodes.nixos); };
         port = mkOption { type = port; };
-        apps = mkOption { type = listOf deferredModule; };
       };
     });
     default = [ ];
@@ -42,7 +34,14 @@ in
   config.flake.modules.nixos.default =
     { hostName, ... }:
     {
-      imports = proxyApps.${hostName} or [ ];
+      imports =
+        (foldl' (
+          acc: n:
+          acc
+          // {
+            n.node = (acc.${n.node} or [ ]) ++ (map (app: cfg.modules.nixos.${app}) n.apps);
+          }
+        ) { } cfg.externals.nginx.proxies).${hostName} or [ ];
       config = mkIf (hostName == cfg.externals.nginx.node) {
         services.nginx.virtualHosts = pipe cfg.externals.nginx.proxies [
           (map (proxy: {
