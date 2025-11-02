@@ -7,9 +7,8 @@
     };
     secrets.sops.enable = true;
     nodes.nixos = {
-      nephalem.arch = "x86_64";
       veil = {
-        arch = "aarch64";
+        facter = ../facter/rpi4b.json;
         createImage = true;
       };
     };

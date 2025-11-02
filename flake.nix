@@ -22,5 +22,6 @@
     systems.url = "github:nix-systems/default";
     rrv-sh.url = "github:rrvsh/rrv.sh";
     rrv-sh.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
   };
 }
