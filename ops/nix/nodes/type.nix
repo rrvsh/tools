@@ -17,7 +17,7 @@ in
       imports = [
         inputs.disko.nixosModules.default
         inputs.nixos-facter-modules.nixosModules.facter
-        config.flake.diskoConfigurations.${hostConfig.type}
+        (config.flake.diskoConfigurations.${hostConfig.type} { inherit (hostConfig) device; })
       ];
       config = mkMerge [
         {
@@ -26,6 +26,8 @@ in
         (mkIf (hostConfig.type == "rpi4b") {
           boot.loader.grub.enable = false;
           boot.loader.generic-extlinux-compatible.enable = true;
+        })
+        (mkIf (hostConfig.type == "nephalem") {
         })
       ];
     };
