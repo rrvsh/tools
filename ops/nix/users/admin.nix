@@ -6,19 +6,15 @@ let
   inherit (lib.options) mkOption;
   inherit (lib.attrsets) filterAttrs;
   inherit (lib.lists) elemAt;
-  manifestAdmin = elemAt (attrValues (
-    filterAttrs (_: value: value.primary or false) cfg.manifest.users.users
-  )) 0;
+  adminCfg = elemAt (attrValues (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
 in
 {
-  options.flake.manifest.users = {
-    admin.username = mkOption { type = str; };
-    admin.email = mkOption { type = str; };
+  options.flake.users.admin = {
+    username = mkOption { type = str; };
+    email = mkOption { type = str; };
   };
-  config.flake.manifest.users = {
-    admin.username = elemAt (attrNames (
-      filterAttrs (_: value: value.primary or false) cfg.manifest.users.users
-    )) 0;
-    admin.email = manifestAdmin.email;
+  config.flake.users.admin = {
+    inherit (adminCfg) email;
+    username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
   };
 }

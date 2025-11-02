@@ -1,14 +1,14 @@
 { lib, config, ... }:
 let
   cfg = config.flake;
-  inherit (builtins) mapAttrs;
+  inherit (builtins) mapAttrs attrValues;
   inherit (lib.types) str attrsOf submodule;
   inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.modules) mkIf;
-  inherit (lib.lists) optional;
+  inherit (lib.lists) optional any;
 in
 {
-  options.flake.manifest.users.users = mkOption {
+  options.flake.users.users = mkOption {
     type = attrsOf (submodule {
       options = {
         primary = mkEnableOption "";
@@ -20,17 +20,23 @@ in
   config.flake.modules.nixos.default =
     { config, ... }:
     {
+      assertions = [
+        {
+          assertion = any (u: u.primary) (attrValues cfg.users.users);
+          message = "At least one user must have `primary = true` in flake.users.users.";
+        }
+      ];
       security.sudo.wheelNeedsPassword = false;
       users = {
         groups.users.gid = 100;
         mutableUsers = false;
         users = mapAttrs (username: userConfig: {
           extraGroups = optional userConfig.primary "wheel";
-          hashedPasswordFile = mkIf (cfg.manifest.options.sops.enable or false
+          hashedPasswordFile = mkIf (cfg.secrets.sops.enable or false
           ) config.sops.secrets."${username}/hashedPassword".path;
           isNormalUser = true;
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
-        }) cfg.manifest.users.users;
+        }) cfg.users.users;
       };
     };
 }

@@ -1,21 +1,36 @@
 {
-  inputs,
-  lib,
   config,
+  lib,
+  inputs,
   ...
 }:
 let
   cfg = config.flake;
-  inherit (cfg) manifest;
   inherit (builtins) mapAttrs;
   inherit (lib.modules) mkIf;
+  inherit (lib.options) mkOption;
   inherit (lib.attrsets) filterAttrs;
+  inherit (lib.types) attrsOf submoduleWith bool;
 in
 {
-  flake.images = (mapAttrs (name: _: cfg.nixosConfigurations.${name}.config.system.build.sdImage)) (
-    filterAttrs (_: value: value.createImage) manifest.nodes.nixos
-  );
-  flake.modules.nixos.default =
+  options.flake.nodes.nixos = mkOption {
+    type = attrsOf (submoduleWith {
+      modules = [
+        {
+          options = {
+            createImage = mkOption {
+              type = bool;
+              default = false;
+            };
+          };
+        }
+      ];
+    });
+  };
+  config.flake.images =
+    (mapAttrs (name: _: cfg.nixosConfigurations.${name}.config.system.build.sdImage))
+      (filterAttrs (_: value: value.createImage) cfg.nodes.nixos);
+  config.flake.modules.nixos.default =
     { hostName, hostConfig, ... }:
     {
       imports = [ "${inputs.nixpkgs}/nixos/modules/installer/sd-card/sd-image-${hostConfig.arch}.nix" ];

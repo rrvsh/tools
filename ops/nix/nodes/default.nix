@@ -4,12 +4,7 @@ let
 in
 {
   flake.modules.nixos.default =
-    {
-      hostName,
-      hostConfig,
-      config,
-      ...
-    }:
+    { hostName, config, ... }:
     {
       networking.hostName = hostName;
       nix.settings = {
@@ -23,7 +18,6 @@ in
         ];
         trusted-substituters = [ "https://nix-community.cachix.org" ];
       };
-      nixpkgs.hostPlatform.system = "${hostConfig.arch}-linux";
       services = {
         openssh.enable = true;
         tailscale = {

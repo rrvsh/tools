@@ -1,4 +1,3 @@
-# provide sops to the whole flake
 {
   inputs,
   config,
@@ -7,14 +6,16 @@
 }:
 let
   cfg = config.flake;
+  sopsFilePath = secrets + /users.yaml;
   inherit (cfg.paths) secrets;
+  inherit (cfg.users) admin;
+  inherit (builtins) hasAttr pathExists;
   inherit (lib.attrsets) mapAttrs';
-  inherit (cfg.manifest.users) admin;
   inherit (lib.options) mkEnableOption;
   inherit (lib.modules) mkIf;
 in
 {
-  options.flake.manifest.users.sops.enable = mkEnableOption "";
+  options.flake.secrets.sops.enable = mkEnableOption "";
   config.flake.modules.nixos.default =
     { config, ... }:
     let
@@ -22,7 +23,17 @@ in
     in
     {
       imports = [ inputs.sops-nix.nixosModules.sops ];
-      config = mkIf cfg.manifest.users.sops.enable {
+      config = mkIf cfg.secrets.sops.enable {
+        assertions = [
+          {
+            assertion = hasAttr "users" cfg;
+            message = "You must have included the users module and defined users to use `secrets.sops`.";
+          }
+          {
+            assertion = pathExists sopsFilePath;
+            message = "You must have created ${sopsFilePath} to set user passwords.";
+          }
+        ];
         system.activationScripts.ensureSshKey.text = # bash
           ''
             path="${sshKeyPath}"
@@ -37,9 +48,9 @@ in
           name = "${name}/hashedPassword";
           value = {
             neededForUsers = true;
-            sopsFile = secrets + /users.yaml;
+            sopsFile = sopsFilePath;
           };
-        }) cfg.manifest.users;
+        }) cfg.users.users;
       };
     };
 }
