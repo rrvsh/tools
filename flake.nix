@@ -5,7 +5,11 @@
       (inputs.import-tree ./ops/nix)
       // {
         systems = import inputs.systems;
-        flake.paths.root = ./.;
+        flake.paths = {
+          root = ./.;
+          facter = ./ops/facter;
+          secrets = ./ops/sops;
+        };
       }
     );
   inputs = {
