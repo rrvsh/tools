@@ -1,3 +1,9 @@
-tmp
+# generated files
+
 result
 .direnv
+*.qcow2
+keys/
+
+# developer choice
+tmp

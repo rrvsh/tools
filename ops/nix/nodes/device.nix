@@ -40,7 +40,7 @@
         };
       };
     };
-  flake.diskoConfigurations.nephalem =
+  flake.diskoConfigurations.desktop =
     {
       device ? "",
       ...

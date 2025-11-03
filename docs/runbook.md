@@ -8,3 +8,7 @@ rg --no-binary --hidden --null -l '' \
       echo "\n==== $f ====\n"
       cat "$f"
   end | pbcopy
+
+nix store info --store ssh://eu.nixbuild.net
+
+nix run nixpkgs#darwin.linux-builder

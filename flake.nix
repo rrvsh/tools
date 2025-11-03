@@ -22,6 +22,8 @@
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nixos-facter-modules.url = "github:nix-community/nixos-facter-modules";
+    nixos-generators.inputs.nixpkgs.follows = "nixpkgs";
+    nixos-generators.url = "github:nix-community/nixos-generators";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     rrv-sh.inputs.nixpkgs.follows = "nixpkgs";
     rrv-sh.url = "github:rrvsh/rrv.sh";

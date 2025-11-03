@@ -6,16 +6,7 @@
       pubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n rafiq";
     };
     secrets.sops.enable = true;
-    nodes.nixos = {
-      nephalem = {
-        type = "nephalem";
-        device = "/dev/disk/by-id/nvme-CT2000P3SSD8_2325E6E77434";
-      };
-      veil = {
-        type = "rpi4b";
-        device = "/dev/mmcblk1";
-      };
-    };
+    nodes.nixos = { };
     externals.nginx = {
       node = "veil";
       ssl = {

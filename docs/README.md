@@ -1,5 +1,21 @@
 ## current state
 
+- externals
+    - nginx: proxies complete, todo is static sites and deeper config
+- internals
+    - added ssh, tailscale
+- nodes
+    - device: disko configurations
+    - type: facter and disko
+    - nixos: default nixos modules and construction
+- secrets
+    - sops: done basically? figure out api
+- users
+    - users: provides user info
+    - admin: provides admin user for e.g. sops
+
+TODO:
+    - figure out how to get one vm running thats it
 
 
 ## what this is
