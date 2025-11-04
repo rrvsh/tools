@@ -5,10 +5,6 @@
       email = "rafiq@rrv.sh";
       pubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n rafiq";
     };
-    templates.pkg-shell = {
-      path = ./_templates/pkg-shell;
-      description = "premade package and shell for all systems with flake parts";
-    };
   };
   perSystem =
     { pkgs, ... }:
