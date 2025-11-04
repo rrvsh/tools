@@ -17,7 +17,7 @@ in
       };
     });
   };
-  config.flake.modules.nixos.default =
+  config.flake.modules.nixos.leaf =
     { config, ... }:
     {
       assertions = [
@@ -32,7 +32,8 @@ in
         mutableUsers = false;
         users = mapAttrs (username: userConfig: {
           extraGroups = optional userConfig.primary "wheel";
-          hashedPasswordFile = mkIf (cfg.secrets.sops.enable or false
+          hashedPasswordFile = mkIf (
+            cfg.users.secrets.type == "sops"
           ) config.sops.secrets."${username}/hashedPassword".path;
           isNormalUser = true;
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];

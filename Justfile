@@ -1,8 +1,8 @@
-check: format lint test
+check: nice test
 
-nice: format lint
+nice: format-nix lint
 
-format: format-nix
+format: format-nix format-gha
 
 format-nix:
   treefmt
