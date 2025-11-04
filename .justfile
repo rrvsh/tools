@@ -1,4 +1,4 @@
-check: nice test
+check: format lint test
 
 nice: format-nix lint
 
