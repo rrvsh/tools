@@ -1,9 +1,9 @@
-tmp
-
-# Nix
+# generated files
 
 result
-
-# Direnv
-
 .direnv
+*.qcow2
+keys/
+
+# developer choice
+tmp

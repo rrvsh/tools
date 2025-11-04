@@ -5,22 +5,20 @@
       (inputs.import-tree ./ops/nix)
       // {
         systems = import inputs.systems;
-        flake.paths.root = ./.;
+        flake.paths = {
+          root = ./.;
+          device = ./ops/definitions/devices;
+          secrets = ./ops/definitions/secrets;
+        };
       }
     );
   inputs = {
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
-    home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    home-manager.url = "github:nix-community/home-manager";
-    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
-    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
-    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
-    sops-nix.url = "github:Mic92/sops-nix";
     import-tree.url = "github:vic/import-tree";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    sops-nix.inputs.nixpkgs.follows = "nixpkgs";
+    sops-nix.url = "github:Mic92/sops-nix";
     systems.url = "github:nix-systems/default";
-    rrv-sh.url = "github:rrvsh/rrv.sh";
-    rrv-sh.inputs.nixpkgs.follows = "nixpkgs";
   };
 }
