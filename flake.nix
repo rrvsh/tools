@@ -1,10 +1,11 @@
 {
+  description = "personal infra and configs for rafiq";
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       (inputs.import-tree ./ops/nix)
       // {
-        systems = import inputs.systems;
+        systems = ["aarch64-darwin"];
         flake.paths = {
           root = ./.;
           device = ./ops/definitions/devices;
@@ -19,6 +20,5 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
-    systems.url = "github:nix-systems/default";
   };
 }
