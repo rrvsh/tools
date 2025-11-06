@@ -5,7 +5,7 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       (inputs.import-tree ./ops/nix)
       // {
-        systems = ["aarch64-darwin"];
+        systems = [ "aarch64-darwin" ];
         flake.paths = {
           root = ./.;
           device = ./ops/definitions/devices;
@@ -20,5 +20,7 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/master";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
   };
 }
