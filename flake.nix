@@ -5,7 +5,10 @@
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
       (inputs.import-tree ./ops/nix)
       // {
-        systems = [ "aarch64-darwin" ];
+        systems = [
+          "aarch64-darwin"
+          "x86_64-linux"
+        ];
         flake.paths = {
           root = ./.;
           device = ./ops/definitions/devices;
