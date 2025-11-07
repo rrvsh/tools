@@ -8,8 +8,6 @@
     devenv =
       pkgs: with pkgs; [
         deadnix
-        gh
-        git
         just
         nh
         nixfmt-tree

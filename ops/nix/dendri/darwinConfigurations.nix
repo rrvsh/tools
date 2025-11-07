@@ -4,7 +4,10 @@ let
 in
 {
   flake.darwinConfigurations.alpha = inputs.nix-darwin.lib.darwinSystem {
-    modules = [ cfg.modules.darwin.leaf ];
+    modules = [
+      inputs.home-manager.darwinModules.home-manager
+      cfg.modules.darwin.leaf
+    ];
   };
   flake.modules.darwin.leaf =
     { pkgs, ... }:

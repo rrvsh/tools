@@ -1,11 +1,11 @@
 { lib, config, ... }:
 let
   cfg = config.flake;
-  inherit (builtins) mapAttrs attrValues;
+  inherit (builtins) mapAttrs attrNames attrValues;
   inherit (lib.types) str attrsOf submodule;
   inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.modules) mkIf;
-  inherit (lib.lists) optional any;
+  inherit (lib.lists) findFirstIndex optional any;
 in
 {
   options.flake.users.users = mkOption {
@@ -39,5 +39,24 @@ in
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
         }) cfg.users.users;
       };
+    };
+  config.flake.modules.darwin.leaf =
+    { config, ... }:
+    {
+      security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
+      users.knownUsers = attrNames cfg.users.users;
+      users.users = mapAttrs (username: _: {
+        home = "/Users/${username}";
+        # first user created is always 501
+        uid = 501 + (findFirstIndex (x: x == username) null (attrNames cfg.users.users));
+      }) cfg.users.users;
+      home-manager.users = mapAttrs (username: _: {
+        imports = [ cfg.modules.homeManager.${username} ];
+        home = {
+          inherit username;
+          homeDirectory = config.users.users.${username}.home;
+          stateVersion = "25.11";
+        };
+      }) cfg.users.users;
     };
 }
