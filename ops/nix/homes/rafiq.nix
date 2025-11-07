@@ -1,3 +1,11 @@
+# considerations: probably want the following structure for keybinds
+# super -> within a window, new tab, copy, paste, etc
+# leader keys -> within an app, e.g <leader>s to save
+# alt ->
+# ctrl ->
+# super alt -> move a window?
+# super ctrl -> workspaces?
+# shift should be a modifier of other modifiers aka super shift t in firefox
 {
   inputs,
   lib,
@@ -124,6 +132,11 @@ in
           enable = true;
           package = null;
           clearDefaultKeybinds = true;
+          settings.keybind = [
+            "performable:super+c=copy_to_clipboard"
+            "performable:super+v=paste_from_clipboard"
+            "performable:super+t=new_tab"
+          ];
         };
       };
     };
