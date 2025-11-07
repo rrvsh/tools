@@ -1,5 +1,12 @@
-{ inputs, lib, ... }:
+{
+  inputs,
+  lib,
+  config,
+  ...
+}:
 let
+  cfg = config.flake;
+  inherit (cfg.paths) src;
   inherit (lib.meta) getExe;
 in
 {
@@ -35,7 +42,10 @@ in
       gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
     in
     {
-      imports = [ inputs.nix-index-database.homeModules.nix-index ];
+      imports = [
+        inputs.nvf.homeManagerModules.default
+        inputs.nix-index-database.homeModules.nix-index
+      ];
 
       home = {
         packages = with pkgs; [
@@ -45,6 +55,7 @@ in
         ];
         shellAliases = {
           inherit gdb;
+          cd = "z";
           v = "$EDITOR";
           e = "${fish} -c 'set -e var; set var ($FINDER); test -n \"$var\"; and $EDITOR $var'";
           gaa = "${git} add";
@@ -66,11 +77,16 @@ in
           gupdate-main = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} stash pop";
         };
         sessionVariables = {
-          EDITOR = getExe pkgs.neovim;
+          EDITOR = "nvim";
           FINDER = getExe pkgs.skim;
         };
       };
       programs = {
+        nvf = {
+          enable = true;
+          settings.vim.additionalRuntimePaths = [ src ];
+          settings.vim.luaConfigRC.rafiq = "require(\"rafiq\")";
+        };
         zoxide.enable = true;
         nix-index.enable = true;
         nix-index-database.comma.enable = true;
