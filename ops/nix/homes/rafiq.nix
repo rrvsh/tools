@@ -13,6 +13,10 @@ in
   flake.modules.darwin.rafiq =
     { config, ... }:
     {
+      nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
+      nix.settings.extra-trusted-public-keys = [
+        "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
+      ];
       nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
       nixpkgs.config.allowUnfreePredicate =
         pkg:
@@ -58,6 +62,7 @@ in
           cd = "z";
           v = "$EDITOR";
           e = "${fish} -c 'set -e var; set var ($FINDER); test -n \"$var\"; and $EDITOR $var'";
+          t = "$FILE_MANAGER";
           gaa = "${git} add";
           gap = "${git} add -p .";
           gc = "${git} commit";
@@ -79,6 +84,7 @@ in
         sessionVariables = {
           EDITOR = "nvim";
           FINDER = getExe pkgs.skim;
+          FILE_MANAGER = "yy";
         };
       };
       programs = {
@@ -102,6 +108,10 @@ in
         firefox = {
           enable = true;
           package = null;
+        };
+        yazi = {
+          enable = true;
+          package = inputs.yazi.packages.${pkgs.system}.default;
         };
       };
     };
