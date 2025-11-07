@@ -13,6 +13,7 @@ in
           "firefox-bin"
           "slack"
         ];
+      homebrew.brews = [ "docker" ];
       system = {
         activationScripts = {
           extraActivation.text = lib.mkAfter config.system.activationScripts.pmset.text;
