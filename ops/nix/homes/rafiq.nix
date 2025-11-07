@@ -31,9 +31,12 @@ in
     { pkgs, ... }:
     let
       git = getExe pkgs.git;
+      fish = getExe pkgs.fish;
       gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
     in
     {
+      imports = [ inputs.nix-index-database.homeModules.nix-index ];
+
       home = {
         packages = with pkgs; [
           gh
@@ -43,26 +46,39 @@ in
         shellAliases = {
           inherit gdb;
           v = "$EDITOR";
-          gs = "${git} status";
+          e = "${fish} -c 'set -e var; set var ($FINDER); test -n \"$var\"; and $EDITOR $var'";
+          gaa = "${git} add";
+          gap = "${git} add -p .";
           gc = "${git} commit";
-          gcend = "${git} commit --amend --no-edit";
-          gcamend = "${git} commit -a --amend --no-edit";
-          gcm = "${git} commit -m";
           gcam = "${git} commit -am";
-          gu = "${git} push";
+          gcamend = "${git} commit -a --amend --no-edit";
+          gcend = "${git} commit --amend --no-edit";
+          gcm = "${git} commit -m";
           gd = "${git} diff";
           gdh = "${git} diff HEAD";
-          gds = "${git} diff --staged";
           gdm = "${git} diff $(${gdb})";
+          gds = "${git} diff --staged";
+          grc = "${git} rebase --continue";
+          gs = "${git} status";
+          gu = "${git} push";
           gundo = "${git} add . && ${git} stash && ${git} reset HEAD~1 && ${git} stash pop";
           gupdate = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} rebase $(${gdb}) && ${git} stash pop";
           gupdate-main = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} stash pop";
         };
         sessionVariables = {
           EDITOR = getExe pkgs.neovim;
+          FINDER = getExe pkgs.skim;
         };
       };
       programs = {
+        zoxide.enable = true;
+        nix-index.enable = true;
+        nix-index-database.comma.enable = true;
+        mise.enable = true;
+        skim = {
+          enable = true;
+        };
+        ripgrep-all.enable = true;
         direnv = {
           enable = true;
           nix-direnv.enable = true;
@@ -71,7 +87,6 @@ in
           enable = true;
           package = null;
         };
-        mise.enable = true;
       };
     };
 }
