@@ -25,6 +25,7 @@ in
           "slack"
         ];
       homebrew.brews = [ "docker" ];
+      homebrew.casks = [ "ghostty" ];
       system = {
         activationScripts = {
           extraActivation.text = lib.mkAfter config.system.activationScripts.pmset.text;
@@ -112,6 +113,11 @@ in
         yazi = {
           enable = true;
           package = inputs.yazi.packages.${pkgs.system}.default;
+        };
+        ghostty = {
+          enable = true;
+          package = null;
+          clearDefaultKeybinds = true;
         };
       };
     };
