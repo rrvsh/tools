@@ -33,6 +33,7 @@
     nvf.url = "github:notashelf/nvf";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
+    yazi.url = "github:sxyazi/yazi";
     homebrew-core = {
       url = "github:homebrew/homebrew-core";
       flake = false;
