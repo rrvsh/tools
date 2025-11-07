@@ -2,9 +2,12 @@
 {
   flake.modules.darwin.rafiq = {
     nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
-nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
-             "firefox-bin"
-           ];
+    nixpkgs.config.allowUnfreePredicate =
+      pkg:
+      builtins.elem (lib.getName pkg) [
+        "firefox-bin"
+      ];
+    system.defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
   };
   flake.modules.homeManager.rafiq =
     { pkgs, ... }:
@@ -17,7 +20,7 @@ nixpkgs.config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [
         neovim
         gh
         git
-firefox-bin
+        firefox-bin
       ];
       programs.firefox = {
         enable = true;

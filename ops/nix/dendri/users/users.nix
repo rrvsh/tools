@@ -55,15 +55,15 @@ in
         uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
       }) cfg.users.users;
       home-manager = {
-useGlobalPkgs = true;
-users = mapAttrs (username: _: {
-        imports = [ cfg.modules.homeManager.${username} ];
-        home = {
-          inherit username;
-          homeDirectory = config.users.users.${username}.home;
-          stateVersion = "25.11";
-        };
-      }) cfg.users.users;
-};
+        useGlobalPkgs = true;
+        users = mapAttrs (username: _: {
+          imports = [ cfg.modules.homeManager.${username} ];
+          home = {
+            inherit username;
+            homeDirectory = config.users.users.${username}.home;
+            stateVersion = "25.11";
+          };
+        }) cfg.users.users;
+      };
     };
 }
