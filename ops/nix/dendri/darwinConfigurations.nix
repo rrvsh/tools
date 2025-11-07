@@ -21,8 +21,13 @@ in
     in
     {
       environment.systemPackages = [ pkgs.vim ];
-      nix.enable = false; # required for nix-darwin and determinate compat
-      nix.settings.experimental-features = "nix-command flakes";
+      nix.settings = {
+        experimental-features = "nix-command flakes";
+        trusted-users = [
+          cfg.users.admin.username
+          "@admin"
+        ];
+      };
       nixpkgs.hostPlatform = "aarch64-darwin";
       homebrew = {
         enable = true;
