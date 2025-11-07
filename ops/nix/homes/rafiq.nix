@@ -94,6 +94,10 @@ in
           settings.vim = {
             additionalRuntimePaths = [ src ];
             luaConfigRC.rafiq = "require(\"rafiq\")";
+            extraPackages = with pkgs; [ ripgrep ];
+            utility.snacks-nvim = {
+              enable = true;
+            };
           };
         };
         zoxide.enable = true;
