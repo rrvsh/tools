@@ -1,4 +1,4 @@
--- luacheck: globals vim
+-- luacheck: globals vim Snacks
 vim.o.relativenumber = true
 vim.o.number = true
 vim.o.expandtab = true -- insert tabs with spaces
@@ -8,3 +8,4 @@ vim.o.softtabstop = 2 -- amount of spaces tab should indent
 vim.o.shiftwidth = 2 -- amount of spaces builtins use by default
 vim.keymap.set("v", "Y", '"+y') -- copy to clipboard on shift y
 vim.keymap.set({ "n", "v" }, "<leader>s", vim.cmd("update"))
+vim.keymap.set("n", "<leader>fg", Snacks.picker.grep)
