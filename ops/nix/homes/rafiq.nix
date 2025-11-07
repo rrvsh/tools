@@ -83,7 +83,6 @@ in
           gupdate-main = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} stash pop";
         };
         sessionVariables = {
-          EDITOR = "nvim";
           FINDER = getExe pkgs.skim;
           FILE_MANAGER = "yy";
         };
@@ -91,6 +90,7 @@ in
       programs = {
         nvf = {
           enable = true;
+          defaultEditor = true;
           settings.vim = {
             additionalRuntimePaths = [ src ];
             luaConfigRC.rafiq = "require(\"rafiq\")";
