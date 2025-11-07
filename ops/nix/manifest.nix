@@ -16,6 +16,7 @@
         nixfmt-tree
         sops
         statix
+        stylua
         zizmor
       ];
   };
