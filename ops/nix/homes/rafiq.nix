@@ -1,4 +1,7 @@
 { inputs, lib, ... }:
+let
+  inherit (lib.meta) getExe;
+in
 {
   flake.modules.darwin.rafiq =
     { config, ... }:
@@ -24,19 +27,48 @@
     };
   flake.modules.homeManager.rafiq =
     { pkgs, ... }:
+    let
+      git = getExe pkgs.git;
+      gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
+    in
     {
-      programs.direnv = {
-        enable = true;
-        nix-direnv.enable = true;
+      home = {
+        packages = with pkgs; [
+          gh
+          firefox-bin
+        ];
+        shellAliases = {
+          inherit gdb;
+          v = "$EDITOR";
+          gs = "${git} status";
+          gc = "${git} commit";
+          gcend = "${git} commit --amend --no-edit";
+          gcamend = "${git} commit -a --amend --no-edit";
+          gcm = "${git} commit -m";
+          gcam = "${git} commit -am";
+          gu = "${git} push";
+          gd = "${git} diff";
+          gdh = "${git} diff HEAD";
+          gds = "${git} diff --staged";
+          gdm = "${git} diff $(${gdb})";
+          gundo = "${git} add . && ${git} stash && ${git} reset HEAD~1 && ${git} stash pop";
+          gupdate = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} rebase $(${gdb}) && ${git} stash pop";
+          gupdate-main = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} stash pop";
+        };
+        sessionVariables = {
+          EDITOR = getExe pkgs.neovim;
+        };
       };
-      home.packages = with pkgs; [
-        neovim
-        gh
-        firefox-bin
-      ];
-      programs.firefox = {
-        enable = true;
-        package = null;
+      programs = {
+        direnv = {
+          enable = true;
+          nix-direnv.enable = true;
+        };
+        firefox = {
+          enable = true;
+          package = null;
+        };
+        mise.enable = true;
       };
     };
 }
