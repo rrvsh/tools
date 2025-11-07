@@ -1,12 +1,21 @@
 { lib, config, ... }:
 let
   cfg = config.flake;
-  inherit (builtins) mapAttrs attrNames attrValues;
-  inherit (lib.types) str attrsOf submodule;
-  inherit (lib.options) mkOption mkEnableOption;
-  inherit (lib.modules) mkIf;
+  inherit (builtins)
+    attrNames
+    attrValues
+    hasAttr
+    listToAttrs
+    map
+    mapAttrs
+    ;
+  inherit (lib.attrsets) mapAttrsToList;
   inherit (lib.lists) findFirstIndex optional any;
+  inherit (lib.modules) mkIf;
+  inherit (lib.options) mkOption mkEnableOption;
+  inherit (lib.types) str attrsOf submodule;
   knownUsers = attrNames cfg.users.users;
+  userShells = mapAttrsToList (_: value: value.shell) cfg.users.users;
 in
 {
   options.flake.users.users = mkOption {
@@ -16,6 +25,10 @@ in
         fullName = mkOption { type = str; };
         email = mkOption { type = str; };
         pubkey = mkOption { type = str; };
+        shell = mkOption {
+          type = str;
+          default = "fish";
+        };
         defaultBranchName = mkOption {
           type = str;
           default = "main";
@@ -47,18 +60,30 @@ in
       };
     };
   config.flake.modules.darwin.leaf =
-    { config, ... }:
+    { config, pkgs, ... }:
     {
+      assertions = [
+        {
+          assertion = any (pkg_name: hasAttr pkg_name config.programs) userShells;
+          message = "users.users.<name>.shell must be set to a valid shell name.";
+        }
+      ];
       imports = map (username: cfg.modules.darwin.${username}) knownUsers;
       security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
-      users = {
-        inherit knownUsers;
-      };
-      users.users = mapAttrs (username: _: {
+      users = { inherit knownUsers; };
+      users.users = mapAttrs (username: userConfig: {
         home = "/Users/${username}";
         # first user created is always 501
         uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
+        openssh.authorizedKeys.keys = [ userConfig.pubkey ];
+        shell = pkgs.${userConfig.shell};
       }) cfg.users.users;
+      programs = listToAttrs (
+        map (x: {
+          name = x;
+          value.enable = true;
+        }) userShells
+      );
       home-manager = {
         useGlobalPkgs = true;
         users = mapAttrs (username: userConfig: {
@@ -69,6 +94,7 @@ in
             stateVersion = "25.11";
           };
           programs = {
+            ${userConfig.shell}.enable = true;
             git = {
               enable = true;
               signing = {
