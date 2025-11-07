@@ -11,6 +11,7 @@ in
         pkg:
         builtins.elem (lib.getName pkg) [
           "firefox-bin"
+          "slack"
         ];
       system = {
         activationScripts = {
@@ -36,6 +37,7 @@ in
         packages = with pkgs; [
           gh
           firefox-bin
+          slack
         ];
         shellAliases = {
           inherit gdb;
