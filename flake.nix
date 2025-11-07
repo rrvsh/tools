@@ -13,6 +13,7 @@
           root = ./.;
           device = ./ops/definitions/devices;
           secrets = ./ops/definitions/secrets;
+          src = ./src;
         };
       }
     );
@@ -29,6 +30,7 @@
     nix-index-database.url = "github:nix-community/nix-index-database";
     nixpkgs-firefox-darwin.url = "github:bandithedoge/nixpkgs-firefox-darwin";
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nvf.url = "github:notashelf/nvf";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
     homebrew-core = {
