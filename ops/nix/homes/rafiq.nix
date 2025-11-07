@@ -91,8 +91,10 @@ in
       programs = {
         nvf = {
           enable = true;
-          settings.vim.additionalRuntimePaths = [ src ];
-          settings.vim.luaConfigRC.rafiq = "require(\"rafiq\")";
+          settings.vim = {
+            additionalRuntimePaths = [ src ];
+            luaConfigRC.rafiq = "require(\"rafiq\")";
+          };
         };
         zoxide.enable = true;
         nix-index.enable = true;
