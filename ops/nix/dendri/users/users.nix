@@ -6,6 +6,7 @@ let
   inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.modules) mkIf;
   inherit (lib.lists) findFirstIndex optional any;
+  knownUsers = attrNames cfg.users.users;
 in
 {
   options.flake.users.users = mkOption {
@@ -43,12 +44,15 @@ in
   config.flake.modules.darwin.leaf =
     { config, ... }:
     {
+      imports = map (username: cfg.modules.darwin.${username}) knownUsers;
       security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
-      users.knownUsers = attrNames cfg.users.users;
+      users = {
+        inherit knownUsers;
+      };
       users.users = mapAttrs (username: _: {
         home = "/Users/${username}";
         # first user created is always 501
-        uid = 501 + (findFirstIndex (x: x == username) null (attrNames cfg.users.users));
+        uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
       }) cfg.users.users;
       home-manager.users = mapAttrs (username: _: {
         imports = [ cfg.modules.homeManager.${username} ];
