@@ -54,7 +54,9 @@ in
         # first user created is always 501
         uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
       }) cfg.users.users;
-      home-manager.users = mapAttrs (username: _: {
+      home-manager = {
+useGlobalPkgs = true;
+users = mapAttrs (username: _: {
         imports = [ cfg.modules.homeManager.${username} ];
         home = {
           inherit username;
@@ -62,5 +64,6 @@ in
           stateVersion = "25.11";
         };
       }) cfg.users.users;
+};
     };
 }
