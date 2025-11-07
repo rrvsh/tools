@@ -13,8 +13,13 @@ in
     type = attrsOf (submodule {
       options = {
         primary = mkEnableOption "";
+        fullName = mkOption { type = str; };
         email = mkOption { type = str; };
         pubkey = mkOption { type = str; };
+        defaultBranchName = mkOption {
+          type = str;
+          default = "main";
+        };
       };
     });
   };
@@ -56,12 +61,27 @@ in
       }) cfg.users.users;
       home-manager = {
         useGlobalPkgs = true;
-        users = mapAttrs (username: _: {
+        users = mapAttrs (username: userConfig: {
           imports = [ cfg.modules.homeManager.${username} ];
           home = {
             inherit username;
             homeDirectory = config.users.users.${username}.home;
             stateVersion = "25.11";
+          };
+          programs = {
+            git = {
+              enable = true;
+              signing = {
+                signByDefault = true;
+                key = "~/.ssh/id_ed25519.pub";
+              };
+              settings = {
+                user.name = userConfig.fullName;
+                user.email = userConfig.email;
+                gpg.format = "ssh";
+                init.defaultBranch = userConfig.defaultBranchName;
+              };
+            };
           };
         }) cfg.users.users;
       };

@@ -19,7 +19,6 @@
       home.packages = with pkgs; [
         neovim
         gh
-        git
         firefox-bin
       ];
       programs.firefox = {
