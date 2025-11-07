@@ -12,3 +12,5 @@ rg --no-binary --hidden --null -l '' \
 nix store info --store ssh://eu.nixbuild.net
 
 nix run nixpkgs#darwin.linux-builder
+
+ssh-keygen -f ~/.ssh/id_ed25519 -y > ~/.ssh/id_ed25519.pub
