@@ -13,12 +13,15 @@ format-gha:
 format-lua:
   stylua .
 
-lint: lint-nix
+lint: lint-lua lint-nix
 
 lint-nix:
   statix check
   statix fix
   deadnix -e
+
+lint-lua:
+  luacheck $(git ls-files '*.lua')
 
 test: test-nix
 

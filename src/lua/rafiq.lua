@@ -1,3 +1,4 @@
+-- luacheck: globals vim
 vim.o.relativenumber = true
 vim.o.number = true
 vim.o.expandtab = true -- insert tabs with spaces

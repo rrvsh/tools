@@ -18,6 +18,7 @@
         statix
         stylua
         zizmor
+        luajitPackages.luacheck
       ];
   };
 }
