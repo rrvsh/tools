@@ -8,6 +8,7 @@
       shell = "fish";
       defaultBranchName = "prime";
       browser = "firefox";
+      terminal = "ghostty";
     };
     devenv =
       pkgs: with pkgs; [

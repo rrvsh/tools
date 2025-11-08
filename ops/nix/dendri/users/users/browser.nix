@@ -33,5 +33,18 @@ in
         nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
       }
     ) cfg.users.users;
+    modules.homeManager = mapAttrs (
+      _: userConfig:
+      (
+        { pkgs, ... }:
+        mkIf (userConfig.browser == "firefox") {
+          home.packages = [ pkgs.firefox-bin ];
+          programs.firefox = {
+            enable = true;
+            package = if pkgs.stdenv.isDarwin then null else pkgs.firefox; # throws error on darwin
+          };
+        }
+      )
+    ) cfg.users.users;
   };
 }

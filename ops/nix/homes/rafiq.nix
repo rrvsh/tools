@@ -28,7 +28,6 @@ in
           "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
         ];
         homebrew.brews = [ "docker" ];
-        homebrew.casks = [ "ghostty" ];
         system = {
           activationScripts = {
             extraActivation.text = lib.mkAfter config.system.activationScripts.pmset.text;
@@ -58,7 +57,6 @@ in
         home = {
           packages = with pkgs; [
             gh
-            firefox-bin
             slack
           ];
           shellAliases = {
@@ -115,25 +113,11 @@ in
             enable = true;
             nix-direnv.enable = true;
           };
-          firefox = {
-            enable = true;
-            package = null;
-          };
           yazi = {
             enable = true;
             package = inputs.yazi.packages.${pkgs.system}.default.override {
               runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
             };
-          };
-          ghostty = {
-            enable = true;
-            package = null;
-            clearDefaultKeybinds = true;
-            settings.keybind = [
-              "performable:super+c=copy_to_clipboard"
-              "performable:super+v=paste_from_clipboard"
-              "performable:super+t=new_tab"
-            ];
           };
         };
       };
