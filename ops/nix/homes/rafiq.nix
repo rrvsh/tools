@@ -6,15 +6,8 @@
 # super alt -> move a window?
 # super ctrl -> workspaces?
 # shift should be a modifier of other modifiers aka super shift t in firefox
-{
-  inputs,
-  lib,
-  config,
-  ...
-}:
+{ inputs, lib, ... }:
 let
-  cfg = config.flake;
-  inherit (cfg.paths) src;
   inherit (lib.meta) getExe;
 in
 {
@@ -49,10 +42,7 @@ in
         gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
       in
       {
-        imports = [
-          inputs.nvf.homeManagerModules.default
-          inputs.nix-index-database.homeModules.nix-index
-        ];
+        imports = [ inputs.nix-index-database.homeModules.nix-index ];
 
         home = {
           packages = with pkgs; [
@@ -89,18 +79,6 @@ in
           };
         };
         programs = {
-          nvf = {
-            enable = true;
-            defaultEditor = true;
-            settings.vim = {
-              additionalRuntimePaths = [ src ];
-              luaConfigRC.rafiq = "require(\"rafiq\")";
-              extraPackages = with pkgs; [ ripgrep ];
-              utility.snacks-nvim = {
-                enable = true;
-              };
-            };
-          };
           zoxide.enable = true;
           nix-index.enable = true;
           nix-index-database.comma.enable = true;
