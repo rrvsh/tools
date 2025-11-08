@@ -12,7 +12,6 @@ in
     ];
   };
   flake.modules.darwin.leaf =
-    { pkgs, ... }:
     let
       taps = {
         "homebrew/homebrew-core" = inputs.homebrew-core;
@@ -20,33 +19,29 @@ in
       };
     in
     {
-      environment.systemPackages = [ pkgs.vim ];
-      nix.settings = {
-        experimental-features = "nix-command flakes";
-        trusted-users = [
-          cfg.users.admin.username
-          "@admin"
-        ];
-      };
+      nix.settings.experimental-features = "nix-command flakes";
       nixpkgs.hostPlatform = "aarch64-darwin";
-      homebrew = {
-        enable = true;
-        taps = attrNames taps;
-      };
-      nix-homebrew = {
-        inherit taps;
-        enable = true;
-        enableRosetta = true;
-        user = cfg.users.admin.username;
-        mutableTaps = false;
-      };
       system = {
         configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
         stateVersion = 6;
         activationScripts.extraActivation.text = ''
           echo >&2 "ensuring rosetta is installed..."
           softwareupdate --install-rosetta --agree-to-license
+          echo >&2 "configuring power management..."
+          sudo pmset -a disablesleep 1
         '';
+        defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
+        keyboard.enableKeyMapping = true;
+        keyboard.remapCapsLockToEscape = true;
+      };
+      homebrew.enable = true;
+      homebrew.taps = attrNames taps;
+      nix-homebrew = {
+        inherit taps;
+        enable = true;
+        enableRosetta = true;
+        user = cfg.users.admin.username;
+        mutableTaps = false;
       };
     };
 }

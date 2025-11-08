@@ -6,10 +6,7 @@
 }:
 let
   cfg = config.flake;
-  inherit (builtins)
-    mapAttrs
-    any
-    ;
+  inherit (builtins) mapAttrs any;
   inherit (lib.lists) optional;
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkOption;

@@ -13,23 +13,9 @@ in
 {
   flake = {
     allowedUnfreePackages = [ "slack" ];
-    modules.darwin.rafiq =
-      { config, ... }:
-      {
-        homebrew.brews = [ "docker" ];
-        system = {
-          activationScripts = {
-            extraActivation.text = lib.mkAfter config.system.activationScripts.pmset.text;
-            pmset.text = ''
-              echo >&2 "configuring power management..."
-              sudo pmset -a disablesleep 1
-            '';
-          };
-          defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
-          keyboard.enableKeyMapping = true;
-          keyboard.remapCapsLockToEscape = true;
-        };
-      };
+    modules.darwin.rafiq = {
+      homebrew.brews = [ "docker" ];
+    };
     modules.homeManager.rafiq =
       { pkgs, config, ... }:
       let
