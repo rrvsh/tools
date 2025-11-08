@@ -126,7 +126,9 @@ in
         };
         yazi = {
           enable = true;
-          package = inputs.yazi.packages.${pkgs.system}.default;
+          package = inputs.yazi.packages.${pkgs.system}.default.override {
+            runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
+          };
         };
         ghostty = {
           enable = true;
