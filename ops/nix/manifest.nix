@@ -13,17 +13,5 @@
         terminal = "ghostty";
       };
     };
-    devenv =
-      pkgs: with pkgs; [
-        deadnix
-        just
-        nh
-        nixfmt-tree
-        sops
-        statix
-        stylua
-        zizmor
-        luajitPackages.luacheck
-      ];
   };
 }
