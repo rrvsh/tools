@@ -16,10 +16,6 @@ in
     modules.darwin.rafiq =
       { config, ... }:
       {
-        nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
-        nix.settings.extra-trusted-public-keys = [
-          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
-        ];
         homebrew.brews = [ "docker" ];
         system = {
           activationScripts = {
@@ -35,15 +31,15 @@ in
         };
       };
     modules.homeManager.rafiq =
-      { pkgs, ... }:
+      { pkgs, config, ... }:
       let
         git = getExe pkgs.git;
         fish = getExe pkgs.fish;
+        sk = getExe pkgs.skim;
         gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
       in
       {
         imports = [ inputs.nix-index-database.homeModules.nix-index ];
-
         home = {
           packages = with pkgs; [
             gh
@@ -53,8 +49,8 @@ in
             inherit gdb;
             cd = "z";
             v = "$EDITOR";
-            e = "${fish} -c 'set -e var; set var ($FINDER); test -n \"$var\"; and $EDITOR $var'";
-            t = "$FILE_MANAGER";
+            e = "${fish} -c 'set -e var; set var (${sk}); test -n \"$var\"; and $EDITOR $var'";
+            t = config.programs.yazi.shellWrapperName;
             gaa = "${git} add";
             gap = "${git} add -p .";
             gc = "${git} commit";
@@ -73,30 +69,16 @@ in
             gupdate = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} rebase $(${gdb}) && ${git} stash pop";
             gupdate-main = "${git} add . && ${git} stash && ${git} checkout $(${gdb}) && ${git} pull && ${git} checkout - && ${git} stash pop";
           };
-          sessionVariables = {
-            FINDER = getExe pkgs.skim;
-            FILE_MANAGER = "yy";
-          };
         };
         programs = {
           zoxide.enable = true;
           nix-index.enable = true;
           nix-index-database.comma.enable = true;
           mise.enable = true;
-          skim = {
-            enable = true;
-          };
+          skim.enable = true;
           ripgrep-all.enable = true;
-          direnv = {
-            enable = true;
-            nix-direnv.enable = true;
-          };
-          yazi = {
-            enable = true;
-            package = inputs.yazi.packages.${pkgs.system}.default.override {
-              runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
-            };
-          };
+          direnv.enable = true;
+          direnv.nix-direnv.enable = true;
         };
       };
   };

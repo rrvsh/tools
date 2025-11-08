@@ -11,6 +11,7 @@
         shell = "fish";
         browser = "firefox";
         terminal = "ghostty";
+        file-browser = "yazi";
       };
     };
   };
