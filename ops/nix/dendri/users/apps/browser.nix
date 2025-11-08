@@ -9,19 +9,13 @@ let
   inherit (builtins)
     mapAttrs
     any
-    map
-    attrValues
     ;
-  inherit (lib.lists) optional uniqueStrings;
+  inherit (lib.lists) optional;
   inherit (lib.modules) mkIf;
   inherit (lib.options) mkOption;
-  inherit (lib.trivial) pipe;
   inherit (lib.types) enum;
-  userBrowsers = pipe cfg.users.users [
-    attrValues
-    (map (x: x.apps.browser))
-    uniqueStrings
-  ];
+  inherit (lib.attrsets) mapAttrsToList;
+  userBrowsers = mapAttrsToList (_: value: value.apps.browser) cfg.users.users;
 in
 {
   config.flake = {

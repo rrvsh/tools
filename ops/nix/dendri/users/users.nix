@@ -3,13 +3,10 @@ let
   cfg = config.flake;
   inherit (builtins)
     attrNames
-    hasAttr
-    listToAttrs
     map
     mapAttrs
     ;
-  inherit (lib.attrsets) mapAttrsToList;
-  inherit (lib.lists) findFirstIndex any;
+  inherit (lib.lists) findFirstIndex;
   inherit (lib.options) mkOption mkEnableOption;
   inherit (lib.types)
     attrs
@@ -18,7 +15,6 @@ let
     submodule
     ;
   knownUsers = attrNames cfg.users.users;
-  userShells = mapAttrsToList (_: value: value.shell) cfg.users.users;
 in
 {
   options.flake.users.userOptions.apps = mkOption { type = attrs; };
@@ -29,10 +25,6 @@ in
         fullName = mkOption { type = str; };
         email = mkOption { type = str; };
         pubkey = mkOption { type = str; };
-        shell = mkOption {
-          type = str;
-          default = "fish";
-        };
         defaultBranchName = mkOption {
           type = str;
           default = "main";
@@ -43,14 +35,8 @@ in
   };
   config.flake = {
     modules.darwin.leaf =
-      { config, pkgs, ... }:
+      { config, ... }:
       {
-        assertions = [
-          {
-            assertion = any (pkg_name: hasAttr pkg_name config.programs) userShells;
-            message = "users.users.<name>.shell must be set to a valid shell name.";
-          }
-        ];
         imports = map (username: cfg.modules.darwin.${username}) knownUsers;
         security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
         users = { inherit knownUsers; };
@@ -59,14 +45,7 @@ in
           # first user created is always 501
           uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
-          shell = pkgs.${userConfig.shell};
         }) cfg.users.users;
-        programs = listToAttrs (
-          map (x: {
-            name = x;
-            value.enable = true;
-          }) userShells
-        );
         home-manager = {
           useGlobalPkgs = true;
           users = mapAttrs (username: userConfig: {
@@ -77,7 +56,6 @@ in
               stateVersion = "25.11";
             };
             programs = {
-              ${userConfig.shell}.enable = true;
               git = {
                 enable = true;
                 signing = {
