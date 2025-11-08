@@ -19,17 +19,17 @@ let
   inherit (lib.types) enum;
   userBrowsers = pipe cfg.users.users [
     attrValues
-    (map (x: x.browser))
+    (map (x: x.apps.browser))
     uniqueStrings
   ];
 in
 {
   config.flake = {
-    users.userOptions.browser = mkOption { type = enum [ "firefox" ]; };
+    users.userOptions.apps.browser = mkOption { type = enum [ "firefox" ]; };
     allowedUnfreePackages = optional (any (x: x == "firefox") userBrowsers) "firefox-bin";
     modules.darwin = mapAttrs (
       _: userConfig:
-      mkIf (userConfig.browser == "firefox") {
+      mkIf (userConfig.apps.browser == "firefox") {
         nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
       }
     ) cfg.users.users;
@@ -37,7 +37,7 @@ in
       _: userConfig:
       (
         { pkgs, ... }:
-        mkIf (userConfig.browser == "firefox") {
+        mkIf (userConfig.apps.browser == "firefox") {
           home.packages = [ pkgs.firefox-bin ];
           programs.firefox = {
             enable = true;

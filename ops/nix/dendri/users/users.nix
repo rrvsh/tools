@@ -21,28 +21,27 @@ let
   userShells = mapAttrsToList (_: value: value.shell) cfg.users.users;
 in
 {
-  options.flake.users.userOptions = mkOption { type = attrs; };
+  options.flake.users.userOptions.apps = mkOption { type = attrs; };
   options.flake.users.users = mkOption {
     type = attrsOf (submodule {
-      options = cfg.users.userOptions;
+      options = {
+        primary = mkEnableOption "";
+        fullName = mkOption { type = str; };
+        email = mkOption { type = str; };
+        pubkey = mkOption { type = str; };
+        shell = mkOption {
+          type = str;
+          default = "fish";
+        };
+        defaultBranchName = mkOption {
+          type = str;
+          default = "main";
+        };
+        apps = mkOption { type = submodule { options = cfg.users.userOptions.apps; }; };
+      };
     });
   };
   config.flake = {
-
-    users.userOptions = {
-      primary = mkEnableOption "";
-      fullName = mkOption { type = str; };
-      email = mkOption { type = str; };
-      pubkey = mkOption { type = str; };
-      shell = mkOption {
-        type = str;
-        default = "fish";
-      };
-      defaultBranchName = mkOption {
-        type = str;
-        default = "main";
-      };
-    };
     modules.darwin.leaf =
       { config, pkgs, ... }:
       {

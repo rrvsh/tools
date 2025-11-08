@@ -14,10 +14,10 @@ let
 in
 {
   config.flake = {
-    users.userOptions.terminal = mkOption { type = enum [ "ghostty" ]; };
+    users.userOptions.apps.terminal = mkOption { type = enum [ "ghostty" ]; };
     modules.darwin = mapAttrs (
       _: userConfig:
-      mkIf (userConfig.terminal == "ghostty") {
+      mkIf (userConfig.apps.terminal == "ghostty") {
         homebrew.casks = [ "ghostty" ];
       }
     ) cfg.users.users;
@@ -25,7 +25,7 @@ in
       _: userConfig:
       (
         { pkgs, ... }:
-        mkIf (userConfig.terminal == "ghostty") {
+        mkIf (userConfig.apps.terminal == "ghostty") {
           programs.ghostty = {
             enable = true;
             package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty; # ghostty broken on darwin
