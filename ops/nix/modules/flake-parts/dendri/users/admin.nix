@@ -17,4 +17,8 @@ in
     inherit (adminCfg) email;
     username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
   };
+  config.flake.modules.darwin.leaf = {
+    system.primaryUser = cfg.users.admin.username;
+    nix.settings.trusted-users = [ cfg.users.admin.username ];
+  };
 }
