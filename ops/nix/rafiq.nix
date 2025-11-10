@@ -22,6 +22,7 @@ in
         git = getExe pkgs.git;
         fish = getExe pkgs.fish;
         sk = getExe pkgs.skim;
+        rg = getExe pkgs.ripgrep;
         gdb = "${git} rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
       in
       {
@@ -62,6 +63,7 @@ in
           nix-index-database.comma.enable = true;
           mise.enable = true;
           skim.enable = true;
+          skim.defaultCommand = "${rg} --files --hidden --glob '!.git'";
           ripgrep-all.enable = true;
           direnv.enable = true;
           direnv.nix-direnv.enable = true;
