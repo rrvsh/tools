@@ -65,6 +65,17 @@ in
           ripgrep-all.enable = true;
           direnv.enable = true;
           direnv.nix-direnv.enable = true;
+          nvf.settings.vim = {
+            lsp.enable = true;
+            languages.python = {
+              enable = true;
+              format.enable = true;
+              format.type = "ruff";
+              lsp.enable = true;
+              lsp.server = "pyright";
+              treesitter.enable = true;
+            };
+          };
         };
       };
   };
