@@ -67,6 +67,7 @@ in
                   user.email = userConfig.email;
                   gpg.format = "ssh";
                   init.defaultBranch = userConfig.defaultBranchName;
+                  push.autoSetupRemote = true;
                 };
               };
             };
