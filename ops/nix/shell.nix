@@ -7,6 +7,7 @@
           # general
           just
           sops
+          ssh-to-age
 
           # nix
           nixfmt-tree
