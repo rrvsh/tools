@@ -1,4 +1,8 @@
 -- luacheck: globals vim Snacks
+require("snacks")
+
+-- VISUALS
+Snacks.indent.enable()
 
 -- UTILS
 local function git_root()

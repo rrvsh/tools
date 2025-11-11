@@ -69,6 +69,8 @@ in
           direnv.enable = true;
           direnv.nix-direnv.enable = true;
           nvf.settings.vim = {
+            startPlugins = [ "snacks-nvim" ];
+            extraPackages = with pkgs; [ ripgrep ];
             lsp.enable = true;
             languages.python = {
               enable = true;
