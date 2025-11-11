@@ -3,6 +3,9 @@ require("snacks")
 
 -- VISUALS
 Snacks.indent.enable()
+vim.o.relativenumber = true
+vim.o.number = true
+vim.opt.termguicolors = true
 
 -- UTILS
 local function git_root()
@@ -12,19 +15,20 @@ local function git_root()
 	return vim.fn.trim(result)
 end
 
--- OPTIONS
-vim.o.relativenumber = true
-vim.o.number = true
-vim.o.expandtab = true -- insert tabs with spaces
+-- INPUT
+vim.o.expandtab = true -- insert tabs with space characters
 vim.o.smarttab = true -- start of line uses shiftwidth, else tabstop
-vim.o.tabstop = 2 -- amount of spaces a tab character represents
-vim.o.softtabstop = 2 -- amount of spaces tab should indent
-vim.o.shiftwidth = 2 -- amount of spaces builtins use by default
-
--- KEYMAPS
+vim.o.tabstop = 2 -- amount of space characters a tab character represents
+vim.o.softtabstop = 2 -- amount of space characters tab should indent
+vim.o.shiftwidth = 2 -- amount of space characters builtins use by default
+vim.g.mapleader = " "
 vim.keymap.set("v", "Y", '"+y') -- copy to clipboard on shift y
-vim.keymap.set({ "n", "v" }, "<leader>s", vim.cmd("update"))
+vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]]) -- edit all references in file
 vim.keymap.set("n", "<leader>fg", Snacks.picker.grep)
 vim.keymap.set("n", "<leader>ff", function()
 	Snacks.picker.files({ dirs = { git_root() } })
 end, { desc = "search git repo" })
+
+-- MISC
+
+vim.o.undofile = true
