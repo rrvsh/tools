@@ -30,7 +30,7 @@ in
         mkIf (userConfig.apps.file-browser == "yazi") {
           programs.yazi = {
             enable = true;
-            package = inputs.yazi.packages.${pkgs.system}.default.override {
+            package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
               # this will use the binary cache configured above
               # but only after it is registered i.e. after a system rebuild is done with the above and **without this**
               # so comment this package out the first time you rebuild, then uncomment it and rebuild again
