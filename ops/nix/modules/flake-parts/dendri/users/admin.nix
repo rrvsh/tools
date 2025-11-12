@@ -21,6 +21,7 @@ in
     modules.nixos.leaf = {
       security.sudo.wheelNeedsPassword = false;
       users.users.${cfg.users.admin.username}.extraGroups = [ "wheel" ];
+      services.getty.autologinUser = cfg.users.admin.username;
       nix.settings.trusted-users = [ cfg.users.admin.username ];
     };
     modules.darwin.leaf = {
