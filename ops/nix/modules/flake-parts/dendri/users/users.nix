@@ -15,6 +15,33 @@ let
     submodule
     ;
   knownUsers = attrNames cfg.users.users;
+  hmConfig = users: {
+    useGlobalPkgs = true;
+    users = mapAttrs (username: userConfig: {
+      imports = [ cfg.modules.homeManager.${username} ];
+      home = {
+        inherit username;
+        homeDirectory = users.${username}.home;
+        stateVersion = "25.11";
+      };
+      programs = {
+        git = {
+          enable = true;
+          signing = {
+            signByDefault = true;
+            key = "~/.ssh/id_ed25519.pub";
+          };
+          settings = {
+            user.name = userConfig.fullName;
+            user.email = userConfig.email;
+            gpg.format = "ssh";
+            init.defaultBranch = userConfig.defaultBranchName;
+            push.autoSetupRemote = true;
+          };
+        };
+      };
+    }) cfg.users.users;
+  };
 in
 {
   options.flake.users.userOptions.apps = mkOption { type = attrs; };
@@ -34,9 +61,25 @@ in
     });
   };
   config.flake = {
+    modules.nixos.leaf =
+      { config, ... }:
+      {
+        home-manager = hmConfig config.users.users;
+        imports = map (username: cfg.modules.nixos.${username}) knownUsers;
+        users = {
+          groups.users.gid = 100;
+          users = mapAttrs (username: userConfig: {
+            description = userConfig.fullName;
+            isNormalUser = true;
+            openssh.authorizedKeys.keys = [ userConfig.pubkey ];
+            uid = 1000 + (findFirstIndex (x: x == username) null knownUsers);
+          }) cfg.users.users;
+        };
+      };
     modules.darwin.leaf =
       { config, ... }:
       {
+        home-manager = hmConfig config.users.users;
         imports = map (username: cfg.modules.darwin.${username}) knownUsers;
         security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
         users = { inherit knownUsers; };
@@ -46,33 +89,6 @@ in
           uid = 501 + (findFirstIndex (x: x == username) null knownUsers);
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
         }) cfg.users.users;
-        home-manager = {
-          useGlobalPkgs = true;
-          users = mapAttrs (username: userConfig: {
-            imports = [ cfg.modules.homeManager.${username} ];
-            home = {
-              inherit username;
-              homeDirectory = config.users.users.${username}.home;
-              stateVersion = "25.11";
-            };
-            programs = {
-              git = {
-                enable = true;
-                signing = {
-                  signByDefault = true;
-                  key = "~/.ssh/id_ed25519.pub";
-                };
-                settings = {
-                  user.name = userConfig.fullName;
-                  user.email = userConfig.email;
-                  gpg.format = "ssh";
-                  init.defaultBranch = userConfig.defaultBranchName;
-                  push.autoSetupRemote = true;
-                };
-              };
-            };
-          }) cfg.users.users;
-        };
       };
   };
 }

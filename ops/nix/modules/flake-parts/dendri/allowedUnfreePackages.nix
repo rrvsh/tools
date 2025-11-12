@@ -9,6 +9,8 @@ in
 {
   options.flake.allowedUnfreePackages = mkOption { type = listOf str; };
   config.flake = {
+    modules.nixos.leaf.nixpkgs.config.allowUnfreePredicate =
+      pkg: elem (getName pkg) cfg.allowedUnfreePackages;
     modules.darwin.leaf.nixpkgs.config.allowUnfreePredicate =
       pkg: elem (getName pkg) cfg.allowedUnfreePackages;
   };

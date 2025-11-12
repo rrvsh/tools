@@ -10,19 +10,23 @@
 {
   flake = {
     allowedUnfreePackages = [ "slack" ];
-    modules.darwin.rafiq = {
-      homebrew.brews = [ "docker" ];
-    };
+    modules.darwin.rafiq =
+      { pkgs, ... }:
+      {
+        homebrew.brews = [ "docker" ];
+        home-manager.users.rafiq = {
+          home.packages = with pkgs; [
+            slack
+            monitorcontrol
+          ];
+        };
+      };
     modules.homeManager.rafiq =
       { pkgs, config, ... }:
       {
         imports = [ inputs.nix-index-database.homeModules.nix-index ];
         home = {
-          packages = with pkgs; [
-            gh
-            monitorcontrol
-            slack
-          ];
+          packages = with pkgs; [ gh ];
           shellAliases = {
             cd = "z";
             nix-search = ''
