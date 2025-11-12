@@ -9,7 +9,7 @@ let
   userSecrets = secrets + /users.yaml;
   inherit (cfg.paths) secrets;
   inherit (cfg.users) admin;
-  inherit (builtins) pathExists;
+  inherit (builtins) mapAttrs pathExists;
   inherit (lib.attrsets) mapAttrs';
   inherit (lib.options) mkOption;
   inherit (lib.types) enum;
@@ -23,7 +23,7 @@ in
   config.flake.modules.nixos.leaf =
     { config, ... }:
     let
-      sshKeyPath = "${config.users.users.${admin.username}.home}/.ssh/id_ed25519";
+      sshKeyPath = "${config.users.users.${admin.username}.home}/.ssh";
     in
     {
       imports = [ inputs.sops-nix.nixosModules.sops ];
@@ -36,14 +36,13 @@ in
         ];
         system.activationScripts.ensureSshKey.text = # bash
           ''
-            path="${sshKeyPath}"
+            path="${sshKeyPath}/id_ed25519"
             if [ ! -f "$path" ]; then
-              echo "Error: SSH key missing at $path"
+              echo "Error: SSH key missing at $path."
               echo "Create or copy it before rebuilding."
-              exit 1
             fi
           '';
-        sops.age.sshKeyPaths = [ sshKeyPath ];
+        sops.age.sshKeyPaths = [ "${sshKeyPath}/id_ed25519" ];
         sops.secrets = mapAttrs' (name: _value: {
           name = "${name}/hashedPassword";
           value = {
@@ -51,6 +50,14 @@ in
             sopsFile = userSecrets;
           };
         }) cfg.users.users;
+        users.mutableUsers = false;
+        users.users = mapAttrs (username: _: {
+          hashedPasswordFile = config.sops.secrets."${username}/hashedPassword".path;
+        }) cfg.users.users;
+        virtualisation.vmVariant.virtualisation.sharedDirectories.admin = {
+          source = "~/.ssh";
+          target = sshKeyPath;
+        };
       };
     };
 }

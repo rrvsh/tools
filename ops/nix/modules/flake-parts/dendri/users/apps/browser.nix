@@ -29,7 +29,7 @@ in
       (
         { pkgs, ... }:
         mkIf (userConfig.apps.browser == "firefox") {
-          home.packages = [ pkgs.firefox-bin ];
+          home.packages = optional pkgs.stdenv.isDarwin pkgs.firefox-bin;
           programs.firefox = {
             enable = true;
             package = if pkgs.stdenv.isDarwin then null else pkgs.firefox; # throws error on darwin

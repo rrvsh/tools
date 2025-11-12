@@ -13,12 +13,19 @@ in
     username = mkOption { type = str; };
     email = mkOption { type = str; };
   };
-  config.flake.users.admin = {
-    inherit (adminCfg) email;
-    username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
-  };
-  config.flake.modules.darwin.leaf = {
-    system.primaryUser = cfg.users.admin.username;
-    nix.settings.trusted-users = [ cfg.users.admin.username ];
+  config.flake = {
+    users.admin = {
+      inherit (adminCfg) email;
+      username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
+    };
+    modules.nixos.leaf = {
+      security.sudo.wheelNeedsPassword = false;
+      users.users.${cfg.users.admin.username}.extraGroups = [ "wheel" ];
+      nix.settings.trusted-users = [ cfg.users.admin.username ];
+    };
+    modules.darwin.leaf = {
+      system.primaryUser = cfg.users.admin.username;
+      nix.settings.trusted-users = [ cfg.users.admin.username ];
+    };
   };
 }

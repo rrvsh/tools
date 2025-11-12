@@ -12,9 +12,10 @@ let
   inherit (lib.types) enum;
 in
 {
-  config.flake = {
-    users.userOptions.apps.file-browser = mkOption { type = enum [ "yazi" ]; };
-    modules.darwin = mapAttrs (
+
+  flake.users.userOptions.apps.file-browser = mkOption { type = enum [ "yazi" ]; };
+  flake.modules = {
+    nixos = mapAttrs (
       _: userConfig:
       mkIf (userConfig.apps.file-browser == "yazi") {
         nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
@@ -23,7 +24,16 @@ in
         ];
       }
     ) cfg.users.users;
-    modules.homeManager = mapAttrs (
+    darwin = mapAttrs (
+      _: userConfig:
+      mkIf (userConfig.apps.file-browser == "yazi") {
+        nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
+        nix.settings.extra-trusted-public-keys = [
+          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
+        ];
+      }
+    ) cfg.users.users;
+    homeManager = mapAttrs (
       _: userConfig:
       (
         { pkgs, ... }:
