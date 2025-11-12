@@ -8,6 +8,7 @@ in
     modules = [
       inputs.home-manager.darwinModules.home-manager
       inputs.nix-homebrew.darwinModules.nix-homebrew
+      inputs.nix-rosetta-builder.darwinModules.default
       cfg.modules.darwin.leaf
     ];
   };
@@ -43,5 +44,6 @@ in
         user = cfg.users.admin.username;
         mutableTaps = false;
       };
+      nix-rosetta-builder.onDemand = true;
     };
 }
