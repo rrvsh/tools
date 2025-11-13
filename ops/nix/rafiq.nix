@@ -77,6 +77,10 @@
               enable = true;
               formatOnSave = true;
             };
+            utility.yazi-nvim = {
+              enable = true;
+              setupOpts.open_for_directories = true;
+            };
             languages = {
               enableExtraDiagnostics = true;
               enableFormat = true;

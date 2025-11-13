@@ -25,6 +25,7 @@ vim.g.mapleader = " "
 vim.keymap.set("v", "Y", '"+y') -- copy to clipboard on shift y
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]]) -- edit all references in file
 vim.keymap.set("n", "<leader>fg", Snacks.picker.grep)
+vim.keymap.set("n", "<leader>tt", ":Yazi<CR>")
 vim.keymap.set("n", "<leader>ff", function()
 	Snacks.picker.files({ dirs = { git_root() } })
 end, { desc = "search git repo" })
