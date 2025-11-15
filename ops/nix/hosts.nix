@@ -17,7 +17,7 @@ in
         cfg.modules.darwin.leaf
       ];
     };
-    nixosConfigurations.iota = inputs.nixpkgs.lib.nixosSystem {
+    nixosConfigurations.pi = inputs.nixpkgs.lib.nixosSystem {
       modules = [
         inputs.home-manager.nixosModules.home-manager
         inputs.nixos-generators.nixosModules.all-formats
@@ -25,13 +25,17 @@ in
       ];
     };
     modules.nixos.leaf = {
-      networking.hostName = "iota";
+      networking.hostName = "pi";
       nix.settings.experimental-features = "nix-command flakes";
       nixpkgs.hostPlatform = "aarch64-linux";
       system.stateVersion = "25.11";
-      boot.loader.systemd-boot.enable = true;
-      boot.loader.efi.canTouchEfiVariables = true;
-      fileSystems."/".device = "/dev/sda";
+      services.openssh.enable = true;
+      fileSystems."/" = {
+        device = "/dev/disk/by-uuid/44444444-4444-4444-8888-888888888888";
+        fsType = "ext4";
+      };
+      boot.loader.grub.enable = false;
+      boot.loader.generic-extlinux-compatible.enable = true;
     };
     modules.darwin.leaf =
       let
@@ -52,6 +56,7 @@ in
             softwareupdate --install-rosetta --agree-to-license
             echo >&2 "configuring power management..."
             sudo pmset -a disablesleep 1
+            sudo pmset -a displaysleep 0
           '';
           defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
           keyboard.enableKeyMapping = true;

@@ -8,6 +8,8 @@
           just
           sops
           ssh-to-age
+          zstd
+          caligula
 
           # nix
           nixfmt-tree
