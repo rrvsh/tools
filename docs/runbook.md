@@ -29,3 +29,6 @@ nix shell nixpkgs#qemu -c qemu-system-aarch64 \
    -netdev user,id=net0,hostfwd=tcp::2222-:22 \
    -bios /nix/store/1gfvpb90c3xpjxf4r2k2br62d0h0zhgc-qemu-10.1.2/share/qemu/edk2-aarch64-code.fd \
    -nographic
+
+nix build .#nixosConfigurations.pi.config.formats.sd-aarch64
+caligula burn result/nixos-image-sd-card-25.11.20251108.b6a8526-aarch64-linux.img.zst

@@ -2,6 +2,7 @@
 
 result
 .direnv
+*.img*
 *.qcow2
 keys/
 
