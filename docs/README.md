@@ -11,11 +11,9 @@ warning: the logic is in an unfinished state. you cannot yet import any flake-pa
 
 run:
 
-- `just format` to format nix and gha yaml files
-- `just lint` to lint nix files
-- `just test` to run all tests found in the nix flake
+- `bacon rebuild` to watch for changes and rebuild nix darwin
 - `just nice` to format nix files and lint (format gha is slow)
-- `just check` :thumbsup:
+- `just check` to format, lint, and run tests
 
 ## acknowledgements
 
