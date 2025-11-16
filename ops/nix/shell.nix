@@ -10,6 +10,7 @@
           ssh-to-age
           zstd
           caligula
+          bacon
 
           # nix
           nixfmt-tree
