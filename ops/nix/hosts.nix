@@ -26,7 +26,13 @@ in
     };
     modules.nixos.leaf = {
       networking.hostName = "pi";
-      nix.settings.experimental-features = "nix-command flakes";
+      nix.settings = {
+        experimental-features = "nix-command flakes";
+        extra-substituters = [ "https://nix-community.cachix.org" ];
+        extra-trusted-public-keys = [
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+        ];
+      };
       nixpkgs.hostPlatform = "aarch64-linux";
       system.stateVersion = "25.11";
       services.openssh.enable = true;
@@ -46,7 +52,13 @@ in
       in
       {
         networking.hostName = "alpha";
-        nix.settings.experimental-features = "nix-command flakes";
+        nix.settings = {
+          experimental-features = "nix-command flakes";
+          extra-substituters = [ "https://nix-community.cachix.org" ];
+          extra-trusted-public-keys = [
+            "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          ];
+        };
         nixpkgs.hostPlatform = "aarch64-darwin";
         system = {
           configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
