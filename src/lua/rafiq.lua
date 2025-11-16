@@ -23,28 +23,31 @@ vim.o.signcolumn = "number"
 
 -- KEYMAPS
 
+vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
+vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 vim.keymap.set("n", "<leader>w", ":update ++p<CR>", { desc = "Write file if update" })
 vim.keymap.set("n", "<leader>h", ":help ", { desc = "Open help command" })
 vim.keymap.set("n", "<leader>so", ":source<CR>", { desc = "Source current lua file" })
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
-end, { desc = "[LSP] Code Actions" })
+end, { desc = "Code Actions" })
 vim.keymap.set("n", "<leader>lh", function()
 	vim.lsp.buf.hover()
-end, { desc = "[LSP] Hover" })
+end, { desc = "Hover" })
 vim.keymap.set("n", "<leader>lr", function()
 	vim.lsp.buf.rename()
-end, { desc = "[LSP] Rename all references" })
+end, { desc = "Rename all references" })
 vim.keymap.set("n", "<leader>lgr", function()
 	vim.lsp.buf.references()
-end, { desc = "[LSP] See all references" })
+end, { desc = "List all references" })
 vim.keymap.set("n", "<leader>lf", function()
 	vim.lsp.buf.format()
-end, { desc = "[LSP] Format" })
+end, { desc = "Format" })
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
+vim.keymap.set("n", "<leader>sil", "vi[:sort<CR>", { desc = "Sort in []" })
 
 -- AUTOCMD
 
@@ -72,9 +75,10 @@ vim.api.nvim_create_autocmd({ "InsertLeave", "TextChanged", "CursorHold" }, {
 
 -- LSP
 
-vim.diagnostic.config({ virtual_lines = { current_line = true } })
+vim.diagnostic.config({ virtual_text = { current_line = true } })
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust_analyzer")
+vim.lsp.enable("stylua")
 vim.lsp.enable("lua_ls")
 vim.lsp.config("lua_ls", {
 	on_init = function(client)
@@ -103,6 +107,8 @@ vim.lsp.config("lua_ls", {
 		})
 	end,
 	settings = {
-		Lua = {},
+		Lua = {
+			format = { enable = false },
+		},
 	},
 })

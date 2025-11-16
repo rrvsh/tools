@@ -112,6 +112,7 @@ in
             lua-language-server
             nil
             rust-analyzer
+            stylua
           ];
         };
       };
