@@ -1,8 +1,26 @@
 -- luacheck: globals vim
+
+-- PLUGINS
+
 vim.pack.add({
 	{ src = "https://github.com/neovim/nvim-lspconfig" },
 	{ src = "https://github.com/folke/which-key.nvim" },
+	{ src = "https://github.com/nvim-mini/mini.nvim" },
+	{ src = "https://github.com/nvim-lua/plenary.nvim" },
+	{ src = "https://github.com/mikavilpas/yazi.nvim" },
 })
+require("mini.pick").setup()
+local yazi = require("yazi")
+vim.g.loaded_netrwPlugin = 1
+vim.api.nvim_create_autocmd("UIEnter", {
+	callback = function()
+		yazi.setup({
+			open_for_directories = true,
+		})
+	end,
+})
+
+-- OPTIONS
 
 vim.g.mapleader = " "
 
@@ -25,10 +43,12 @@ vim.o.signcolumn = "number"
 
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
+vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
-vim.keymap.set("n", "<leader>w", ":update ++p<CR>", { desc = "Write file if update" })
+vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("n", "<leader>h", ":help ", { desc = "Open help command" })
-vim.keymap.set("n", "<leader>so", ":source<CR>", { desc = "Source current lua file" })
+vim.keymap.set("n", "<leader>ff", ":Pick files<CR>", { desc = "Picker: Files" })
+vim.keymap.set("n", "<leader>fg", ":Pick grep_live<CR>", { desc = "Picker: Files" })
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
 end, { desc = "Code Actions" })
@@ -38,6 +58,9 @@ end, { desc = "Hover" })
 vim.keymap.set("n", "<leader>lr", function()
 	vim.lsp.buf.rename()
 end, { desc = "Rename all references" })
+vim.keymap.set("n", "<leader>lgd", function()
+	vim.lsp.buf.definition()
+end, { desc = "Go to definition" })
 vim.keymap.set("n", "<leader>lgr", function()
 	vim.lsp.buf.references()
 end, { desc = "List all references" })
