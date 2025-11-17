@@ -76,6 +76,7 @@ vim.api.nvim_create_autocmd({ "InsertLeave", "TextChanged", "CursorHold" }, {
 -- LSP
 
 vim.diagnostic.config({ virtual_text = { current_line = true } })
+vim.lsp.enable("pyright")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust_analyzer")
 vim.lsp.enable("stylua")

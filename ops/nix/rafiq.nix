@@ -111,6 +111,7 @@ in
           neovim.extraPackages = with pkgs; [
             lua-language-server
             nil
+            pyright
             rust-analyzer
             stylua
           ];
