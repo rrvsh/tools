@@ -29,12 +29,6 @@ in
           programs.ghostty = {
             enable = true;
             package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty; # ghostty broken on darwin
-            clearDefaultKeybinds = true;
-            settings.keybind = [
-              "performable:super+c=copy_to_clipboard"
-              "performable:super+v=paste_from_clipboard"
-              "performable:super+t=new_tab"
-            ];
           };
         }
       )
