@@ -68,7 +68,7 @@ vim.api.nvim_create_autocmd({ "InsertLeave", "TextChanged", "CursorHold" }, {
 		if after > before then
 			local name = vim.api.nvim_buf_get_name(buf)
 			local time = os.date("%H:%M:%S")
-			print("Wrote to file: " .. name .. " at " .. time)
+			vim.api.nvim_echo({ { "Wrote: " .. name .. " at " .. time } }, false, {})
 		end
 	end,
 })
