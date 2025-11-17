@@ -16,6 +16,7 @@ in
     modules.darwin.rafiq =
       { pkgs, ... }:
       {
+        nixpkgs.overlays = [ inputs.fenix.overlays.default ];
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
           home.packages = with pkgs; [
@@ -109,10 +110,11 @@ in
             };
           };
           neovim.extraPackages = with pkgs; [
+            cargo
             lua-language-server
             nil
             pyright
-            rust-analyzer
+            rust-analyzer-nightly
             stylua
           ];
         };
