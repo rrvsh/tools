@@ -11,9 +11,10 @@ let
   inherit (lib.strings) concatStrings;
 in
 {
-  flake = {
-    allowedUnfreePackages = [ "slack" ];
-    modules.darwin.rafiq =
+  flake.allowedUnfreePackages = [ "slack" ];
+  flake.modules = {
+    nixos.rafiq.nixpkgs.overlays = [ inputs.fenix.overlays.default ];
+    darwin.rafiq =
       { pkgs, ... }:
       {
         nixpkgs.overlays = [ inputs.fenix.overlays.default ];
@@ -25,7 +26,7 @@ in
           ];
         };
       };
-    modules.homeManager.rafiq =
+    homeManager.rafiq =
       { pkgs, config, ... }:
       {
         imports = [ inputs.nix-index-database.homeModules.nix-index ];
@@ -120,4 +121,5 @@ in
         };
       };
   };
+
 }
