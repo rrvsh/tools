@@ -11,11 +11,13 @@ let
   inherit (lib.strings) concatStrings;
 in
 {
-  flake = {
-    allowedUnfreePackages = [ "slack" ];
-    modules.darwin.rafiq =
+  flake.allowedUnfreePackages = [ "slack" ];
+  flake.modules = {
+    nixos.rafiq.nixpkgs.overlays = [ inputs.fenix.overlays.default ];
+    darwin.rafiq =
       { pkgs, ... }:
       {
+        nixpkgs.overlays = [ inputs.fenix.overlays.default ];
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
           home.packages = with pkgs; [
@@ -24,7 +26,7 @@ in
           ];
         };
       };
-    modules.homeManager.rafiq =
+    homeManager.rafiq =
       { pkgs, config, ... }:
       {
         imports = [ inputs.nix-index-database.homeModules.nix-index ];
@@ -108,37 +110,16 @@ in
               };
             };
           };
-          nvf.settings.vim = {
-            startPlugins = [ "snacks-nvim" ];
-            extraPackages = with pkgs; [
-              ruff
-              ripgrep
-            ];
-            lsp = {
-              enable = true;
-              formatOnSave = true;
-            };
-            utility.yazi-nvim = {
-              enable = true;
-              setupOpts.open_for_directories = true;
-            };
-            languages = {
-              enableExtraDiagnostics = true;
-              enableFormat = true;
-              enableTreesitter = true;
-              nix = {
-                enable = true;
-                format.type = "nixfmt";
-                lsp.server = "nil";
-              };
-              python = {
-                enable = true;
-                format.type = "ruff";
-                lsp.server = "pyright";
-              };
-            };
-          };
+          neovim.extraPackages = with pkgs; [
+            cargo
+            lua-language-server
+            nil
+            pyright
+            rust-analyzer-nightly
+            stylua
+          ];
         };
       };
   };
+
 }
