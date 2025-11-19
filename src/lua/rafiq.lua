@@ -66,30 +66,6 @@ vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 })
 vim.keymap.set("n", "<leader>sil", "vi[:sort<CR>", { desc = "Sort in []" })
 
--- AUTOCMD
-
-vim.api.nvim_create_autocmd({ "InsertLeave", "TextChanged", "CursorHold" }, {
-	pattern = "*",
-	callback = function()
-		local buf = vim.api.nvim_get_current_buf()
-		local before = vim.api.nvim_buf_get_changedtick(buf)
-
-		if vim.bo.filetype == "rust" then
-			vim.cmd("silent write")
-		else
-			vim.cmd("silent update")
-		end
-
-		local after = vim.api.nvim_buf_get_changedtick(buf)
-
-		if after > before then
-			local name = vim.api.nvim_buf_get_name(buf)
-			local time = os.date("%H:%M:%S")
-			vim.api.nvim_echo({ { "Wrote: " .. name .. " at " .. time } }, false, {})
-		end
-	end,
-})
-
 -- LSP
 
 vim.diagnostic.config({ virtual_text = { current_line = true } })
