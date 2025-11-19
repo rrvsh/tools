@@ -13,11 +13,9 @@ in
 {
   flake.allowedUnfreePackages = [ "slack" ];
   flake.modules = {
-    nixos.rafiq.nixpkgs.overlays = [ inputs.fenix.overlays.default ];
     darwin.rafiq =
       { pkgs, ... }:
       {
-        nixpkgs.overlays = [ inputs.fenix.overlays.default ];
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
           home.packages = with pkgs; [
@@ -115,11 +113,11 @@ in
             lua-language-server
             nil
             pyright
-            rust-analyzer-nightly
+            rust-analyzer
+            rustc
             stylua
           ];
         };
       };
   };
-
 }
