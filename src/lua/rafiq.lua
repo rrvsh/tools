@@ -2,14 +2,8 @@
 
 -- PLUGINS
 
-vim.pack.add({
-	{ src = "https://github.com/neovim/nvim-lspconfig" },
-	{ src = "https://github.com/folke/which-key.nvim" },
-	{ src = "https://github.com/nvim-mini/mini.nvim" },
-	{ src = "https://github.com/nvim-lua/plenary.nvim" },
-	{ src = "https://github.com/mikavilpas/yazi.nvim" },
-})
 require("mini.pick").setup()
+require("fidget").setup()
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {

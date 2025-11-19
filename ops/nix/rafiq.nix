@@ -108,6 +108,15 @@ in
               };
             };
           };
+          neovim.plugins = with pkgs.vimPlugins; [
+            fidget-nvim
+            mini-nvim
+            nvim-lspconfig
+            plenary-nvim
+            rustaceanvim
+            which-key-nvim
+            yazi-nvim
+          ];
           neovim.extraPackages = with pkgs; [
             cargo
             lua-language-server
