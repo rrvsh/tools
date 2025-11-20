@@ -113,7 +113,6 @@ in
             mini-nvim
             nvim-lspconfig
             plenary-nvim
-            rustaceanvim
             which-key-nvim
             yazi-nvim
           ];
@@ -124,6 +123,7 @@ in
             pyright
             rust-analyzer
             rustc
+            rustfmt
             stylua
           ];
         };
