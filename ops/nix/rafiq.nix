@@ -18,10 +18,7 @@ in
       {
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
-          home.packages = with pkgs; [
-            slack
-            monitorcontrol
-          ];
+          home.packages = [ pkgs.monitorcontrol ];
         };
       };
     homeManager.rafiq =
@@ -118,6 +115,7 @@ in
           ];
           neovim.extraPackages = with pkgs; [
             cargo
+            clippy
             lua-language-server
             nil
             pyright

@@ -72,6 +72,15 @@ vim.diagnostic.config({ virtual_text = { current_line = true } })
 vim.lsp.enable("pyright")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust_analyzer")
+vim.lsp.config('rust_analyzer', {
+  settings = {
+    ['rust-analyzer'] = {
+      check = {
+        command = "clippy";
+      }
+    }
+  }
+})
 vim.lsp.enable("stylua")
 vim.lsp.enable("lua_ls")
 vim.lsp.config("lua_ls", {
