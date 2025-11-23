@@ -13,17 +13,12 @@ in
 {
   flake.allowedUnfreePackages = [ "slack" ];
   flake.modules = {
-    nixos.rafiq.nixpkgs.overlays = [ inputs.fenix.overlays.default ];
     darwin.rafiq =
       { pkgs, ... }:
       {
-        nixpkgs.overlays = [ inputs.fenix.overlays.default ];
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
-          home.packages = with pkgs; [
-            slack
-            monitorcontrol
-          ];
+          home.packages = [ pkgs.monitorcontrol ];
         };
       };
     homeManager.rafiq =
@@ -110,16 +105,26 @@ in
               };
             };
           };
+          neovim.plugins = with pkgs.vimPlugins; [
+            fidget-nvim
+            mini-nvim
+            nvim-lspconfig
+            plenary-nvim
+            which-key-nvim
+            yazi-nvim
+          ];
           neovim.extraPackages = with pkgs; [
             cargo
+            clippy
             lua-language-server
             nil
             pyright
-            rust-analyzer-nightly
+            rust-analyzer
+            rustc
+            rustfmt
             stylua
           ];
         };
       };
   };
-
 }

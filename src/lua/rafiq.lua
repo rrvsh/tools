@@ -2,14 +2,8 @@
 
 -- PLUGINS
 
-vim.pack.add({
-	{ src = "https://github.com/neovim/nvim-lspconfig" },
-	{ src = "https://github.com/folke/which-key.nvim" },
-	{ src = "https://github.com/nvim-mini/mini.nvim" },
-	{ src = "https://github.com/nvim-lua/plenary.nvim" },
-	{ src = "https://github.com/mikavilpas/yazi.nvim" },
-})
 require("mini.pick").setup()
+require("fidget").setup()
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -72,36 +66,21 @@ vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 })
 vim.keymap.set("n", "<leader>sil", "vi[:sort<CR>", { desc = "Sort in []" })
 
--- AUTOCMD
-
-vim.api.nvim_create_autocmd({ "InsertLeave", "TextChanged", "CursorHold" }, {
-	pattern = "*",
-	callback = function()
-		local buf = vim.api.nvim_get_current_buf()
-		local before = vim.api.nvim_buf_get_changedtick(buf)
-
-		if vim.bo.filetype == "rust" then
-			vim.cmd("silent write")
-		else
-			vim.cmd("silent update")
-		end
-
-		local after = vim.api.nvim_buf_get_changedtick(buf)
-
-		if after > before then
-			local name = vim.api.nvim_buf_get_name(buf)
-			local time = os.date("%H:%M:%S")
-			vim.api.nvim_echo({ { "Wrote: " .. name .. " at " .. time } }, false, {})
-		end
-	end,
-})
-
 -- LSP
 
 vim.diagnostic.config({ virtual_text = { current_line = true } })
 vim.lsp.enable("pyright")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust_analyzer")
+vim.lsp.config("rust_analyzer", {
+	settings = {
+		["rust-analyzer"] = {
+			check = {
+				command = "clippy",
+			},
+		},
+	},
+})
 vim.lsp.enable("stylua")
 vim.lsp.enable("lua_ls")
 vim.lsp.config("lua_ls", {
