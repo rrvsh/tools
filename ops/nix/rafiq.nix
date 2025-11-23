@@ -86,6 +86,7 @@ in
               ];
               # Second Line Right
               right_format = "$git_metrics";
+              directory.truncation_symbol = "../";
               git_status.format = "[$all_status$ahead_behind]($style)";
               git_metrics.format = "([-$deleted]($deleted_style) )([+$added]($added_style))";
               git_branch.format = "[$symbol$branch(:$remote_branch)]($style) ";
