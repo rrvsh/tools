@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  inputs,
+  ...
+}:
 let
   cfg = config.flake;
   inherit (builtins)
@@ -14,34 +19,39 @@ let
     attrsOf
     submodule
     ;
-  knownUsers = attrNames cfg.users.users;
-  hmConfig = users: {
-    useGlobalPkgs = true;
-    users = mapAttrs (username: userConfig: {
-      imports = [ cfg.modules.homeManager.${username} ];
-      home = {
-        inherit username;
-        homeDirectory = users.${username}.home;
-        stateVersion = "25.11";
-      };
-      programs = {
-        git = {
-          enable = true;
-          signing = {
-            signByDefault = true;
-            key = "~/.ssh/id_ed25519.pub";
-          };
-          settings = {
-            user.name = userConfig.fullName;
-            user.email = userConfig.email;
-            gpg.format = "ssh";
-            init.defaultBranch = userConfig.defaultBranchName;
-            push.autoSetupRemote = true;
+  common = class: config: {
+    imports = map (username: cfg.modules.${class}.${username}) knownUsers ++ [
+      inputs.home-manager."${class}Modules".home-manager
+    ];
+    home-manager = {
+      useGlobalPkgs = true;
+      users = mapAttrs (username: userConfig: {
+        imports = [ cfg.modules.homeManager.${username} ];
+        home = {
+          inherit username;
+          homeDirectory = config.users.users.${username}.home;
+          stateVersion = "25.11";
+        };
+        programs = {
+          git = {
+            enable = true;
+            signing = {
+              signByDefault = true;
+              key = "~/.ssh/id_ed25519.pub";
+            };
+            settings = {
+              user.name = userConfig.fullName;
+              user.email = userConfig.email;
+              gpg.format = "ssh";
+              init.defaultBranch = userConfig.defaultBranchName;
+              push.autoSetupRemote = true;
+            };
           };
         };
-      };
-    }) cfg.users.users;
+      }) cfg.users.users;
+    };
   };
+  knownUsers = attrNames cfg.users.users;
 in
 {
   options.flake.users.userOptions.apps = mkOption { type = attrs; };
@@ -63,9 +73,8 @@ in
   config.flake = {
     modules.nixos.leaf =
       { config, ... }:
-      {
-        home-manager = hmConfig config.users.users;
-        imports = map (username: cfg.modules.nixos.${username}) knownUsers;
+      common "nixos" config
+      // {
         users = {
           groups.users.gid = 100;
           users = mapAttrs (username: userConfig: {
@@ -78,9 +87,8 @@ in
       };
     modules.darwin.leaf =
       { config, ... }:
-      {
-        home-manager = hmConfig config.users.users;
-        imports = map (username: cfg.modules.darwin.${username}) knownUsers;
+      common "darwin" config
+      // {
         security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
         users = { inherit knownUsers; };
         users.users = mapAttrs (username: userConfig: {
