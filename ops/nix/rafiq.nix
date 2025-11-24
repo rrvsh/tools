@@ -1,21 +1,24 @@
-# considerations: probably want the following structure for keybinds
-# super -> within a window, new tab, copy, paste, etc
-# leader keys -> within an app, e.g <leader>s to save
-# alt ->
-# ctrl ->
-# super alt -> move a window?
-# super ctrl -> workspaces?
-# shift should be a modifier of other modifiers aka super shift t in firefox
 { inputs, lib, ... }:
 let
   inherit (lib.strings) concatStrings;
 in
 {
-  flake.allowedUnfreePackages = [ "slack" ];
   flake.modules = {
     darwin.rafiq =
       { pkgs, ... }:
       {
+        system = {
+          activationScripts.extraActivation.text = ''
+            echo >&2 "ensuring rosetta is installed..."
+            softwareupdate --install-rosetta --agree-to-license
+            echo >&2 "configuring power management..."
+            sudo pmset -a disablesleep 1
+            sudo pmset -a displaysleep 0
+          '';
+          defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
+          keyboard.enableKeyMapping = true;
+          keyboard.remapCapsLockToEscape = true;
+        };
         homebrew.brews = [ "docker" ];
         home-manager.users.rafiq = {
           home.packages = [ pkgs.monitorcontrol ];
