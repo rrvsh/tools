@@ -70,6 +70,7 @@ vim.keymap.set("n", "<leader>sil", "vi[:sort<CR>", { desc = "Sort in []" })
 
 vim.diagnostic.config({ virtual_text = { current_line = true } })
 vim.lsp.enable("pyright")
+vim.lsp.enable("ruff")
 vim.lsp.enable("nil_ls")
 vim.lsp.enable("rust_analyzer")
 vim.lsp.config("rust_analyzer", {
