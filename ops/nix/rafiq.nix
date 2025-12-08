@@ -61,6 +61,7 @@ in
           };
         };
         programs = {
+          carapace.enable = true;
           zoxide.enable = true;
           nix-index.enable = true;
           nix-index-database.comma.enable = true;
