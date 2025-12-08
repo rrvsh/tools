@@ -123,6 +123,7 @@ in
             lua-language-server
             nil
             pyright
+            ruff
             rust-analyzer
             rustc
             rustfmt
