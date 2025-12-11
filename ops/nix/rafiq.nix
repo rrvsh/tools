@@ -63,8 +63,17 @@ in
         programs = {
           codex = {
             enable = true;
-            settings.features = {
-              web_search_request = true;
+            settings = {
+              features.web_search_request = true;
+              model = "gpt-5.1-codex-max"; # Little blurb to get it to use a temporary better model
+              notice."hide_gpt-5.1-codex-max_migration_prompt" = true; # ^
+              projects = {
+                "/Users/rafiq".trust_level = "untrusted";
+                "/Users/rafiq/repos".trust_level = "trusted";
+                # "/Users/rafiq/repos/alphastory".trust_level = "trusted";
+                # "/Users/rafiq/repos/pinbreak".trust_level = "trusted";
+                # "/Users/rafiq/Downloads".trust_level = "untrusted";
+              };
             };
             # Note: Don't remove or modify the following without STRICT research.
             custom-instructions = ''
