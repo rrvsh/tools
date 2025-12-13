@@ -1,20 +1,20 @@
+# This file defines all the inputs we need for the nix code and evaluates it to
+# produce the following outputs:
+# nix-darwin configuration for alpha, my macbook pro
 {
   description = "personal infra and configs for rafiq";
+  # here, import-tree and flake-parts are combined to make the output of
+  # every nix file in ./nix be the output of the flake, making each file
+  # in ./nix a flake part module
   outputs =
     inputs:
     inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      (inputs.import-tree ./ops/nix)
+      (inputs.import-tree ./nix)
       // {
-        systems = [
-          "aarch64-darwin"
-          "x86_64-linux"
-        ];
-        flake.paths = {
-          root = ./.;
-          device = ./ops/definitions/devices;
-          secrets = ./ops/definitions/secrets;
-          src = ./src;
-        };
+        # ./. saves the repository root as a variable
+        # so we can refer to things like the docs and src
+        # directories (see ./nix/options/users/apps/editor.nix:38)
+        flake.paths.root = ./.;
       }
     );
   inputs = {
