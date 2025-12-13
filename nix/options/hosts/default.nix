@@ -37,7 +37,6 @@ in
 {
   options.flake.hosts = {
     darwin = hostOption;
-    nixos = hostOption;
   };
   config.flake = {
     darwinConfigurations = mapAttrs (
@@ -50,18 +49,6 @@ in
         ];
       }
     ) cfg.hosts.darwin;
-    nixosConfigurations = mapAttrs (
-      hostname: hostConfig:
-      inputs.nixpkgs.lib.nixosSystem {
-        specialArgs = { inherit hostname hostConfig; };
-        modules = [
-          inputs.nixos-generators.nixosModules.all-formats
-          cfg.modules.nixos.leaf
-          hostConfig.extraConfig
-        ];
-      }
-    ) cfg.hosts.nixos;
     modules.darwin.leaf = common;
-    modules.nixos.leaf = common;
   };
 }

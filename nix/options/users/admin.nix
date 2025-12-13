@@ -18,12 +18,6 @@ in
       inherit (adminCfg) email;
       username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
     };
-    modules.nixos.leaf = {
-      security.sudo.wheelNeedsPassword = false;
-      users.users.${cfg.users.admin.username}.extraGroups = [ "wheel" ];
-      services.getty.autologinUser = cfg.users.admin.username;
-      nix.settings.trusted-users = [ cfg.users.admin.username ];
-    };
     modules.darwin.leaf = {
       system.primaryUser = cfg.users.admin.username;
       nix.settings.trusted-users = [ cfg.users.admin.username ];

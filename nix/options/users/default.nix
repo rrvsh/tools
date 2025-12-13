@@ -71,20 +71,6 @@ in
     });
   };
   config.flake = {
-    modules.nixos.leaf =
-      { config, ... }:
-      common "nixos" config
-      // {
-        users = {
-          groups.users.gid = 100;
-          users = mapAttrs (username: userConfig: {
-            description = userConfig.fullName;
-            isNormalUser = true;
-            openssh.authorizedKeys.keys = [ userConfig.pubkey ];
-            uid = 1000 + (findFirstIndex (x: x == username) null knownUsers);
-          }) cfg.users.users;
-        };
-      };
     modules.darwin.leaf =
       { config, ... }:
       common "darwin" config

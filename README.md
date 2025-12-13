@@ -1,19 +1,12 @@
+# tools
+
+these are the tools i currently use
+
 ## RULES
-
-- every file must be ATOMIC -> HARD REQUIREMENT! includes all types of files
+- prime must only contain tools currently in use
+- branches are to add new tools and must be in use for at least a week before being merged
 - lists (of all kinds) should be sorted
-
-## dev setup
-
-with `direnv`, run `direnv allow` and all dependencies will be in your shell. otherwise, install nix and run `nix develop` after cloning the repository.
-
-warning: the logic is in an unfinished state. you cannot yet import any flake-parts module i have written here and put it into your own config, or for most of my modules as a general rule (too much dependence on each other). feel free to steal any of the logic for yourself though :)
-
-run:
-
-- `bacon rebuild` to watch for changes and rebuild nix darwin
-- `just nice` to format nix files and lint (format gha is slow)
-- `just check` to format, lint, and run tests
+- READMES everywhere with more RULES
 
 ## acknowledgements
 

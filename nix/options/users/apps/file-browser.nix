@@ -15,15 +15,6 @@ in
 
   flake.users.userOptions.apps.file-browser = mkOption { type = enum [ "yazi" ]; };
   flake.modules = {
-    nixos = mapAttrs (
-      _: userConfig:
-      mkIf (userConfig.apps.file-browser == "yazi") {
-        nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
-        nix.settings.extra-trusted-public-keys = [
-          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
-        ];
-      }
-    ) cfg.users.users;
     darwin = mapAttrs (
       _: userConfig:
       mkIf (userConfig.apps.file-browser == "yazi") {

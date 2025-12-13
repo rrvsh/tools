@@ -6,7 +6,7 @@
 }:
 let
   cfg = config.flake;
-  inherit (cfg.paths) src;
+  inherit (cfg.paths) root;
   inherit (builtins) mapAttrs;
   inherit (lib.modules) mkIf mkMerge;
   inherit (lib.options) mkOption;
@@ -16,7 +16,6 @@ in
   config.flake = {
     users.userOptions.apps.editor = mkOption {
       type = enum [
-        "nvf"
         "neovim"
       ];
     };
@@ -27,16 +26,6 @@ in
         {
           imports = [ inputs.nvf.homeManagerModules.default ];
           config = mkMerge [
-            (mkIf (userConfig.apps.editor == "nvf") {
-              programs.nvf = {
-                enable = true;
-                defaultEditor = true;
-                settings.vim = {
-                  additionalRuntimePaths = [ src ];
-                  luaConfigRC.${username} = "require(\"${username}\")";
-                };
-              };
-            })
             (mkIf (userConfig.apps.editor == "neovim") {
               programs.neovim = {
                 enable = true;
@@ -46,7 +35,7 @@ in
                 vimAlias = true;
                 extraLuaConfig = "require(\"${username}\")";
               };
-              xdg.configFile."nvim/lua".source = src + /lua;
+              xdg.configFile."nvim/lua".source = root + src/lua;
             })
           ];
         }
