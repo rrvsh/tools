@@ -15,6 +15,8 @@ these are the tools i currently use
 - Just commands
     - `just nice` formats and auto-fixes lints
     - `just check` runs the same check run in CI for formatting, linting, and testing
+    - `just rb` rebuilds the local Darwin system configuration after running `nice`, then `check`.
+        *- planned: allow specifying remote to rebuild, add support for not-Darwins*
 
 ## acknowledgements
 
