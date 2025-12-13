@@ -10,8 +10,15 @@ let
 in
 {
   options.flake.users.admin = {
-    username = mkOption { type = str; };
-    email = mkOption { type = str; };
+    username = mkOption {
+      internal = true;
+      type = str;
+    };
+    email = mkOption {
+      # NOTE: currently unused
+      internal = true;
+      type = str;
+    };
   };
   config.flake = {
     users.admin = {
