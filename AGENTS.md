@@ -46,3 +46,4 @@ Always check for native modules or options first: Home Manager, NixOS, nix-darwi
 - As the agent, suggest tooling/process upgrades (shfmt, shellcheck, bats, CI hooks) and propose adding revisions to `AGENTS.md` when gaps appear in your understanding or knowledge.
 - Mark internal-only options with `internal = true; visible = false;` and explain why they shouldn’t be user-facing (e.g., managed universes should not shrink).
 - Write docs/tickets in the first person; audience is a single macOS maintainer.
+- When working in any directory, skim its README.md (and nested readmes) first; treat them as local policy that can override general guidance.
