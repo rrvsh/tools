@@ -8,7 +8,7 @@ let
   };
 in
 {
-  flake.modules.darwin.leaf = {
+  flake.modules.darwin.default = {
     imports = [ inputs.nix-homebrew.darwinModules.nix-homebrew ];
     homebrew.enable = true;
     homebrew.taps = attrNames taps;

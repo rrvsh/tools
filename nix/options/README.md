@@ -2,6 +2,10 @@
 
 this should provide a public API for easily defining the module outputs of higher level modules.
 
+- `hosts.darwin.<name>` -> used to name and configure darwin machines
+- `users.users.<name>` -> used to name and configure users
+- `modules.darwin.default` -> used in builders/darwinConfigurations.nix in all darwin machines
+
 ## RULES:
 
 - the folder structure should match the nesting of the option.

@@ -1,3 +1,3 @@
 {
-  flake.hosts.darwin.alpha.platform = "aarch64-darwin";
+  flake.hosts.darwin.alpha = { };
 }

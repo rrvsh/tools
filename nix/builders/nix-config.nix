@@ -9,7 +9,7 @@ let
   };
 in
 {
-  config.flake.modules.darwin.leaf = common // {
+  config.flake.modules.darwin.default = common // {
     imports = [ inputs.nix-rosetta-builder.darwinModules.default ];
     system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
     system.stateVersion = 6;
