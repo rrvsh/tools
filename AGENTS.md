@@ -36,3 +36,13 @@ Always check for native modules or options first: Home Manager, NixOS, nix-darwi
 - Add a new option → create matching file under `nix/options/...`; expose schema via `mkOption`.
 - Add a new module/output → prefer `builders/` if it directly feeds a flake output; otherwise put supporting logic in `options/`.
 - New user/host → define data under `nix/<name>.nix` and rely on `_build_darwin_users.nix`/`darwinConfigurations.nix` to wire it.
+
+**Additional Conventions**
+- Scope config narrowly: prefer per-user settings under `flake.users.users.<name>`; use per-host settings under `flake.hosts.darwin.<name>` only when machine-specific.
+- Keep logic in matching module paths so user/host concerns stay separated and wiring remains clear.
+- Aim for stateless, declarative designs; when full statelessness is impossible, find a way to change the problem or solution to allow a stateless implementation.
+- Keep scripts in `src/` (e.g., `src/sh/...`) and keep Nix files focused on Nix expressions; avoid inlining long shell snippets.
+- When pulling scripts into activation, use store-backed references (e.g., `system.activationScripts.source`) or similar so runtime doesn’t depend on the checkout path.
+- As the agent, suggest tooling/process upgrades (shfmt, shellcheck, bats, CI hooks) and propose adding revisions to `AGENTS.md` when gaps appear in your understanding or knowledge.
+- Mark internal-only options with `internal = true; visible = false;` and explain why they shouldn’t be user-facing (e.g., managed universes should not shrink).
+- Write docs/tickets in the first person; audience is a single macOS maintainer.
