@@ -35,7 +35,7 @@ in
                 vimAlias = true;
                 extraLuaConfig = "require(\"${username}\")";
               };
-              xdg.configFile."nvim/lua".source = root + src/lua;
+              xdg.configFile."nvim/lua".source = root + /src/lua;
             })
           ];
         }
