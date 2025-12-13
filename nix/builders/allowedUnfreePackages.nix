@@ -1,3 +1,5 @@
+# Takes config.flake.allowedUnfreePackages, a list of strings, and makes them all allowed
+# system wide
 { lib, config, ... }:
 let
   cfg = config.flake;
@@ -8,8 +10,6 @@ let
 in
 {
   options.flake.allowedUnfreePackages = mkOption { type = listOf str; };
-  config.flake = {
-    modules.darwin.default.nixpkgs.config.allowUnfreePredicate =
-      pkg: elem (getName pkg) cfg.allowedUnfreePackages;
-  };
+  config.flake.modules.darwin.default.nixpkgs.config.allowUnfreePredicate =
+    pkg: elem (getName pkg) cfg.allowedUnfreePackages;
 }

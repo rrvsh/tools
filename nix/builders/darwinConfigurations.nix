@@ -1,3 +1,5 @@
+# Constructs darwinConfigurations from config.flake.modules.darwin.{default, hostName},
+# where hostName is the defined name of the machine
 { inputs, config, ... }:
 let
   cfg = config.flake;
