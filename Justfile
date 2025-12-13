@@ -1,3 +1,8 @@
+rb:
+  just nice
+  just check
+  nh darwin switch .
+
 nice: format lint
 check: check-gha check-lua check-nix test
 
