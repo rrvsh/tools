@@ -2,6 +2,8 @@ reload direnv or nix develop: `direnv reload`
 
 ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
 
+Home paths in Nix/Home Manager: see `nix/README.md` (“Referencing home directories”) for the preferred patterns.
+
 rg --no-binary --hidden --null -l '' \
       | tr '\0' '\n' \
       | grep -vE '^\.git/' \

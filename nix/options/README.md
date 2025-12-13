@@ -38,7 +38,7 @@ this should provide a public API for easily defining the module outputs of highe
       ...
       config.flake.modules.darwin.default = {
         users.users = mapAttrs (username: userConfig: {
-          home = "/Users/${username}";
+          home = "/Users/${username}"; # prefer setting home here; see nix/README.md for home path guidance
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
         }) config.flake.users.users;
       };

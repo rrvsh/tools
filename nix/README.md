@@ -9,6 +9,13 @@
 - nix code:
     - prefer including source of variables instead of inheriting them
 
+## Referencing home directories
+- Prefer module options: `config.home.homeDirectory` (Home Manager) or `config.users.users.<name>.home` (system user).
+- In shell snippets (e.g., `writeShellScriptBin`), use `$HOME` and avoid `${HOME}` to prevent Nix interpolation.
+- Don't use `~` ever.
+- Avoid `builtins.getEnv "HOME"` in flakes (impure).
+- Why: the canonical home is set once in the OS layer (`nix/options/users/_build_darwin_users.nix`), where each system user gets `users.users.<name>.home = "/Users/<name>"`. Home Manager is invoked from that same file and reuses the value when it sets `home.homeDirectory`, so HM state, profiles, and file installs all depend on the OS user home. Use `config.home.homeDirectory` (or `config.users.users.<name>.home` when inside system-level modules) in Nix to stay on that single source of truth. In shell scripts, use `$HOME` so the shell expands the runtime value; `${HOME}` inside a Nix string would be treated as Nix interpolation and fail during evaluation.
+
 ## RULES:
 
 structure all files as "libraries" and "modules" or think of them as their outputs for example:
