@@ -35,14 +35,11 @@ in
       };
     });
   };
-  config.flake.modules.darwin.default =
-    { config, ... }:
-    (import ./_darwin.nix {
-      inherit
-        cfg
-        config
-        inputs
-        lib
-        ;
-    });
+  config.flake = import ./_build_darwin_users.nix {
+    inherit
+      cfg
+      inputs
+      lib
+      ;
+  };
 }

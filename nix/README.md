@@ -6,6 +6,8 @@
     - optional comment name of file first line
     - optional wrap in curly braces to denote files
     - refer to modules by full path e.g. `config.flake` instead of `flake`
+- nix code:
+    - prefer including source of variables instead of inheriting them
 
 ## RULES:
 

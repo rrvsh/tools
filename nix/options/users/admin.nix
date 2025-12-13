@@ -1,12 +1,10 @@
 { lib, config, ... }:
 let
   cfg = config.flake;
-  inherit (builtins) attrNames attrValues;
   inherit (lib.types) str;
   inherit (lib.options) mkOption;
-  inherit (lib.attrsets) filterAttrs;
   inherit (lib.lists) elemAt;
-  adminCfg = elemAt (attrValues (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
+  primaryUsers = lib.attrsets.filterAttrs (_: value: value.primary or false) cfg.users.users;
 in
 {
   options.flake.users.admin = {
@@ -15,15 +13,15 @@ in
       type = str;
     };
     email = mkOption {
-      # NOTE: currently unused
       internal = true;
       type = str;
     };
   };
   config.flake = {
     users.admin = {
-      inherit (adminCfg) email;
-      username = elemAt (attrNames (filterAttrs (_: value: value.primary or false) cfg.users.users)) 0;
+      username = elemAt (builtins.attrNames primaryUsers) 0;
+      # NOTE: currently unused
+      inherit (elemAt (builtins.attrValues primaryUsers) 0) email;
     };
     modules.darwin.default = {
       system.primaryUser = cfg.users.admin.username;
