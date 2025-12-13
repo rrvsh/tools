@@ -20,28 +20,12 @@ in
   ];
   home-manager = {
     useGlobalPkgs = true;
-    users = mapAttrs (username: userConfig: {
+    users = mapAttrs (username: _userConfig: {
       imports = [ cfg.modules.homeManager.${username} ];
       home = {
         inherit username;
         homeDirectory = config.users.users.${username}.home;
         stateVersion = "25.11";
-      };
-      programs = {
-        git = {
-          enable = true;
-          signing = {
-            signByDefault = true;
-            key = "~/.ssh/id_ed25519.pub";
-          };
-          settings = {
-            user.name = userConfig.fullName;
-            user.email = userConfig.email;
-            gpg.format = "ssh";
-            init.defaultBranch = userConfig.defaultBranchName;
-            push.autoSetupRemote = true;
-          };
-        };
       };
     }) cfg.users.users;
   };
