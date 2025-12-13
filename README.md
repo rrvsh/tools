@@ -7,6 +7,7 @@ these are the tools i currently use
 - branches are to add new tools and must be in use for at least a week before being merged
 - lists (of all kinds) should be sorted
 - READMES everywhere with more RULES
+- files should include comments where appropriate (the appropriateness scales with how shallowly nested it is)
 
 ## acknowledgements
 

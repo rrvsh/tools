@@ -1,3 +1,5 @@
+reload direnv or nix develop: `direnv reload`
+
 ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
 
 rg --no-binary --hidden --null -l '' \
