@@ -2,6 +2,12 @@
 
 these are the tools i currently use
 
+## working with the repo
+
+- Just commands
+    - `just nice` formats and auto-fixes lints
+    - `just check` runs the same check run in CI for formatting, linting, and testing
+
 ## RULES
 - prime must only contain tools currently in use
 - branches are to add new tools and must be in use for at least a week before being merged
