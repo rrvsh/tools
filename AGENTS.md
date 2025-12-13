@@ -1,0 +1,1 @@
+Always check for native modules or options first: Home Manager, NixOS, nix-darwin, or any other flake inputs in the project. If a native option exists, prefer enabling it. If not, look for another published Nix flake that provides the functionality. Only fall back to custom Nix code or package definitions when no existing module or flake solves the problem.
