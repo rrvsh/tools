@@ -1,3 +1,7 @@
+nod:
+  just nice
+  nix-on-droid switch --flake .#perseus
+
 rb:
   just nice
   just check
@@ -11,7 +15,11 @@ lint: lint-lua lint-nix
 test: test-nix
 
 format-gha:
-  zizmor . --gh-token $(gh auth token) --fix
+  # if not authed to github just skip
+  @TOKEN=$(gh auth token 2>/dev/null || true); \
+  if [ -n "$TOKEN" ]; then \
+    zizmor . --gh-token "$TOKEN" --fix; \
+  fi
 
 format-lua:
   stylua .

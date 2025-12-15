@@ -1,4 +1,7 @@
-{ config, lib, pkgs, ... }:
+{
+  pkgs,
+  ...
+}:
 
 {
   # Simply install just the packages
@@ -40,6 +43,6 @@
 
   # Set your time zone
   #time.timeZone = "Europe/Berlin";
-  
+
   android-integration.termux-setup-storage.enable = true;
 }
