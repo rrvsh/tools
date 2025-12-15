@@ -1,5 +1,7 @@
 Always check for native modules or options first: Home Manager, NixOS, nix-darwin, or any other flake inputs in the project. If a native option exists, prefer enabling it. If not, look for another published Nix flake that provides the functionality. Only fall back to custom Nix code or package definitions when no existing module or flake solves the problem.
 
+Write docs in GitHub Flavored Markdown and prefer Markdown links over citations.
+
 **Working Model (How Things Are Built)**
 - **Flake wiring:** `flake.nix` uses `flake-parts` + `import-tree`; every file under `nix/` is a flake-part module. `flake.paths.root` points to repo root for path joins.
 - **Public API lives in `nix/options/`:** Folder path mirrors option path. Options define schema + defaults; logic that doesn’t directly produce a flake output belongs here.
