@@ -17,6 +17,8 @@ nix store info --store ssh://eu.nixbuild.net
 
 nix run nixpkgs#darwin.linux-builder
 
+sudo darwin-rebuild switch --flake
+
 ssh-keygen -f ~/.ssh/id_ed25519 -y > ~/.ssh/id_ed25519.pub
 
 mkdir -p ~/Library/Application\ Support/sops/age && ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/Library/Application\ Support/sops/age/keys.txt

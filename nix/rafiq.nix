@@ -61,6 +61,8 @@ in
                 firefox-bin
               ];
             shellAliases = {
+              # e.g. 10112025.md
+              "in" = "mkdir -p ~/in && $EDITOR ~/in/$(date +%d%m%Y).md";
               cd = "z";
               nix-search = ''
                 nix-locate -r '.' --minimal --all 2>/dev/null | \
