@@ -27,7 +27,7 @@
       grc = "git rebase --continue";
       gs = "git status";
       gu = "git push";
-      gupdate = "git add . && git stash && git checkout $(gdb) && git pull && git checkout - && git rebase $(gdb) && git stash pop";
+      gupdate = "git add . && git stash && git checkout $(gparentbranch) && git pull && git checkout - && git rebase $(gparentbranch) && git stash pop";
       gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
     };
   };
