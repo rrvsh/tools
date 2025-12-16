@@ -17,11 +17,8 @@ in
       email = "rafiq@rrv.sh";
       pubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n";
     };
-    allowedUnfreePackages = [ "firefox-bin" ];
     modules = {
       darwin.rafiq = {
-        # macOS upstream Firefox in nixpkgs is broken; this overlay provides the working firefox-bin build for Darwin.
-        nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
         nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
         nix.settings.extra-trusted-public-keys = [
           "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
@@ -55,7 +52,6 @@ in
               [ gh ]
               ++ optionals pkgs.stdenv.isDarwin [
                 alt-tab-macos
-                firefox-bin
                 monitorcontrol
               ];
             shellAliases = {
@@ -103,11 +99,6 @@ in
                 # so comment this package out the first time you rebuild, then uncomment it and rebuild again
                 runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
               };
-            };
-            firefox = {
-              enable = true;
-              # HM’s firefox module errors on Darwin when a package is set; keep null on macOS and install via home.packages.
-              package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
             };
             git = {
               enable = true;
