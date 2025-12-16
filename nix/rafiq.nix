@@ -19,32 +19,28 @@ in
     };
     allowedUnfreePackages = [ "firefox-bin" ];
     modules = {
-      darwin.rafiq =
-        { pkgs, ... }:
-        {
-          users.users.rafiq.shell = pkgs.fish;
-          programs.fish.enable = true;
-          # macOS upstream Firefox in nixpkgs is broken; this overlay provides the working firefox-bin build for Darwin.
-          nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
-          nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
-          nix.settings.extra-trusted-public-keys = [
-            "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
-          ];
-          system = {
-            activationScripts.extraActivation.text = ''
-              echo >&2 "ensuring rosetta is installed..."
-              softwareupdate --install-rosetta --agree-to-license
-              echo >&2 "configuring power management..."
-              sudo pmset -a disablesleep 1
-              sudo pmset -a displaysleep 0
-            '';
-            defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
-            keyboard.enableKeyMapping = true;
-            keyboard.remapCapsLockToEscape = true;
-          };
-          homebrew.brews = [ "docker" ];
-          homebrew.casks = [ "ghostty" ];
+      darwin.rafiq = {
+        # macOS upstream Firefox in nixpkgs is broken; this overlay provides the working firefox-bin build for Darwin.
+        nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
+        nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
+        nix.settings.extra-trusted-public-keys = [
+          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
+        ];
+        system = {
+          activationScripts.extraActivation.text = ''
+            echo >&2 "ensuring rosetta is installed..."
+            softwareupdate --install-rosetta --agree-to-license
+            echo >&2 "configuring power management..."
+            sudo pmset -a disablesleep 1
+            sudo pmset -a displaysleep 0
+          '';
+          defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
+          keyboard.enableKeyMapping = true;
+          keyboard.remapCapsLockToEscape = true;
         };
+        homebrew.brews = [ "docker" ];
+        homebrew.casks = [ "ghostty" ];
+      };
       homeManager.rafiq =
         { pkgs, config, ... }:
         {
@@ -95,7 +91,6 @@ in
             };
           };
           programs = {
-            fish.enable = true;
             ghostty = {
               enable = true;
               package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty; # ghostty broken on darwin
