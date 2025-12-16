@@ -19,10 +19,6 @@ in
     };
     modules = {
       darwin.rafiq = {
-        nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
-        nix.settings.extra-trusted-public-keys = [
-          "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
-        ];
         system = {
           activationScripts.extraActivation.text = ''
             echo >&2 "ensuring rosetta is installed..."
@@ -39,7 +35,7 @@ in
         homebrew.casks = [ "ghostty" ];
       };
       homeManager.rafiq =
-        { pkgs, config, ... }:
+        { pkgs, ... }:
         {
           imports = [
             inputs.nvf.homeManagerModules.default
@@ -65,7 +61,6 @@ in
               '';
               v = "$EDITOR";
               e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-              t = config.programs.yazi.shellWrapperName;
               gaa = "git add";
               gap = "git add -p .";
               gc = "git commit";
@@ -90,15 +85,6 @@ in
             ghostty = {
               enable = true;
               package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty; # ghostty broken on darwin
-            };
-            yazi = {
-              enable = true;
-              package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
-                # this will use the binary cache configured above
-                # but only after it is registered i.e. after a system rebuild is done with the above and **without this**
-                # so comment this package out the first time you rebuild, then uncomment it and rebuild again
-                runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
-              };
             };
             git = {
               enable = true;

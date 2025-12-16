@@ -7,7 +7,7 @@
     modules.homeManager.rafiq =
       { pkgs, ... }:
       {
-        home.packages = lib.lists.optional pkgs.stdev.isDarwin pkgs.firefox-bin;
+        home.packages = lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin;
         programs.firefox.enable = true;
         # HM’s firefox module errors on Darwin when a package is set; keep null on macOS and install via home.packages.
         programs.firefox.package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
