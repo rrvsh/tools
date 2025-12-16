@@ -26,16 +26,21 @@ in
           openssh.authorizedKeys.keys = [ userConfig.pubkey ];
         }
       );
-      home-manager.useGlobalPkgs = true;
-      home-manager.users = mapToUsers (
-        username: _: {
-          imports = [ cfg.modules.homeManager.${username} ];
-          home = {
-            inherit username;
-            homeDirectory = config.users.users.${username}.home;
-            stateVersion = "25.11";
-          };
-        }
-      );
+      home-manager = {
+        # keep only one backup of files
+        backupFileExtension = "bak";
+        overwriteBackup = true;
+        useGlobalPkgs = true;
+        users = mapToUsers (
+          username: _: {
+            imports = [ cfg.modules.homeManager.${username} ];
+            home = {
+              inherit username;
+              homeDirectory = config.users.users.${username}.home;
+              stateVersion = "25.11";
+            };
+          }
+        );
+      };
     };
 }
