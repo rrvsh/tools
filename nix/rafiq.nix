@@ -58,8 +58,9 @@ in
               with pkgs;
               [ gh ]
               ++ optionals pkgs.stdenv.isDarwin [
-                monitorcontrol
+                alt-tab-macos
                 firefox-bin
+                monitorcontrol
               ];
             shellAliases = {
               # e.g. 10112025.md
