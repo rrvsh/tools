@@ -8,6 +8,26 @@
     - refer to modules by full path e.g. `config.flake` instead of `flake`
 - nix code:
     - prefer including source of variables instead of inheriting them
+    - for the top level of a file, never go below the `config.flake.modules.<class>.<name>` level.
+        - bad:
+          ```nix
+          {
+            config.flake.modules.homeManager.rafiq.programs.direnv.enable = true;
+            config.flake.modules.homeManager.rafiq.programs.direnv.nix-direnv.enable = true;
+          }
+          ```
+        - good:
+          ```nix
+          {
+            config.flake.modules.homeManager.rafiq = {
+              programs.direnv = {
+                enable = true;
+                nix-direnv.enable = true;
+              };
+            };
+          }
+          ```
+        - in general, keep `config.flake` together, `modules.<class>.<name>` together, and deeper than that as appropriate.
 
 ## Referencing home directories
 - Prefer module options: `config.home.homeDirectory` (Home Manager) or `config.users.users.<name>.home` (system user).
