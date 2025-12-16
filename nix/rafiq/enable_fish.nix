@@ -1,7 +1,9 @@
 {
-  config.flake.modules = {
-    homeManager.rafiq.programs.fish.enable = true;
-    darwin.rafiq =
+  config.flake = {
+    modules.homeManager.rafiq = {
+      programs.fish.enable = true;
+    };
+    modules.darwin.rafiq =
       { pkgs, ... }:
       {
         users.users.rafiq.shell = pkgs.fish;
