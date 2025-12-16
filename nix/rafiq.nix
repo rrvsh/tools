@@ -24,6 +24,7 @@ in
         {
           users.users.rafiq.shell = pkgs.fish;
           programs.fish.enable = true;
+          # macOS upstream Firefox in nixpkgs is broken; this overlay provides the working firefox-bin build for Darwin.
           nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
           nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
           nix.settings.extra-trusted-public-keys = [
@@ -109,7 +110,8 @@ in
             };
             firefox = {
               enable = true;
-              package = if pkgs.stdenv.isDarwin then null else pkgs.firefox; # throws error on darwin
+              # HM’s firefox module errors on Darwin when a package is set; keep null on macOS and install via home.packages.
+              package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
             };
             git = {
               enable = true;
