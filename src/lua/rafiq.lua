@@ -35,36 +35,44 @@ vim.o.signcolumn = "number"
 
 -- KEYMAPS
 
+--- PASSIVE
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
+
+--- ACTIVE
 vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
-vim.keymap.set("n", "<leader>h", ":help ", { desc = "Open help command" })
 vim.keymap.set("n", "<leader>ff", ":Pick files<CR>", { desc = "Picker: Files" })
-vim.keymap.set("n", "<leader>fg", ":Pick grep_live<CR>", { desc = "Picker: Files" })
+vim.keymap.set("n", "<leader>fg", ":Pick grep_live<CR>", { desc = "Picker: Live Grep" })
+
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
 end, { desc = "Code Actions" })
+
 vim.keymap.set("n", "<leader>lh", function()
 	vim.lsp.buf.hover()
 end, { desc = "Hover" })
-vim.keymap.set("n", "<leader>lr", function()
-	vim.lsp.buf.rename()
-end, { desc = "Rename all references" })
+
 vim.keymap.set("n", "<leader>lgd", function()
 	vim.lsp.buf.definition()
 end, { desc = "Go to definition" })
+
 vim.keymap.set("n", "<leader>lgr", function()
 	vim.lsp.buf.references()
 end, { desc = "List all references" })
+
 vim.keymap.set("n", "<leader>lf", function()
 	vim.lsp.buf.format()
 end, { desc = "Format" })
+
+vim.keymap.set("n", "<leader>lr", function()
+	vim.lsp.buf.rename()
+end, { desc = "Rename all references" })
+
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
-vim.keymap.set("n", "<leader>sil", "vi[:sort<CR>", { desc = "Sort in []" })
 
 -- LSP
 
