@@ -10,7 +10,8 @@
         v = "$EDITOR";
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         # e.g. 10112025.md
-        dy = "mkdir -p ~/ref/source && $EDITOR ~/ref/source/daily/daily-scratchpad-$(date +%d%m%Y).md";
+        log = "mkdir -p ~/ref && $EDITOR ~/ref/$(date +%d%m%Y)-log.md";
+        scratch = "mkdir -p ~/ref && $EDITOR ~/ref/$(date +%d%m%Y)-scratchpad.md";
       };
     };
   };
