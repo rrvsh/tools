@@ -9,9 +9,6 @@
       home.shellAliases = {
         v = "$EDITOR";
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-        # e.g. 10112025.md
-        log = "mkdir -p ~/ref && $EDITOR ~/ref/$(date +%d%m%Y)-log.md";
-        scratch = "mkdir -p ~/ref && $EDITOR ~/ref/$(date +%d%m%Y)-scratchpad.md";
       };
     };
   };

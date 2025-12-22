@@ -5,6 +5,7 @@
 - daily notes:
     - `scratch` to open the daily scratchpad
     - `log` to open the daily log
+    - `ref` to open all notes in a picker
 
 ## random
 
