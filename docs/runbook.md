@@ -1,3 +1,13 @@
+# runbook.md
+
+## aliases/shortcuts
+
+- daily notes:
+    - `scratch` to open the daily scratchpad
+    - `log` to open the daily log
+
+## random
+
 reload direnv or nix develop: `direnv reload`
 
 ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
