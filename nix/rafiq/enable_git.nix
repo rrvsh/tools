@@ -4,6 +4,7 @@
       enable = true;
       signing = {
         signByDefault = true;
+        # this needs to be a tilde because git cant use $HOME
         key = "~/.ssh/id_ed25519.pub";
       };
       settings = {
