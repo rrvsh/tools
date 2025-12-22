@@ -11,7 +11,7 @@
 
 reload direnv or nix develop: `direnv reload`
 
-ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
+ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
 
 Home paths in Nix/Home Manager: see `nix/README.md` (“Referencing home directories”) for the preferred patterns.
 
@@ -30,11 +30,11 @@ nix run nixpkgs#darwin.linux-builder
 
 sudo darwin-rebuild switch --flake
 
-ssh-keygen -f ~/.ssh/id_ed25519 -y > ~/.ssh/id_ed25519.pub
+ssh-keygen -f $HOME/.ssh/id_ed25519 -y > $HOME/.ssh/id_ed25519.pub
 
-mkdir -p ~/Library/Application\ Support/sops/age && ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/Library/Application\ Support/sops/age/keys.txt
+mkdir -p $HOME/Library/Application\ Support/sops/age && ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/Library/Application\ Support/sops/age/keys.txt
 
-mkdir -p ~/.config/sops/age && ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt
+mkdir -p $HOME/.config/sops/age && ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
 
 nix shell nixpkgs#qemu -c qemu-system-aarch64 \
    -machine virt,highmem=off \
