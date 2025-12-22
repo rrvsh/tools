@@ -13,6 +13,7 @@ vim.api.nvim_create_autocmd("UIEnter", {
 		})
 	end,
 })
+require("zk").setup({ picker = "minipick" })
 
 -- OPTIONS
 
