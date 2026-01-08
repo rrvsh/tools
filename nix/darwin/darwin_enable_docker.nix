@@ -1,6 +1,6 @@
 {
   config.flake = {
-    modules.darwin.rafiq = {
+    modules.darwin.default = {
       homebrew.brews = [ "docker" ];
     };
   };
