@@ -11,7 +11,7 @@ in
     modules.homeManager.rafiq =
       { pkgs, ... }:
       {
-        xdg.configFile."nvim/lua".source = root + /src/lua;
+        xdg.configFile."nvim/lua".source = root + /nvim;
         programs.neovim = {
           enable = true;
           package = inputs.neovim-nightly-overlay.packages.${pkgs.stdenv.hostPlatform.system}.default;
