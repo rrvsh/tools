@@ -7,22 +7,12 @@ let
   primaryUsers = lib.attrsets.filterAttrs (_: value: value.primary or false) cfg.users.users;
 in
 {
-  options.flake.users.admin = {
-    username = mkOption {
-      internal = true;
-      type = str;
-    };
-    email = mkOption {
-      internal = true;
-      type = str;
-    };
+  options.flake.users.admin.username = mkOption {
+    internal = true;
+    type = str;
   };
   config.flake = {
-    users.admin = {
-      username = elemAt (builtins.attrNames primaryUsers) 0;
-      # NOTE: currently unused
-      inherit (elemAt (builtins.attrValues primaryUsers) 0) email;
-    };
+    users.admin.username = elemAt (builtins.attrNames primaryUsers) 0;
     modules.darwin.default = {
       system.primaryUser = cfg.users.admin.username;
       nix.settings.trusted-users = [ cfg.users.admin.username ];

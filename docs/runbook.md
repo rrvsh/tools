@@ -1,17 +1,5 @@
 # runbook.md
 
-## aliases/shortcuts
-
-- daily notes:
-    - shell aliases:
-        - `scratch` to open the daily scratchpad
-        - `log` to open the daily log
-        - `ref` to open all notes in a picker
-    - neovim keymaps:
-        - `<leader>gs` to open the daily scratchpad
-        - `<leader>gl` to open the daily log
-        - `<leader>fr` to open all notes in a picker
-
 ## random
 
 reload direnv or nix develop: `direnv reload`

@@ -1,11 +1,5 @@
-{
-  lib,
-  config,
-  inputs,
-  ...
-}:
+{ lib, ... }:
 let
-  cfg = config.flake;
   inherit (lib.options) mkOption;
   inherit (lib.types)
     str
@@ -34,12 +28,5 @@ in
         };
       };
     });
-  };
-  config.flake = import ./_build_darwin_users.nix {
-    inherit
-      cfg
-      inputs
-      lib
-      ;
   };
 }

@@ -13,7 +13,6 @@ vim.api.nvim_create_autocmd("UIEnter", {
 		})
 	end,
 })
-require("zk").setup({ picker = "minipick" })
 
 -- OPTIONS
 
@@ -24,14 +23,13 @@ vim.o.expandtab = true -- insert tabs with space characters
 vim.o.number = true
 vim.o.relativenumber = true
 vim.o.shiftwidth = 2 -- amount of space characters builtins use by default
-vim.o.smartcase = true
+vim.o.ignorecase = true -- case insensitive search
+vim.o.smartcase = true -- case sensitive search if it includes capital letters
 vim.o.smarttab = true -- start of line uses shiftwidth, else tabstop
 vim.o.softtabstop = 2 -- amount of space characters tab should indent
 vim.o.tabstop = 2 -- amount of space characters a tab character represents
 vim.o.termguicolors = true
 vim.o.undofile = true
-vim.o.undofile = true
-vim.o.winborder = "rounded"
 vim.o.signcolumn = "number"
 
 -- KEYMAPS
@@ -41,30 +39,8 @@ vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
 
 --- ACTIVE
-vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
-vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
-vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("n", "<leader>ff", ":Pick files<CR>", { desc = "Picker: Files" })
 vim.keymap.set("n", "<leader>fg", ":Pick grep_live<CR>", { desc = "Picker: Live Grep" })
-vim.keymap.set("n", "<leader>fr", ":ZkNotes<CR>", { desc = "Picker: ~/ref" })
-
-vim.keymap.set("n", "<leader>gl", function()
-	local ref_dir = vim.fn.expand("$HOME/ref")
-	if vim.fn.isdirectory(ref_dir) == 0 then
-		vim.fn.mkdir(ref_dir, "p")
-	end
-	local path = string.format("%s/%s-log.md", ref_dir, vim.fn.strftime("%d%m%Y"))
-	vim.cmd.edit(path)
-end, { desc = "Open daily log" })
-
-vim.keymap.set("n", "<leader>gs", function()
-	local ref_dir = vim.fn.expand("$HOME/ref")
-	if vim.fn.isdirectory(ref_dir) == 0 then
-		vim.fn.mkdir(ref_dir, "p")
-	end
-	local path = string.format("%s/%s-scratchpad.md", ref_dir, vim.fn.strftime("%d%m%Y"))
-	vim.cmd.edit(path)
-end, { desc = "Open daily scratchpad" })
 
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
@@ -93,6 +69,10 @@ end, { desc = "Rename all references" })
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
+
+vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
+vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
+vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 
 -- LSP
 
