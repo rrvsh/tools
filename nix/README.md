@@ -28,6 +28,14 @@
           }
           ```
         - in general, keep `config.flake` together, `modules.<class>.<name>` together, and deeper than that as appropriate.
+    - standardize every file to wrap module definitions like:
+      ```nix
+      {
+        config.flake = {
+          modules.<class>.<name> = { ... };
+        };
+      }
+      ```
 
 ## Referencing home directories
 - Prefer module options: `config.home.homeDirectory` (Home Manager) or `config.users.users.<name>.home` (system user).

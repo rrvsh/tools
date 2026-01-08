@@ -1,5 +1,7 @@
 {
-  config.flake.modules.darwin.rafiq = {
-    homebrew.brews = [ "docker" ];
+  config.flake = {
+    modules.darwin.rafiq = {
+      homebrew.brews = [ "docker" ];
+    };
   };
 }
