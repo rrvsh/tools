@@ -37,6 +37,8 @@ vim.o.signcolumn = "number"
 --- PASSIVE
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
 vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
+vim.keymap.set("n", "n", "nzz", { desc = "Center screen on next search" })
+vim.keymap.set("n", "N", "Nzz", { desc = "Center screen on prev search" })
 
 --- ACTIVE
 vim.keymap.set("n", "<leader>ff", ":Pick files<CR>", { desc = "Picker: Files" })
