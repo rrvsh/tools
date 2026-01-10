@@ -5,6 +5,7 @@ use axum::{
     response::{Html, IntoResponse, Response},
     routing::get,
 };
+use tokio::signal;
 
 #[derive(Template)]
 #[template(path = "hello.html")]
@@ -22,7 +23,10 @@ async fn main() {
         .expect("Error binding to port {port}");
 
     let app = Router::new().route("/hello", get(hello_get));
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap();
 }
 
 async fn hello_get() -> Result<Response, StatusCode> {
@@ -34,4 +38,10 @@ async fn hello_get() -> Result<Response, StatusCode> {
         |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
         |rendered| Ok(Html(rendered).into_response()),
     )
+}
+
+async fn shutdown_signal() {
+    signal::ctrl_c()
+        .await
+        .expect("failed to install Ctrl+C handler")
 }
