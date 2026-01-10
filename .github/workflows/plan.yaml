@@ -1,0 +1,65 @@
+name: Post `tofu plan` output in PR comment
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/plan.yaml
+      - tf/**
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: plan
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    timeout-minutes: 5
+    steps:
+      - name: Check out code
+        timeout-minutes: 1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        timeout-minutes: 5
+        with:
+          service_account: 'infra-ci@rrvsh-production.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/1096616770660/locations/global/workloadIdentityPools/github-actions/providers/tools'
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@d64e0553100205688c0fb2fa16edb0fc8663c590
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run tofu plan
+        timeout-minutes: 5
+        run: |
+          nix develop -c tofu -chdir=tf init \
+            -input=false \
+          && nix develop -c tofu -chdir=tf plan \
+            -input=false \
+            -concise \
+            -out=plan.tfplan \
+          && { \
+            echo "# OpenTofu Plan"; \
+            echo '```tf'; \
+            nix develop -c tofu -chdir=tf show \
+              -no-color \
+              -plan=plan.tfplan; \
+            echo '```'; \
+          } > plan.txt
+
+      - name: Add comment
+        timeout-minutes: 5
+        uses: thollander/actions-comment-pull-request@e4a76dd2b0a3c2027c3fd84147a67c22ee4c90fa
+        with:
+          comment-tag: plan
+          file-path: plan.txt
