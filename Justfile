@@ -1,9 +1,20 @@
 setup:
   gcloud auth application-default print-access-token || gcloud auth application-default login
-  tofu -chdir=tf init
+  tofu -chdir=tf init -reconfigure
 
-plan:
+reset:
+  gcloud auth application-default revoke
+
+impersonate:
+  gcloud auth application-default login --impersonate-service-account=infra-ci@rrvsh-production.iam.gserviceaccount.com
+
+plan-tf:
+  just setup
   tofu -chdir=tf plan
+
+apply-tf:
+  just setup
+  tofu -chdir=tf apply
 
 run-docker:
   docker image load -i $(nix build .#packages.aarch64-linux.rrvsh-image --print-out-paths)
