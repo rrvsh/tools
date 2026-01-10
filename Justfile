@@ -1,3 +1,7 @@
+run-docker:
+  docker image load -i $(nix build .#packages.aarch64-linux.rrvsh-image --print-out-paths)
+  docker run --rm -p 3000:3000 rrvsh:latest
+
 rb:
   just nice
   just check
