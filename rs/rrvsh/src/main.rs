@@ -16,7 +16,7 @@ struct HelloTemplate {
 #[tokio::main]
 async fn main() {
     let host = "0.0.0.0";
-    let port = 3000;
+    let port = std::env::var("PORT").unwrap_or_else(|_| "3000".to_string());
     let addr = format!("{host}:{port}");
     let listener = tokio::net::TcpListener::bind(addr)
         .await
