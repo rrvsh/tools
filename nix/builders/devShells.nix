@@ -5,12 +5,7 @@
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs; [
           # general
-          bacon
-          caligula
           just
-          sops
-          ssh-to-age
-          zstd
 
           # nix
           deadnix
@@ -25,6 +20,12 @@
           # gha yaml
           gh
           zizmor
+
+          # rust
+          cargo
+          clippy
+          rustc
+          rustfmt
         ];
       };
     };
