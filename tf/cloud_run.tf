@@ -18,3 +18,12 @@ resource "google_cloud_run_v2_service" "rrvsh" {
     type    = "TRAFFIC_TARGET_ALLOCATION_TYPE_LATEST"
   }
 }
+
+resource "google_cloud_run_v2_service_iam_member" "public" {
+  project  = var.project_id
+  location = google_cloud_run_v2_service.rrvsh.location
+  name     = google_cloud_run_v2_service.rrvsh.name
+
+  role   = "roles/run.invoker"
+  member = "allUsers"
+}
