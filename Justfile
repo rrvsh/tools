@@ -3,6 +3,7 @@ impersonate:
 
 setup:
   just impersonate
+  gcloud auth configure-docker asia-southeast1-docker.pkg.dev
   tofu -chdir=tf init -reconfigure
 
 reset:
