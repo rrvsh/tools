@@ -31,3 +31,9 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
 output "rrvsh_cloud_run_url" {
   value = google_cloud_run_v2_service.rrvsh.uri
 }
+
+resource "google_project_iam_member" "infra_ci_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.infra_ci_sa.email}"
+}
