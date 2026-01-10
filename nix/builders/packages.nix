@@ -17,7 +17,7 @@ in
           inherit name;
           tag = "latest";
           contents = [ self'.packages.rrvsh-bin ];
-          config.Cmd = ["/bin/rrvsh"];
+          config.Entrypoint = [ "/bin/rrvsh" ];
         };
       };
     };

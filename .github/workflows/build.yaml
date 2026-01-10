@@ -41,11 +41,12 @@ jobs:
         env:
           IMAGE: asia-southeast1-docker.pkg.dev/rrvsh-production/tools/rrvsh
           DEFAULT_BRANCH: prime
+          REF: ${{ github.ref_name }}
         run: |
           gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
 
           OUT_PATH=$(nix build .#packages.x86_64-linux.rrvsh-image --print-out-paths)
-          docker load < "$OUT_PATH"
+          docker load -i "$OUT_PATH"
 
           docker tag rrvsh:latest ${IMAGE}:${{ github.sha }}
           docker push ${IMAGE}:${{ github.sha }}
