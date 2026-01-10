@@ -27,3 +27,7 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   role   = "roles/run.invoker"
   member = "allUsers"
 }
+
+output "rrvsh_cloud_run_url" {
+  value = google_cloud_run_v2_service.rrvsh.uri
+}
