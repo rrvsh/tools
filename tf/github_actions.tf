@@ -17,6 +17,18 @@ resource "google_iam_workload_identity_pool_provider" "gha_tools_provider" {
   }
 }
 
+resource "google_service_account_iam_member" "gha_impersonation_infra_ci" {
+  service_account_id = google_service_account.infra_ci_sa.name
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gha_pool.name}/attribute.repository/rrvsh/tools"
+  role               = "roles/iam.workloadIdentityUser"
+}
+
+resource "google_service_account_iam_member" "gha_impersonation_code_ci" {
+  service_account_id = google_service_account.code_ci_sa.name
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.gha_pool.name}/attribute.repository/rrvsh/tools"
+  role               = "roles/iam.workloadIdentityUser"
+}
+
 output "gha_provider_name" {
   value = google_iam_workload_identity_pool_provider.gha_tools_provider.name
 }

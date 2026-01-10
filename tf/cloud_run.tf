@@ -3,7 +3,11 @@ resource "google_cloud_run_v2_service" "rrvsh" {
   location = "asia-southeast1"
   project  = var.project_id
 
+  deletion_protection = false
+
   template {
+    service_account = google_service_account.cloud_run_rrvsh_sa.email
+
     containers {
       image = "asia-southeast1-docker.pkg.dev/rrvsh-production/tools/rrvsh:latest"
 
@@ -19,15 +23,6 @@ resource "google_cloud_run_v2_service" "rrvsh" {
   }
 }
 
-resource "google_cloud_run_v2_service_iam_member" "public" {
-  project  = var.project_id
-  location = google_cloud_run_v2_service.rrvsh.location
-  name     = google_cloud_run_v2_service.rrvsh.name
-
-  role   = "roles/run.invoker"
-  member = "allUsers"
-}
-
 output "rrvsh_cloud_run_url" {
   value = google_cloud_run_v2_service.rrvsh.uri
 }
@@ -36,4 +31,22 @@ resource "google_project_iam_member" "infra_ci_run_admin" {
   project = var.project_id
   role    = "roles/run.admin"
   member  = "serviceAccount:${google_service_account.infra_ci_sa.email}"
+}
+
+resource "google_project_iam_member" "code_ci_run_admin" {
+  project = var.project_id
+  role    = "roles/run.admin"
+  member  = "serviceAccount:${google_service_account.code_ci_sa.email}"
+}
+
+resource "google_service_account_iam_member" "code_ci_act_as_cloud_run" {
+  service_account_id = google_service_account.cloud_run_rrvsh_sa.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.code_ci_sa.email}"
+}
+
+resource "google_service_account_iam_member" "infra_ci_act_as_cloud_run" {
+  service_account_id = google_service_account.cloud_run_rrvsh_sa.name
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.infra_ci_sa.email}"
 }
