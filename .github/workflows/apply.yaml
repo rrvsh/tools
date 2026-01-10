@@ -1,0 +1,69 @@
+name: Run `tofu apply` on "magic" PR comments
+
+on: issue_comment
+permissions:
+  contents: read
+  pull-requests: read
+  issues: read
+
+jobs:
+  parse-pr-comment:
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, 'tofu apply ') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      valid: ${{ steps.parse_comment.outputs.valid }}
+      pr_head_sha: ${{ steps.pr_branch.outputs.head_sha }}
+    steps:
+      - name: Parse comment body for validity and target environment
+        id: parse_comment
+        timeout-minutes: 1
+        env:
+          COMMENT_BODY: ${{ github.event.comment.body }}
+        run: |
+          PREFIX='tofu apply'
+          if [ "$COMMENT_BODY" = "$PREFIX" ]; then
+            echo "valid=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "valid=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get PR head SHA from comment
+        id: pr_branch
+        uses: xt0rted/pull-request-comment-branch@19dc39fb67f585a8c58f5326e493b511320fbe43
+
+  apply:
+    needs: parse-pr-comment
+    if: ${{ needs.parse-pr-comment.outputs.valid == 'true' }}
+    runs-on: ubuntu-latest
+    concurrency:
+      group: apply
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+    timeout-minutes: 5
+    steps:
+      - name: Check out code
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        timeout-minutes: 1
+        with:
+          ref: ${{ needs.parse-pr-comment.outputs.pr_head_sha }}
+          persist-credentials: false
+
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
+        timeout-minutes: 5
+        with:
+          service_account: 'infra-ci@rrvsh-production.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/1096616770660/locations/global/workloadIdentityPools/github-actions/providers/tools'
+
+      - name: Run tofu apply
+        timeout-minutes: 5
+        run: |
+          nix develop -c tofu -chdir=tf init -reconfigure \
+            -input=false \
+          && nix develop -c tofu -chdir=tf apply \
+            -input=false \
+            -auto-approve \
+            -concise
