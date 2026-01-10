@@ -47,13 +47,8 @@ jobs:
           OUT_PATH=$(nix build .#packages.x86_64-linux.rrvsh-image --print-out-paths)
           docker load < "$OUT_PATH"
 
-          SAFE_REF=$(echo ${{ github.ref_name }} | tr '/' '-')
-
           docker tag rrvsh:latest ${IMAGE}:${{ github.sha }}
           docker push ${IMAGE}:${{ github.sha }}
-
-          docker tag rrvsh:latest ${IMAGE}:${SAFE_REF}
-          docker push ${IMAGE}:${SAFE_REF}
 
           if [ "$REF" = "$DEFAULT_BRANCH" ]; then
             docker tag rrvsh:latest ${IMAGE}:latest
