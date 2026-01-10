@@ -28,6 +28,10 @@ resource "google_project_service" "ar_api" {
   service = "artifactregistry.googleapis.com"
 }
 
+resource "google_project_service" "cr_api" {
+  service = "run.googleapis.com"
+}
+
 resource "google_service_account" "infra_ci_sa" {
   account_id = "infra-ci"
   description = "Used for running OpenTofu commands in CI."
