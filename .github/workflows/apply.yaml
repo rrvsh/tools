@@ -60,6 +60,8 @@ jobs:
 
       - name: Run tofu apply
         timeout-minutes: 5
+        env:
+          TF_VAR_cloudflare_api_token: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           nix develop -c tofu -chdir=tf init -reconfigure \
             -input=false \
