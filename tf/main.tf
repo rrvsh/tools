@@ -20,6 +20,10 @@ resource "google_project_service" "iam_api" {
   service = "iam.googleapis.com"
 }
 
+resource "google_project_service" "crm_api" {
+  service = "cloudresourcemanager.googleapis.com"
+}
+
 resource "google_service_account" "infra_ci_sa" {
   account_id = "infra-ci"
   description = "Used for running OpenTofu commands in CI."
