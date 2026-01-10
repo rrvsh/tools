@@ -20,6 +20,12 @@
           # gha yaml
           gh
           zizmor
+
+          # rust
+          cargo
+          clippy
+          rustc
+          rustfmt
         ];
       };
     };
