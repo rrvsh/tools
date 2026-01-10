@@ -30,6 +30,10 @@
           # docker
           colima
           docker
+
+          # terraform
+          google-cloud-sdk
+          opentofu
         ];
       };
     };
