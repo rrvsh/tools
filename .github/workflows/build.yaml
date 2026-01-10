@@ -4,11 +4,12 @@ on:
   push:
 
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Check out code
         timeout-minutes: 1
@@ -28,7 +29,33 @@ jobs:
         timeout-minutes: 5
         uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39
 
-      - name: Build container image
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         timeout-minutes: 5
+        with:
+          service_account: 'infra-ci@rrvsh-production.iam.gserviceaccount.com'
+          workload_identity_provider: 'projects/1096616770660/locations/global/workloadIdentityPools/github-actions/providers/tools'
+
+      - name: Build and push container image
+        timeout-minutes: 5
+        env:
+          IMAGE: asia-southeast1-docker.pkg.dev/rrvsh-production/tools/rrvsh
+          DEFAULT_BRANCH: prime
         run: |
-          nix build .#packages.x86_64-linux.rrvsh-image
+          gcloud auth configure-docker asia-southeast1-docker.pkg.dev --quiet
+
+          OUT_PATH=$(nix build .#packages.x86_64-linux.rrvsh-image --print-out-paths)
+          docker load < "$OUT_PATH"
+
+          SAFE_REF=$(echo ${{ github.ref_name }} | tr '/' '-')
+
+          docker tag rrvsh:latest ${IMAGE}:${{ github.sha }}
+          docker push ${IMAGE}:${{ github.sha }}
+
+          docker tag rrvsh:latest ${IMAGE}:${SAFE_REF}
+          docker push ${IMAGE}:${SAFE_REF}
+
+          if [ "$REF" = "$DEFAULT_BRANCH" ]; then
+            docker tag rrvsh:latest ${IMAGE}:latest
+            docker push ${IMAGE}:latest
+          fi
