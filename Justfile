@@ -1,12 +1,12 @@
+impersonate:
+  gcloud auth application-default print-access-token || gcloud auth application-default login --impersonate-service-account=infra-ci@rrvsh-production.iam.gserviceaccount.com
+
 setup:
-  gcloud auth application-default print-access-token || gcloud auth application-default login
+  just impersonate
   tofu -chdir=tf init -reconfigure
 
 reset:
   gcloud auth application-default revoke
-
-impersonate:
-  gcloud auth application-default login --impersonate-service-account=infra-ci@rrvsh-production.iam.gserviceaccount.com
 
 plan-tf:
   just setup
