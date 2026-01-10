@@ -58,6 +58,18 @@ jobs:
           service_account: 'infra-ci@rrvsh-production.iam.gserviceaccount.com'
           workload_identity_provider: 'projects/1096616770660/locations/global/workloadIdentityPools/github-actions/providers/tools'
 
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@d64e0553100205688c0fb2fa16edb0fc8663c590
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache dependencies
+        timeout-minutes: 5
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39
+
       - name: Run tofu apply
         timeout-minutes: 5
         env:
