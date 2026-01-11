@@ -3,6 +3,8 @@ name: Check for changes to docs
 on:
   pull_request:
     types: [opened, synchronize]
+    branches:
+      - 'release/**'
 
 jobs:
   ensure_docs:
