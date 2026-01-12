@@ -1,3 +1,10 @@
+setup:
+  colima start
+
+run-docker:
+  docker load -i $(nix build .#packages.aarch64-linux.rrv-sh-image --print-out-paths)
+  docker run --rm -e PORT=8080 -p 8080:8080 rrv-sh:latest
+
 run-rs:
   cargo run --manifest-path rs/Cargo.toml
 
