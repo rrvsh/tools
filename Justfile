@@ -1,3 +1,6 @@
+run-rs:
+  cargo run --manifest-path rs/Cargo.toml
+
 rb:
   just nice
   just check
