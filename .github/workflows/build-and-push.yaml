@@ -1,0 +1,48 @@
+name: Build container image and push to container registry
+
+on:
+  push:
+
+jobs:
+  build-and-push:
+    strategy:
+      matrix:
+        arch: [amd64, arm64]
+    runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Check out code
+        timeout-minutes: 1
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache dependencies
+        timeout-minutes: 5
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Login to GitHub Container Registry
+        timeout-minutes: 5
+        uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish container images
+        timeout-minutes: 5
+        run: |
+          nix develop -c docker load -i $(nix build .#packages.${{ matrix.arch == 'amd64' && 'x86_64' || 'aarch64' }}-linux.rrv-sh-image --print-out-paths)
+          nix develop -c docker tag rrv-sh:latest ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-${{ matrix.arch }}
+          nix develop -c docker push ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-${{ matrix.arch }}
