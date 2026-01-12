@@ -26,6 +26,10 @@
           clippy
           rustc
           rustfmt
+
+          # docker
+          docker
+          colima
         ];
       };
     };
