@@ -4,11 +4,11 @@ rb:
   nh darwin switch .
 
 nice: format lint
-check: check-gha check-lua check-nix test
+check: check-gha check-lua check-nix check-rs test
 
-format: format-gha format-lua format-nix
-lint: lint-lua lint-nix
-test: test-nix
+format: format-gha format-lua format-nix format-rs
+lint: lint-lua lint-nix lint-rs
+test: test-nix test-rs
 
 format-gha:
   zizmor . --gh-token $(gh auth token) --fix
@@ -19,6 +19,9 @@ format-lua:
 format-nix:
   treefmt
 
+format-rs:
+  cargo fmt --manifest-path rs/Cargo.toml
+
 lint-lua:
   luacheck $(git ls-files '*.lua')
 
@@ -28,8 +31,14 @@ lint-nix:
   statix fix
   deadnix --edit
 
+lint-rs:
+  cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty
+
 test-nix:
   nix flake check --all-systems
+
+test-rs:
+  cargo test --manifest-path rs/Cargo.toml
 
 check-gha:
   zizmor . --gh-token $(gh auth token)
@@ -41,3 +50,9 @@ check-nix:
   treefmt --ci
   statix check
   deadnix
+
+check-rs:
+  just test-rs
+  cargo check --manifest-path rs/Cargo.toml
+  cargo clippy --manifest-path rs/Cargo.toml
+  cargo fmt --manifest-path rs/Cargo.toml --check
