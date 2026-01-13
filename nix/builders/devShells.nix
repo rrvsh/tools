@@ -30,6 +30,12 @@
           # docker
           docker
           colima
+
+          # aws
+          awscli2
+
+          # terraform
+          opentofu
         ];
       };
     };

@@ -1,5 +1,6 @@
 setup:
-  colima start
+  aws sts get-caller-identity > /dev/null 2>&1 || aws configure
+  colima status > /dev/null 2>&1 || colima start
 
 run-docker:
   docker load -i $(nix build .#packages.aarch64-linux.rrv-sh-image --print-out-paths)
