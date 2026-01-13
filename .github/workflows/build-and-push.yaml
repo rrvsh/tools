@@ -9,13 +9,12 @@ jobs:
       matrix:
         arch: [amd64, arm64]
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
-    timeout-minutes: 5
     permissions:
       contents: read
       packages: write
     steps:
-      - name: Check out code
-        timeout-minutes: 1
+      - name: Checkout repository
+        timeout-minutes: 5
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
@@ -28,8 +27,8 @@ jobs:
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
-      - name: Cache dependencies
-        timeout-minutes: 5
+      - name: Cache Nix dependencies
+        timeout-minutes: 10
         uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
 
       - name: Login to GitHub Container Registry
@@ -62,7 +61,6 @@ jobs:
   publish-multi-arch:
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     permissions:
       contents: read
       packages: write
