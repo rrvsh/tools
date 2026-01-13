@@ -14,11 +14,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
         with:
           persist-credentials: false
 
       - name: Get all changed markdown files
+        timeout-minutes: 5
         id: changed-markdown-files
         uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
         with:
@@ -26,5 +28,6 @@ jobs:
             **/*.md
 
       - name: Fail if no change to docs
+        timeout-minutes: 5
         if: steps.changed-markdown-files.outputs.any_changed == 'false'
         run: exit 1
