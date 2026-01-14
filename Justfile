@@ -17,7 +17,7 @@ rb:
 nice: format lint
 check: check-gha check-lua check-nix check-rs test
 
-format: format-gha format-lua format-nix format-rs
+format: format-gha format-lua format-nix format-rs format-tf
 lint: lint-lua lint-nix lint-rs
 test: test-nix test-rs
 
@@ -32,6 +32,9 @@ format-nix:
 
 format-rs:
   cargo fmt --manifest-path rs/Cargo.toml
+
+format-tf:
+  tofu -chdir=tf fmt
 
 lint-lua:
   luacheck $(git ls-files '*.lua')

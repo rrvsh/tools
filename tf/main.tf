@@ -1,9 +1,9 @@
 terraform {
   required_version = "~> 1.11"
   backend "s3" {
-    bucket = "rrvsh-tfstate-dev"
-    key = "tfstate/terraform.tfstate"
-    region = "ap-southeast-1"
+    bucket       = "rrvsh-tfstate-dev"
+    key          = "tfstate/terraform.tfstate"
+    region       = "ap-southeast-1"
     use_lockfile = true
   }
   required_providers {
