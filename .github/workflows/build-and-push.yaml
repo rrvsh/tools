@@ -8,6 +8,7 @@ jobs:
     strategy:
       matrix:
         arch: [amd64, arm64]
+        image: [site]
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
     permissions:
       contents: read
@@ -42,24 +43,27 @@ jobs:
       - name: Build and load container images
         timeout-minutes: 5
         run: |
-          nix develop -c docker load -i $(nix build .#packages.${{ matrix.arch == 'amd64' && 'x86_64' || 'aarch64' }}-linux.rrv-sh-image --print-out-paths)
+          nix develop -c docker load -i $(nix build .#packages.${{ matrix.arch == 'amd64' && 'x86_64' || 'aarch64' }}-linux.${{ matrix.image }}-image --print-out-paths)
 
       - name: Publish container images
         timeout-minutes: 5
         run: |
-          nix develop -c docker tag rrv-sh:latest ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-${{ matrix.arch }}
-          nix develop -c docker push ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-${{ matrix.arch }}
+          nix develop -c docker tag ${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-${{ matrix.arch }}
+          nix develop -c docker push ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-${{ matrix.arch }}
 
       - name: Publish latest arch image
         timeout-minutes: 5
         if: ${{ github.ref_name == 'prime' }}
         run: |
-          nix develop -c docker tag rrv-sh:latest ghcr.io/rrvsh/rrv-sh:latest-${{ matrix.arch }}
-          nix develop -c docker push ghcr.io/rrvsh/rrv-sh:latest-${{ matrix.arch }}
+          nix develop -c docker tag ${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:latest-${{ matrix.arch }}
+          nix develop -c docker push ghcr.io/rrvsh/${{ matrix.image }}:latest-${{ matrix.arch }}
 
 
   publish-multi-arch:
     needs: build-and-push
+    strategy:
+      matrix:
+        image: [site]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -76,20 +80,20 @@ jobs:
       - name: Publish multi-arch manifest
         timeout-minutes: 5
         run: |
-          docker manifest create ghcr.io/rrvsh/rrv-sh:${{ github.sha }} \
-            ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-amd64 \
-            ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-arm64
-          docker manifest annotate ghcr.io/rrvsh/rrv-sh:${{ github.sha }} ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-amd64 --arch amd64
-          docker manifest annotate ghcr.io/rrvsh/rrv-sh:${{ github.sha }} ghcr.io/rrvsh/rrv-sh:${{ github.sha }}-arm64 --arch arm64
-          docker manifest push ghcr.io/rrvsh/rrv-sh:${{ github.sha }}
+          docker manifest create ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }} \
+            ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-amd64 \
+            ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-arm64
+          docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }} ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-amd64 --arch amd64
+          docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }} ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-arm64 --arch arm64
+          docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}
 
       - name: Publish latest multi-arch manifest
         timeout-minutes: 5
         if: ${{ github.ref_name == 'prime' }}
         run: |
-          docker manifest create ghcr.io/rrvsh/rrv-sh:latest \
-            ghcr.io/rrvsh/rrv-sh:latest-amd64 \
-            ghcr.io/rrvsh/rrv-sh:latest-arm64
-          docker manifest annotate ghcr.io/rrvsh/rrv-sh:latest ghcr.io/rrvsh/rrv-sh:latest-amd64 --arch amd64
-          docker manifest annotate ghcr.io/rrvsh/rrv-sh:latest ghcr.io/rrvsh/rrv-sh:latest-arm64 --arch arm64
-          docker manifest push ghcr.io/rrvsh/rrv-sh:latest
+          docker manifest create ghcr.io/rrvsh/${{ matrix.image }}:latest \
+            ghcr.io/rrvsh/${{ matrix.image }}:latest-amd64 \
+            ghcr.io/rrvsh/${{ matrix.image }}:latest-arm64
+          docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:latest-amd64 --arch amd64
+          docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:latest-arm64 --arch arm64
+          docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:latest

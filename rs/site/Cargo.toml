@@ -1,5 +1,5 @@
 [package]
-name = "rrv-sh"
+name = "site"
 version = "0.1.0-alpha"
 description = "A web server with Axum and Askama"
 readme = "../../README.md"

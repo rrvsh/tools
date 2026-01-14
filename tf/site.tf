@@ -1,9 +1,9 @@
-resource "aws_ecs_cluster" "rrv-sh" {
-  name = "rrv-sh"
+resource "aws_ecs_cluster" "site" {
+  name = "site"
 }
 
-resource "aws_ecs_task_definition" "rrv-sh" {
-  family                   = "rrv-sh"
+resource "aws_ecs_task_definition" "site" {
+  family                   = "site"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
   cpu                      = 256
@@ -14,8 +14,8 @@ resource "aws_ecs_task_definition" "rrv-sh" {
   }
   container_definitions = jsonencode([
     {
-      name         = "rrv-sh"
-      image        = "ghcr.io/rrvsh/rrv-sh:latest"
+      name         = "site"
+      image        = "ghcr.io/rrvsh/site:latest"
       essential    = true
       portMappings = [{ containerPort = 80 }]
       environment  = [{ name = "PORT", value = "80" }]
@@ -23,10 +23,10 @@ resource "aws_ecs_task_definition" "rrv-sh" {
   ])
 }
 
-resource "aws_ecs_service" "rrv-sh" {
-  name            = "rrv-sh"
-  cluster         = aws_ecs_cluster.rrv-sh.id
-  task_definition = aws_ecs_task_definition.rrv-sh.arn
+resource "aws_ecs_service" "site" {
+  name            = "site"
+  cluster         = aws_ecs_cluster.site.id
+  task_definition = aws_ecs_task_definition.site.arn
   desired_count   = 1
   launch_type     = "FARGATE"
   network_configuration {
