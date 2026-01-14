@@ -2,7 +2,12 @@ use askama::Template;
 use axum::{
     http::StatusCode,
     response::{Html, IntoResponse, Response},
+    routing::get,
 };
+
+pub fn build_router() -> axum::Router {
+    axum::Router::new().route("/", get(hello))
+}
 
 #[derive(Template)]
 #[template(path = "hello.html")]
