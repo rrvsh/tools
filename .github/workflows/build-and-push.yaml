@@ -104,9 +104,35 @@ jobs:
       contents: read
       id-token: write
     steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        timeout-minutes: 10
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
       - name: Login to AWS
         timeout-minutes: 5
         uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5
         with:
           aws-region: ap-southeast-1
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+
+      - name: Force redeploy of ECS service
+        timeout-minutes: 5
+        run: |
+          nix develop -c aws ecs update-service \
+            --cluster site \
+            --service site \
+            --force-new-deployment
