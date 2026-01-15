@@ -42,3 +42,7 @@ nix shell nixpkgs#qemu -c qemu-system-aarch64 \
 
 nix build .#nixosConfigurations.pi.config.formats.sd-aarch64
 caligula burn result/nixos-image-sd-card-25.11.20251108.b6a8526-aarch64-linux.img.zst
+
+## Clear MacOS DNS Cache
+sudo dscacheutil -flushcache
+sudo killall -HUP mDNSResponder
