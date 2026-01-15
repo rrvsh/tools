@@ -98,11 +98,11 @@ jobs:
           docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:latest
 
   redeploy-site-ecs-service:
-    if: github.ref_name == 'prime'
     needs: publish-multi-arch
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      id-token: write
     steps:
       - name: Login to AWS
         timeout-minutes: 5
