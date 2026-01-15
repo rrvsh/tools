@@ -1,3 +1,16 @@
+resource "aws_acm_certificate" "site" {
+  domain_name       = "rrv.sh"
+  validation_method = "DNS"
+}
+
+resource "aws_acm_certificate_validation" "site" {
+  certificate_arn = aws_acm_certificate.site.arn
+  validation_record_fqdns = [
+    for dvo in aws_acm_certificate.site.domain_validation_options :
+    dvo.resource_record_name
+  ]
+}
+
 resource "aws_lb" "site" {
   name            = "site"
   subnets         = data.aws_subnets.default.ids
@@ -16,6 +29,18 @@ resource "aws_lb_listener" "site_http" {
   load_balancer_arn = aws_lb.site.arn
   port              = 80
   protocol          = "HTTP"
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.site.arn
+  }
+}
+
+resource "aws_lb_listener" "site_https" {
+  load_balancer_arn = aws_lb.site.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-2016-08"
+  certificate_arn   = aws_acm_certificate.site.arn
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.site.arn
@@ -85,4 +110,8 @@ resource "aws_ecs_service" "site" {
     container_port   = 80
     target_group_arn = aws_lb_target_group.site.arn
   }
+}
+
+output "acm_dns_validation_records" {
+  value = aws_acm_certificate.site.domain_validation_options
 }
