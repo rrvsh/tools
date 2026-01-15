@@ -97,8 +97,12 @@ jobs:
           docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:latest-arm64 --arch arm64
           docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:latest
 
-  redeploy-site-ecs-service:
+  redeploy-ecs-service:
+    if: github.ref_name == 'prime'
     needs: publish-multi-arch
+    strategy:
+      matrix:
+        image: [site]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -133,6 +137,6 @@ jobs:
         timeout-minutes: 5
         run: |
           nix develop -c aws ecs update-service \
-            --cluster site \
-            --service site \
+            --cluster ${{ matrix.image }} \
+            --service ${{ matrix.image }} \
             --force-new-deployment
