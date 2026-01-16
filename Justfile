@@ -1,3 +1,9 @@
+watch-rs:
+  bacon run -- --manifest-path rs/Cargo.toml --package site
+
+watch-clippy:
+  bacon clippy -- --manifest-path rs/Cargo.toml --package site
+
 setup:
   cp .env.template .env
   aws sts get-caller-identity > /dev/null 2>&1 || aws configure

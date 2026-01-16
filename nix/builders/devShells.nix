@@ -26,6 +26,7 @@
           clippy
           rustc
           rustfmt
+          bacon
 
           # docker
           docker
