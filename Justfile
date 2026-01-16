@@ -1,4 +1,5 @@
 setup:
+  cp .env.template .env
   aws sts get-caller-identity > /dev/null 2>&1 || aws configure
   colima status > /dev/null 2>&1 || colima start
 
