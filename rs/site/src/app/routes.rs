@@ -1,16 +1,18 @@
+use crate::app::settings::AppSettings;
 use askama::Template;
 use axum::{
-    extract::Path,
+    extract::{Path, State},
     http::StatusCode,
     response::{Html, IntoResponse, Response},
     routing::get,
 };
 
-pub fn build_router() -> axum::Router {
+pub fn build_router(settings: AppSettings) -> axum::Router {
     axum::Router::new()
         .route("/", get(index_get))
         .route("/blog", get(blog_index_get))
         .route("/{year}/{month}/{day}/{slug}", get(article_get))
+        .with_state(settings)
 }
 
 #[derive(Template)]
@@ -43,9 +45,14 @@ struct ArticleTemplate {
 
 pub async fn article_get(
     Path((year, month, day, slug)): Path<(i32, i32, i32, String)>,
+    State(settings): State<AppSettings>,
 ) -> Result<Response, StatusCode> {
-    let content = format!("{year}-{month}-{day}-{slug}");
-    ArticleTemplate { content }.render().map_or_else(
+    let AppSettings { content_dir, .. } = settings;
+    ArticleTemplate {
+        content: format!("{content_dir}/{year}/{month}/{day}/{slug}"),
+    }
+    .render()
+    .map_or_else(
         |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
         |rendered| Ok(Html(rendered).into_response()),
     )

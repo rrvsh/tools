@@ -3,8 +3,8 @@ pub mod settings;
 
 pub async fn serve() {
     let settings = settings::AppSettings::from_env();
-    let listener = tokio::net::TcpListener::bind(settings.addr).await.unwrap();
-    let router = routes::build_router();
+    let listener = tokio::net::TcpListener::bind(&settings.addr).await.unwrap();
+    let router = routes::build_router(settings);
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await
