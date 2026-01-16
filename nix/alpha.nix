@@ -1,0 +1,3 @@
+{
+  flake.hosts.darwin.alpha = { };
+}

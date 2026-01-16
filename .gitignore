@@ -1,0 +1,10 @@
+# generated files
+
+result
+.direnv
+*.img*
+*.qcow2
+keys/
+
+# developer choice
+**tmp**
