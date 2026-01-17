@@ -20,6 +20,15 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Checkout content repository
+        if: ${{ matrix.image == 'site' }}
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6
+        with:
+          repository: rrvsh/site-content
+          path: content
+          persist-credentials: false
+
       - name: Install Nix
         timeout-minutes: 5
         uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
@@ -43,7 +52,12 @@ jobs:
       - name: Build and load container images
         timeout-minutes: 5
         run: |
-          nix develop -c docker load -i $(nix build .#packages.${{ matrix.arch == 'amd64' && 'x86_64' || 'aarch64' }}-linux.${{ matrix.image }}-image --print-out-paths)
+          IMAGE_PATH="$(
+            nix build \
+              ".#packages.${{ matrix.arch == 'amd64' && 'x86_64' || 'aarch64' }}-linux.${{ matrix.image }}-image" \
+              --print-out-paths ${{ matrix.image == 'site' && '--override-input site-content ./content' || '' }}
+          )"
+          nix develop -c docker load -i "$IMAGE_PATH"
 
       - name: Publish container images
         timeout-minutes: 5
