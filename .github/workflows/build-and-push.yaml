@@ -1,6 +1,10 @@
 name: Build container image and push to container registry
 
-on: [push, repository_dispatch]
+on:
+  push:
+    branches:
+      - prime
+  repository_dispatch:
 
 jobs:
   build-and-push:
@@ -9,8 +13,6 @@ jobs:
         arch: [amd64, arm64]
         image: [site]
     runs-on: ${{ matrix.arch == 'amd64' && 'ubuntu-latest' || 'ubuntu-24.04-arm' }}
-    env:
-      LATEST: ${{ github.ref_name == 'prime' || github.event_name == 'repository_dispatch' }}
     permissions:
       contents: read
       packages: write
@@ -63,13 +65,8 @@ jobs:
         timeout-minutes: 5
         run: |
           nix develop -c docker tag ${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-${{ matrix.arch }}
-          nix develop -c docker push ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-${{ matrix.arch }}
-
-      - name: Publish latest arch image
-        timeout-minutes: 5
-        if: ${{ env.LATEST }}
-        run: |
           nix develop -c docker tag ${{ matrix.image }}:latest ghcr.io/rrvsh/${{ matrix.image }}:latest-${{ matrix.arch }}
+          nix develop -c docker push ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-${{ matrix.arch }}
           nix develop -c docker push ghcr.io/rrvsh/${{ matrix.image }}:latest-${{ matrix.arch }}
 
 
@@ -79,8 +76,6 @@ jobs:
       matrix:
         image: [site]
     runs-on: ubuntu-latest
-    env:
-      LATEST: ${{ github.ref_name == 'prime' || github.event_name == 'repository_dispatch' }}
     permissions:
       packages: write
     steps:
@@ -101,11 +96,6 @@ jobs:
           docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }} ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-amd64 --arch amd64
           docker manifest annotate ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }} ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}-arm64 --arch arm64
           docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:${{ github.sha }}
-
-      - name: Publish latest multi-arch manifest
-        timeout-minutes: 5
-        if: ${{ env.LATEST }}
-        run: |
           docker manifest create ghcr.io/rrvsh/${{ matrix.image }}:latest \
             ghcr.io/rrvsh/${{ matrix.image }}:latest-amd64 \
             ghcr.io/rrvsh/${{ matrix.image }}:latest-arm64
@@ -114,7 +104,6 @@ jobs:
           docker manifest push ghcr.io/rrvsh/${{ matrix.image }}:latest
 
   redeploy-ecs-service:
-    if: github.ref_name == 'prime' || github.event_name == 'repository_dispatch'
     needs: publish-multi-arch
     strategy:
       matrix:
