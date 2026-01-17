@@ -571,14 +571,17 @@
     "site-content": {
       "flake": false,
       "locked": {
-        "lastModified": 1768603887,
-        "narHash": "sha256-nlyESfJ0rYX0HRHYpai1oxp8U57tF9yUBPwzwUwzEkE=",
-        "path": "/Users/rafiq/publish",
-        "type": "path"
+        "lastModified": 1768612608,
+        "narHash": "sha256-Dtnkhp7LMR6eswW++NROP201n7Li0obe5h0a/HeTvXE=",
+        "owner": "rrvsh",
+        "repo": "site-content",
+        "rev": "10be49dead4ca16ca7cd005f0afb6affc979f2f3",
+        "type": "github"
       },
       "original": {
-        "path": "/Users/rafiq/publish",
-        "type": "path"
+        "owner": "rrvsh",
+        "repo": "site-content",
+        "type": "github"
       }
     },
     "sops-nix": {

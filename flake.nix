@@ -43,7 +43,7 @@
       flake = false;
     };
     site-content = {
-      url = "path:/Users/rafiq/publish";
+      url = "github:rrvsh/site-content";
       flake = false;
     };
   };
