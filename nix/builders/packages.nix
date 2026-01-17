@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 {
   perSystem =
     { pkgs, self', ... }:
@@ -16,6 +16,7 @@
           pkgs.dockerTools.binSh
         ];
         config = {
+          Env = [ "SITE_CONTENT_DIR=${inputs.site-content}" ];
           Entrypoint = [
             "/bin/sh"
             "-c"

@@ -542,6 +542,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
         "nvf": "nvf",
+        "site-content": "site-content",
         "sops-nix": "sops-nix",
         "yazi": "yazi"
       }
@@ -564,6 +565,22 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
+        "type": "github"
+      }
+    },
+    "site-content": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768612608,
+        "narHash": "sha256-Dtnkhp7LMR6eswW++NROP201n7Li0obe5h0a/HeTvXE=",
+        "owner": "rrvsh",
+        "repo": "site-content",
+        "rev": "10be49dead4ca16ca7cd005f0afb6affc979f2f3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "repo": "site-content",
         "type": "github"
       }
     },
