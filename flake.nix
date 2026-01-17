@@ -42,5 +42,9 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
+    site-content = {
+      url = "path:/Users/rafiq/publish";
+      flake = false;
+    };
   };
 }

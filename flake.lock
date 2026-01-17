@@ -542,6 +542,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
         "nvf": "nvf",
+        "site-content": "site-content",
         "sops-nix": "sops-nix",
         "yazi": "yazi"
       }
@@ -565,6 +566,19 @@
         "owner": "oxalica",
         "repo": "rust-overlay",
         "type": "github"
+      }
+    },
+    "site-content": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1768603887,
+        "narHash": "sha256-nlyESfJ0rYX0HRHYpai1oxp8U57tF9yUBPwzwUwzEkE=",
+        "path": "/Users/rafiq/publish",
+        "type": "path"
+      },
+      "original": {
+        "path": "/Users/rafiq/publish",
+        "type": "path"
       }
     },
     "sops-nix": {
