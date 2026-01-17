@@ -12,6 +12,10 @@ categories = ["site"]
 [dependencies]
 askama = "0.15.1"
 axum = "0.8.8"
+ignore = "0.4.25"
+markdown = "1.0.0"
+markdown-frontmatter = { version = "0.4.0", features = ["yaml"] }
+serde = "1.0.228"
 tokio = { version = "1.49.0", features = ["full"] }
 
 [lints.clippy]
