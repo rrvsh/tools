@@ -1,8 +1,8 @@
-watch-rs:
+watch-site:
   bacon run -- --manifest-path rs/Cargo.toml --package site
 
 watch-clippy:
-  bacon clippy -- --manifest-path rs/Cargo.toml --package site
+  bacon clippy -- --manifest-path rs/Cargo.toml --all
 
 setup:
   cp .env.template .env
@@ -12,9 +12,6 @@ setup:
 run-docker:
   docker load -i $(nix build .#packages.aarch64-linux.site-image --print-out-paths)
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
-
-run-rs:
-  cargo run --manifest-path rs/Cargo.toml
 
 rb:
   just nice
@@ -35,7 +32,7 @@ format-nix:
   treefmt
 
 format-rs:
-  cargo fmt --manifest-path rs/Cargo.toml
+  cargo fmt --manifest-path rs/Cargo.toml --all
 
 format-tf:
   tofu -chdir=tf fmt
@@ -52,7 +49,7 @@ lint-nix:
   deadnix --edit
 
 lint-rs:
-  cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty
+  cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
 test: test-nix test-rs
 
@@ -60,7 +57,7 @@ test-nix:
   nix flake check --all-systems
 
 test-rs:
-  cargo test --manifest-path rs/Cargo.toml
+  cargo test --manifest-path rs/Cargo.toml --all
 
 check: check-gha check-lua check-nix check-rs test
 
@@ -76,5 +73,5 @@ check-nix:
   deadnix
 
 check-rs:
-  cargo clippy --manifest-path rs/Cargo.toml
-  cargo fmt --manifest-path rs/Cargo.toml --check
+  cargo clippy --manifest-path rs/Cargo.toml --all
+  cargo fmt --manifest-path rs/Cargo.toml --check --all
