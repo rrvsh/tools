@@ -1,5 +1,5 @@
 use ignore::Walk;
-use lib::is_markdown;
+use lib::Document;
 
 pub mod routes;
 pub mod settings;
@@ -25,8 +25,8 @@ fn load_files(content_dir: &str) {
     for result in Walk::new(content_dir) {
         match result {
             Ok(entry) => {
-                if is_markdown(entry.path()) {
-                    println!("{}", entry.path().display());
+                if let Some(document) = Document::from_path(entry.path()) {
+                    dbg!(document);
                 }
             }
             Err(err) => println!("ERROR: {err}"),
