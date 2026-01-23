@@ -1,13 +1,15 @@
+use chrono::NaiveDate;
+use ignore::Walk;
 use serde::Deserialize;
 use std::ffi::OsStr;
 use std::path::Path;
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug)]
 pub struct Document {
-    title: String,
-    slug: String,
-    date: String,
-    content: String,
+    pub title: String,
+    pub slug: String,
+    pub date: NaiveDate,
+    pub content: String,
 }
 
 #[derive(Deserialize)]
@@ -28,6 +30,7 @@ impl Document {
         let (frontmatter, content) =
             markdown_frontmatter::parse::<ArticleFrontmatter>(&file_content).ok()?;
         let date = frontmatter.date?;
+        let date = NaiveDate::parse_from_str(&date, "%Y-%m-%d").ok()?;
         let slug = frontmatter.slug?;
         let title = frontmatter.title?;
         Some(Self {
@@ -37,6 +40,15 @@ impl Document {
             content: content.trim().to_string(),
         })
     }
+}
+
+pub fn load_documents_from_dir<P: AsRef<Path>>(path: P) -> Vec<Document> {
+    let mut documents = Walk::new(path)
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| Document::from_path(entry.path()))
+        .collect::<Vec<Document>>();
+    documents.sort_by(|left, right| right.date.cmp(&left.date));
+    documents
 }
 
 #[cfg(test)]
@@ -62,9 +74,10 @@ Testing..."#;
         let expected = Some(Document {
             title: "Test".to_string(),
             slug: "test".to_string(),
-            date: "2026-01-21".to_string(),
+            date: NaiveDate::from_ymd_opt(2026, 1, 21).unwrap(),
             content: "Testing...".to_string(),
         });
+        dbg!(&actual, &expected);
         assert!(actual == expected);
     }
 
@@ -83,6 +96,23 @@ Testing..."#;
         let dir = tempdir().unwrap();
         let file_path = dir.path();
         let actual = Document::from_path(file_path);
+        let expected = None;
+        assert!(actual == expected);
+    }
+
+    #[test]
+    fn document_failure_invalid_date() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("my-temporary-note.md");
+        let mut file = File::create(&file_path).unwrap();
+        let doc = r#"---
+ title: Test
+ slug: test
+ date: not-a-date
+ ---
+ Testing..."#;
+        writeln!(file, "{}", doc).unwrap();
+        let actual = Document::from_path(&file_path);
         let expected = None;
         assert!(actual == expected);
     }

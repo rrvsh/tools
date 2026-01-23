@@ -1,14 +1,15 @@
-use ignore::Walk;
-use lib::Document;
+use std::sync::Arc;
 
 pub mod routes;
 pub mod settings;
+pub mod state;
 
 pub async fn serve() {
     let settings = settings::AppSettings::from_env();
-    load_files(&settings.content_dir);
+    let documents = lib::load_documents_from_dir(&settings.content_dir);
+    let state = Arc::new(state::AppState::new(documents));
     let listener = tokio::net::TcpListener::bind(&settings.addr).await.unwrap();
-    let router = routes::build_router(settings);
+    let router = routes::build_router(state);
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await
@@ -19,17 +20,4 @@ async fn shutdown_signal() {
     tokio::signal::ctrl_c()
         .await
         .expect("failed to install Ctrl+C handler");
-}
-
-fn load_files(content_dir: &str) {
-    for result in Walk::new(content_dir) {
-        match result {
-            Ok(entry) => {
-                if let Some(document) = Document::from_path(entry.path()) {
-                    dbg!(document);
-                }
-            }
-            Err(err) => println!("ERROR: {err}"),
-        }
-    }
 }
