@@ -1,4 +1,4 @@
-use crate::app::settings::AppSettings;
+use crate::app::state::{AppState, MonthGroup};
 use askama::Template;
 use axum::{
     extract::{Path, State},
@@ -6,36 +6,29 @@ use axum::{
     response::{Html, IntoResponse, Response},
     routing::get,
 };
-use ignore::{DirEntry, WalkBuilder};
+use chrono::{Datelike, NaiveDate};
 use markdown::to_html;
-use serde::Deserialize;
-use std::fs::read_to_string;
+use std::sync::Arc;
 
-pub fn build_router(settings: AppSettings) -> axum::Router {
+pub fn build_router(state: Arc<AppState>) -> axum::Router {
     axum::Router::new()
         .route("/", get(index_get))
-        .route("/blog", get(blog_index_get))
         .route("/{year}/{month}/{day}/{slug}", get(article_get))
-        .with_state(settings)
+        .with_state(state)
 }
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct IndexTemplate {}
-
-pub async fn index_get() -> Result<Response, StatusCode> {
-    IndexTemplate {}.render().map_or_else(
-        |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
-        |rendered| Ok(Html(rendered).into_response()),
-    )
+struct IndexTemplate {
+    months: Vec<MonthGroup>,
 }
 
-#[derive(Template)]
-#[template(path = "blog/index.html")]
-struct BlogIndexTemplate {}
-
-pub async fn blog_index_get() -> Result<Response, StatusCode> {
-    BlogIndexTemplate {}.render().map_or_else(
+pub async fn index_get(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
+    IndexTemplate {
+        months: state.months.clone(),
+    }
+    .render()
+    .map_or_else(
         |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
         |rendered| Ok(Html(rendered).into_response()),
     )
@@ -44,70 +37,48 @@ pub async fn blog_index_get() -> Result<Response, StatusCode> {
 #[derive(Template)]
 #[template(path = "article.html")]
 struct ArticleTemplate {
+    title: String,
+    date: String,
     content: String,
 }
 
-#[derive(Deserialize)]
-struct ArticleFrontmatter {
-    slug: String,
-}
+fn format_article_date(date: NaiveDate) -> String {
+    let day = date.day();
+    let suffix = match day {
+        11..=13 => "th",
+        _ => match day % 10 {
+            1 => "st",
+            2 => "nd",
+            3 => "rd",
+            _ => "th",
+        },
+    };
 
-fn is_requested_article(entry: &DirEntry, slug: &str) -> bool {
-    let file_extension = entry
-        .path()
-        .extension()
-        .map(|osstr| osstr.to_str().expect("Invalid UTF-8!"));
-    if Some("md") == file_extension {
-        let file_content = read_to_string(entry.path()).expect("Error reading file to string!");
-        let (frontmatter, _) = markdown_frontmatter::parse::<ArticleFrontmatter>(&file_content)
-            .expect("Error parsing frontmatter!");
-        frontmatter.slug == slug
-    } else {
-        false
-    }
-}
-
-fn get_first_file_path_by_slug(folder_path: &str, slug: &str) -> Option<String> {
-    let matching_entries = WalkBuilder::new(folder_path)
-        .max_depth(Some(1))
-        .build()
-        .filter_map(|entry| entry.ok().filter(|entry| is_requested_article(entry, slug)))
-        .collect::<Vec<DirEntry>>();
-    if matching_entries.len() == 1 {
-        Some(
-            matching_entries
-                .first()
-                .expect("Error getting dir entry!")
-                .path()
-                .to_str()
-                .expect("Invalid UTF-8")
-                .to_string(),
-        )
-    } else {
-        None
-    }
+    format!(
+        "written on {}, the {day}{suffix} of {} {}",
+        date.format("%A"),
+        date.format("%B"),
+        date.year()
+    )
 }
 
 pub async fn article_get(
-    Path((year, month, day, slug)): Path<(i32, i32, i32, String)>,
-    State(settings): State<AppSettings>,
+    Path((year, month, day, slug)): Path<(i32, u32, u32, String)>,
+    State(state): State<Arc<AppState>>,
 ) -> Result<Response, StatusCode> {
-    let AppSettings { content_dir, .. } = settings;
-    let folder_path = format!("{content_dir}/{year}/{month}/{day}");
-    get_first_file_path_by_slug(&folder_path, &slug).map_or_else(
-        || Err(StatusCode::NOT_FOUND),
-        |file_path| {
-            let file_content = read_to_string(file_path).expect("Error reading file!");
-            let (_, body) = markdown_frontmatter::parse::<ArticleFrontmatter>(&file_content)
-                .expect("Error parsing frontmatter!");
-            ArticleTemplate {
-                content: to_html(body),
-            }
-            .render()
-            .map_or_else(
-                |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
-                |rendered| Ok(Html(rendered).into_response()),
-            )
-        },
+    let requested_date = NaiveDate::from_ymd_opt(year, month, day).ok_or(StatusCode::NOT_FOUND)?;
+    let document = state
+        .articles_by_key
+        .get(&(year, month, day, slug))
+        .ok_or(StatusCode::NOT_FOUND)?;
+    ArticleTemplate {
+        title: document.title.clone(),
+        date: format_article_date(requested_date),
+        content: to_html(&document.content),
+    }
+    .render()
+    .map_or_else(
+        |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
+        |rendered| Ok(Html(rendered).into_response()),
     )
 }

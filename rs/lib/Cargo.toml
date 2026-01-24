@@ -1,0 +1,17 @@
+[package]
+name = "lib"
+version = "1.0.0"
+description = "Catch-all for helpers"
+readme = "../../README.md"
+repository = "https://github.com/rrvsh/tools"
+edition = "2024"
+license = "MIT"
+keywords = ["lib"]
+categories = ["lib"]
+
+[dependencies]
+chrono = "0.4.43"
+ignore = "0.4.25"
+markdown-frontmatter = { version = "0.4.0", features = ["yaml"] }
+serde = "1.0.228"
+tempfile = "3.24.0"
