@@ -76,10 +76,10 @@ pub async fn blog_index_get(State(state): State<Arc<AppState>>) -> Result<Respon
                 .collect();
 
             articles.sort_by(|left, right| {
-                right
+                left
                     .date
-                    .cmp(&left.date)
-                    .then_with(|| left.title.cmp(&right.title))
+                    .cmp(&right.date)
+                    .then_with(|| right.title.cmp(&left.title))
             });
 
             let label = NaiveDate::from_ymd_opt(year, month, 1).map_or_else(
@@ -107,7 +107,7 @@ struct ArticleTemplate {
 
 fn format_article_date(date: NaiveDate) -> String {
     let day = date.day();
-    let suffix = match day % 100 {
+    let suffix = match day {
         11..=13 => "th",
         _ => match day % 10 {
             1 => "st",
@@ -117,7 +117,12 @@ fn format_article_date(date: NaiveDate) -> String {
         },
     };
 
-    format!("{}{suffix} {} {}", day, date.format("%B"), date.year())
+    format!(
+        "Written on {}, the {day}{suffix} of {} {}",
+        date.format("%A"),
+        date.format("%B"),
+        date.year()
+    )
 }
 
 pub async fn article_get(
