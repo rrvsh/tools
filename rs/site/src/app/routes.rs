@@ -6,9 +6,9 @@ use axum::{
     response::{Html, IntoResponse, Response},
     routing::get,
 };
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use markdown::to_html;
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 pub fn build_router(state: Arc<AppState>) -> axum::Router {
     axum::Router::new()
@@ -29,12 +29,66 @@ pub async fn index_get() -> Result<Response, StatusCode> {
     )
 }
 
+struct ArticleLink {
+    title: String,
+    url: String,
+    date: NaiveDate,
+}
+
+struct MonthGroup {
+    label: String,
+    articles: Vec<ArticleLink>,
+}
+
 #[derive(Template)]
 #[template(path = "blog/index.html")]
-struct BlogIndexTemplate {}
+struct BlogIndexTemplate {
+    months: Vec<MonthGroup>,
+}
 
-pub async fn blog_index_get() -> Result<Response, StatusCode> {
-    BlogIndexTemplate {}.render().map_or_else(
+pub async fn blog_index_get(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
+    let mut grouped: BTreeMap<(i32, u32), Vec<&lib::Document>> = BTreeMap::new();
+
+    for document in &state.documents {
+        grouped
+            .entry((document.date.year(), document.date.month()))
+            .or_default()
+            .push(document);
+    }
+
+    let months = grouped
+        .into_iter()
+        .rev()
+        .map(|((year, month), documents)| {
+            let mut articles: Vec<ArticleLink> = documents
+                .into_iter()
+                .map(|document| ArticleLink {
+                    title: document.title.clone(),
+                    url: format!(
+                        "/{}/{:02}/{:02}/{}",
+                        document.date.year(),
+                        document.date.month(),
+                        document.date.day(),
+                        document.slug
+                    ),
+                    date: document.date,
+                })
+                .collect();
+
+            articles.sort_by(|left, right| {
+                right
+                    .date
+                    .cmp(&left.date)
+                    .then_with(|| left.title.cmp(&right.title))
+            });
+
+            let label = NaiveDate::from_ymd_opt(year, month, 1).map_or_else(|| format!("{month:02} {year}"), |date| date.format("%B %Y").to_string());
+
+            MonthGroup { label, articles }
+        })
+        .collect();
+
+    BlogIndexTemplate { months }.render().map_or_else(
         |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
         |rendered| Ok(Html(rendered).into_response()),
     )
