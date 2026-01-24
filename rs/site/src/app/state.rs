@@ -1,3 +1,4 @@
+use crate::app::settings::AppSettings;
 use chrono::{Datelike, NaiveDate};
 use lib::Document;
 use std::collections::{BTreeMap, HashMap};
@@ -18,12 +19,13 @@ pub struct MonthGroup {
 
 #[derive(Clone)]
 pub struct AppState {
+    pub settings: AppSettings,
     pub months: Vec<MonthGroup>,
     pub articles_by_key: HashMap<(i32, u32, u32, String), ArticleLink>,
 }
 
 impl AppState {
-    pub fn new(documents: Vec<Document>) -> Self {
+    pub fn new(documents: Vec<Document>, settings: AppSettings) -> Self {
         let mut grouped: BTreeMap<(i32, u32), Vec<Document>> = BTreeMap::new();
         let mut articles_by_key = HashMap::new();
 
@@ -80,6 +82,7 @@ impl AppState {
             .collect();
 
         Self {
+            settings,
             months,
             articles_by_key,
         }

@@ -17,6 +17,7 @@ ignore = "0.4.25"
 lib = { version = "1.0.0", path = "../lib" }
 markdown = "1.0.0"
 markdown-frontmatter = { version = "0.4.0", features = ["yaml"] }
+rss = "2.0.12"
 serde = "1.0.228"
 tokio = { version = "1.49.0", features = ["full"] }
 
