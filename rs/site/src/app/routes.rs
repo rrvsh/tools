@@ -13,30 +13,18 @@ use std::sync::Arc;
 pub fn build_router(state: Arc<AppState>) -> axum::Router {
     axum::Router::new()
         .route("/", get(index_get))
-        .route("/blog", get(blog_index_get))
         .route("/{year}/{month}/{day}/{slug}", get(article_get))
         .with_state(state)
 }
 
 #[derive(Template)]
 #[template(path = "index.html")]
-struct IndexTemplate {}
-
-pub async fn index_get() -> Result<Response, StatusCode> {
-    IndexTemplate {}.render().map_or_else(
-        |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
-        |rendered| Ok(Html(rendered).into_response()),
-    )
-}
-
-#[derive(Template)]
-#[template(path = "blog/index.html")]
-struct BlogIndexTemplate {
+struct IndexTemplate {
     months: Vec<MonthGroup>,
 }
 
-pub async fn blog_index_get(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
-    BlogIndexTemplate {
+pub async fn index_get(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
+    IndexTemplate {
         months: state.months.clone(),
     }
     .render()
@@ -67,7 +55,7 @@ fn format_article_date(date: NaiveDate) -> String {
     };
 
     format!(
-        "Written on {}, the {day}{suffix} of {} {}",
+        "written on {}, the {day}{suffix} of {} {}",
         date.format("%A"),
         date.format("%B"),
         date.year()
@@ -80,20 +68,12 @@ pub async fn article_get(
 ) -> Result<Response, StatusCode> {
     let requested_date = NaiveDate::from_ymd_opt(year, month, day).ok_or(StatusCode::NOT_FOUND)?;
     let document = state
-        .months
-        .iter()
-        .filter(|group| {
-            group
-                .articles
-                .first()
-                .is_some_and(|article| article.date.year() == year && article.date.month() == month)
-        })
-        .flat_map(|group| &group.articles)
-        .find(|article| article.slug == slug && article.date == requested_date)
+        .articles_by_key
+        .get(&(year, month, day, slug))
         .ok_or(StatusCode::NOT_FOUND)?;
     ArticleTemplate {
         title: document.title.clone(),
-        date: format_article_date(document.date),
+        date: format_article_date(requested_date),
         content: to_html(&document.content),
     }
     .render()

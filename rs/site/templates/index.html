@@ -1,7 +1,18 @@
-{% extends "base.html" %}
-
-{% block content %}
-  <h1>rrv.sh index page</h1>
-  <p>currently under construction!</p>
-  <p>follow progress <a href="https://github.com/rrvsh/tools">here</a></p>
-{% endblock %}
+{% extends "base.html" %} {% block content %}
+<h1>rrv.sh index page</h1>
+<p>
+  currently under construction! follow progress
+  <a href="https://github.com/rrvsh/tools">here</a>
+</p>
+<h2>my links</h2>
+<a href="https://github.com/rrvsh">GitHub</a>
+<a href="https://lichess.org/@/bwfiq">Lichess</a>
+<h2>my prose</h2>
+{% for month in months %}
+<h3 style="text-align: left">{{ month.label }}</h3>
+<ul style="text-align: left">
+  {% for article in month.articles %}
+  <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+  {% endfor %}
+</ul>
+{% endfor %} {% endblock %}
