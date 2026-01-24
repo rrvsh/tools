@@ -1,5 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
+  <h1>{{ title }}</h1>
+  <i>Written on: {{ date }}</i>
   {{ content | safe }}
 {% endblock %}

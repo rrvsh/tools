@@ -82,7 +82,10 @@ pub async fn blog_index_get(State(state): State<Arc<AppState>>) -> Result<Respon
                     .then_with(|| left.title.cmp(&right.title))
             });
 
-            let label = NaiveDate::from_ymd_opt(year, month, 1).map_or_else(|| format!("{month:02} {year}"), |date| date.format("%B %Y").to_string());
+            let label = NaiveDate::from_ymd_opt(year, month, 1).map_or_else(
+                || format!("{month:02} {year}"),
+                |date| date.format("%B %Y").to_string(),
+            );
 
             MonthGroup { label, articles }
         })
@@ -97,7 +100,24 @@ pub async fn blog_index_get(State(state): State<Arc<AppState>>) -> Result<Respon
 #[derive(Template)]
 #[template(path = "article.html")]
 struct ArticleTemplate {
+    title: String,
+    date: String,
     content: String,
+}
+
+fn format_article_date(date: NaiveDate) -> String {
+    let day = date.day();
+    let suffix = match day % 100 {
+        11..=13 => "th",
+        _ => match day % 10 {
+            1 => "st",
+            2 => "nd",
+            3 => "rd",
+            _ => "th",
+        },
+    };
+
+    format!("{}{suffix} {} {}", day, date.format("%B"), date.year())
 }
 
 pub async fn article_get(
@@ -111,6 +131,8 @@ pub async fn article_get(
         .find(|document| document.slug == slug && document.date == requested_date)
         .ok_or(StatusCode::NOT_FOUND)?;
     ArticleTemplate {
+        title: document.title.clone(),
+        date: format_article_date(document.date),
         content: to_html(&document.content),
     }
     .render()
