@@ -1,20 +1,7 @@
-use chrono::{Datelike, NaiveDate};
-use lib::Document;
+use crate::app::models::document::Document;
+use crate::app::views::{ArticleLink, MonthGroup};
+use chrono::Datelike;
 use std::collections::{BTreeMap, HashMap};
-
-#[derive(Clone)]
-pub struct ArticleLink {
-    pub title: String,
-    pub url: String,
-    pub date: NaiveDate,
-    pub content: String,
-}
-
-#[derive(Clone)]
-pub struct MonthGroup {
-    pub label: String,
-    pub articles: Vec<ArticleLink>,
-}
 
 #[derive(Clone)]
 pub struct AppState {
@@ -42,21 +29,9 @@ impl AppState {
                     .into_iter()
                     .map(|document| {
                         let date = document.date;
-                        let slug = document.slug;
-                        let article = ArticleLink {
-                            title: document.title,
-                            url: format!(
-                                "/{}/{:02}/{:02}/{}",
-                                date.year(),
-                                date.month(),
-                                date.day(),
-                                slug
-                            ),
-                            date,
-                            content: document.content,
-                        };
+                        let article = ArticleLink::from_document(&document);
                         articles_by_key.insert(
-                            (date.year(), date.month(), date.day(), slug),
+                            (date.year(), date.month(), date.day(), document.slug),
                             article.clone(),
                         );
                         article
@@ -69,13 +44,7 @@ impl AppState {
                         .then_with(|| right.title.cmp(&left.title))
                 });
 
-                MonthGroup {
-                    label: NaiveDate::from_ymd_opt(year, month, 1).map_or_else(
-                        || format!("{month:02} {year}"),
-                        |date| date.format("%B %Y").to_string(),
-                    ),
-                    articles,
-                }
+                MonthGroup::new(year, month, articles)
             })
             .collect();
 

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::ffi::OsStr;
 use std::path::Path;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Document {
     pub title: String,
     pub slug: String,
@@ -44,7 +44,7 @@ impl Document {
 
 pub fn load_documents_from_dir<P: AsRef<Path>>(path: P) -> Vec<Document> {
     let mut documents = Walk::new(path)
-        .filter_map(|entry| entry.ok())
+        .filter_map(std::result::Result::ok)
         .filter_map(|entry| Document::from_path(entry.path()))
         .collect::<Vec<Document>>();
     documents.sort_by(|left, right| right.date.cmp(&left.date));
