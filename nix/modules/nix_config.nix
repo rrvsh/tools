@@ -4,6 +4,7 @@
     modules.darwin.default = {
       nixpkgs.hostPlatform = "aarch64-darwin";
       nix.settings = {
+        trusted-users = [ "rafiq" ];
         experimental-features = "nix-command flakes";
         extra-substituters = [ "https://nix-community.cachix.org" ];
         extra-trusted-public-keys = [
