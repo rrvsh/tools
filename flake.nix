@@ -1,13 +1,8 @@
 {
   description = "personal infra and configs for rafiq";
   outputs =
-    inputs:
-    inputs.flake-parts.lib.mkFlake { inherit inputs; } (
-      (inputs.import-tree ./nix)
-      // {
-        flake.paths.root = ./.;
-      }
-    );
+    inputs@{ flake-parts, import-tree, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } ((import-tree ./nix) // { flake.paths.root = ./.; });
   inputs = {
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
@@ -26,10 +21,6 @@
     sops-nix.url = "github:Mic92/sops-nix";
     yazi.url = "github:sxyazi/yazi";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
-    nixos-generators = {
-      url = "github:nix-community/nixos-generators";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     nix-rosetta-builder = {
       url = "github:cpick/nix-rosetta-builder";
       inputs.nixpkgs.follows = "nixpkgs";
