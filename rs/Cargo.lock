@@ -483,17 +483,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lib"
-version = "1.0.0"
-dependencies = [
- "chrono",
- "ignore",
- "markdown-frontmatter",
- "serde",
- "tempfile",
-]
-
-[[package]]
 name = "libc"
 version = "0.2.180"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -835,10 +824,10 @@ dependencies = [
  "axum",
  "chrono",
  "ignore",
- "lib",
  "markdown",
  "markdown-frontmatter",
  "serde",
+ "tempfile",
  "tokio",
 ]
 

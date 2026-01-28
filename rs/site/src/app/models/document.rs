@@ -4,7 +4,7 @@ use serde::Deserialize;
 use std::ffi::OsStr;
 use std::path::Path;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct Document {
     pub title: String,
     pub slug: String,
@@ -23,7 +23,7 @@ impl Document {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Option<Self> {
         let path = path.as_ref();
         let is_markdown = path.extension() == Some(OsStr::new("md"));
-        if !path.is_file() && !is_markdown {
+        if !path.is_file() || !is_markdown {
             return None;
         }
         let file_content = std::fs::read_to_string(path).ok()?;
@@ -44,7 +44,7 @@ impl Document {
 
 pub fn load_documents_from_dir<P: AsRef<Path>>(path: P) -> Vec<Document> {
     let mut documents = Walk::new(path)
-        .filter_map(|entry| entry.ok())
+        .filter_map(std::result::Result::ok)
         .filter_map(|entry| Document::from_path(entry.path()))
         .collect::<Vec<Document>>();
     documents.sort_by(|left, right| right.date.cmp(&left.date));

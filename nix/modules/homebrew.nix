@@ -1,10 +1,5 @@
-{
-  inputs,
-  config,
-  ...
-}:
+{ inputs, ... }:
 let
-  cfg = config.flake;
   inherit (builtins) attrNames;
   taps = {
     "homebrew/homebrew-core" = inputs.homebrew-core;
@@ -24,7 +19,7 @@ in
         inherit taps;
         enable = true;
         enableRosetta = true;
-        user = cfg.users.admin.username;
+        user = "rafiq";
         mutableTaps = false;
       };
     };
