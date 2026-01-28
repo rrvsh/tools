@@ -23,7 +23,7 @@ impl Document {
     pub fn from_path<P: AsRef<Path>>(path: P) -> Option<Self> {
         let path = path.as_ref();
         let is_markdown = path.extension() == Some(OsStr::new("md"));
-        if !path.is_file() && !is_markdown {
+        if !path.is_file() || !is_markdown {
             return None;
         }
         let file_content = std::fs::read_to_string(path).ok()?;
