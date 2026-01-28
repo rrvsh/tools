@@ -23,7 +23,7 @@ nice: format lint
 format: format-gha format-lua format-nix format-rs format-tf
 
 format-gha:
-  zizmor . --gh-token $(gh auth token) --fix
+  zizmor . --gh-token $(gh auth token) --fix=all
 
 format-lua:
   stylua .
