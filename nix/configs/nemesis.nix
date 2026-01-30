@@ -18,15 +18,6 @@
 
           time.timeZone = "Asia/Singapore";
 
-          users.users.rafiq = {
-            isNormalUser = true;
-            extraGroups = [ "wheel" ];
-            packages = with pkgs; [
-              neovim
-              git
-            ];
-          };
-
           services.openssh.enable = true;
 
           system.stateVersion = "25.11";
