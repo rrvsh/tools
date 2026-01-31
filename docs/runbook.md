@@ -1,10 +1,21 @@
 # runbook.md
 
+## generating an age key to edit sops-nix secrets
+
+```bash
+# linux
+ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
+age-keygen -y $HOME/.config/sops/age/keys.txt
+
+# darwin
+ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > "$HOME/Library/Application Support/sops/age/keys.txt"
+age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt"
+```
+
 ## random
 
 reload direnv or nix develop: `direnv reload`
 
-ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
 
 Home paths in Nix/Home Manager: see `nix/README.md` (“Referencing home directories”) for the preferred patterns.
 
