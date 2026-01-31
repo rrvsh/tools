@@ -8,7 +8,10 @@
         }:
         {
           boot = {
-            loader.systemd-boot.enable = true;
+            loader.systemd-boot = {
+              enable = true;
+              edk2-uefi-shell.enable = true;
+            };
             loader.efi.canTouchEfiVariables = true;
             kernelPackages = pkgs.linuxPackages_latest;
           };
