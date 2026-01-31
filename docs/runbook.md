@@ -12,10 +12,16 @@ ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > "$HOME/Library/Application Su
 age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt"
 ```
 
+## referencing home directories
+
+```nix
+config.home.homeDirectory # home manager
+config.users.users.rafiq.home # nixos/darwin
+```
+
 ## random
 
 reload direnv or nix develop: `direnv reload`
-
 
 Home paths in Nix/Home Manager: see `nix/README.md` (“Referencing home directories”) for the preferred patterns.
 

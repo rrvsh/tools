@@ -5,6 +5,7 @@
 }:
 let
   cfg = config.flake;
+  inherit (config.flake.paths) root;
 in
 {
   config.flake = {
@@ -21,10 +22,14 @@ in
           uid = 1000;
           isNormalUser = true;
           extraGroups = [ "wheel" ];
-          password = "1234";
+          hashedPasswordFile = config.sops.secrets."rafiq/password".path;
           openssh.authorizedKeys.keys = [
             "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
           ];
+        };
+        sops.secrets."rafiq/password" = {
+          sopsFile = root + /sops/rafiq.yaml;
+          neededForUsers = true;
         };
         home-manager = {
           # keep only one backup of files
