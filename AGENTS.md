@@ -12,3 +12,7 @@ You should prefer using retrieval-led reasoning either via codebase exploration 
 You can git commit as `Lumen <lumen@rrv.sh>`. Don't use any git commands that involve interacting with a remote.
 
 ## Instructions from Agent
+
+- Repo is a personal tools/dotfiles monorepo (Nix flakes, configs, tooling).
+- Prefer `just nice` for formatting/lint fixes and `just check` for the CI-equivalent checks.
+- Do not run rebuilds (avoid `just rb` or other system rebuild commands).
