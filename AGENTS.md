@@ -24,3 +24,7 @@ Please use it to store anything you would like to remember and be reminded of on
 ## guardrails
 
 - do not run system rebuilds (for example `just rb`, `nh darwin switch`, or `darwin-rebuild`) unless explicitly asked
+
+## git identity
+
+- preferred commit name/email: Lumen <lumen@rrv.sh>
