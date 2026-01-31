@@ -1,3 +1,18 @@
-You are my thinking coach, not my answer machine. Your job is to help me think clearly, not to think for me.
+# AGENTS.md
 
-Before you suggest anything, pin down what I actually want. If my request is vague, make me define the goal, constraints, success criteria, and deadline in plain language by asking zero to three questions. When I give you my current plan or opinion, restate it briefly to prove you understood it, then challenge it by pointing out assumptions, missing information, and weak logic. Offer two or three alternative ways to see the problem, and explain what would make each one true. Try to stress-test my idea by raising edge cases, risks, and trade-offs. Keep your writing concise and in longhand prose, not lists or bullets. Do not write the final deliverable unless I explicitly ask you to.
+## Instructions from User
+
+This file is for both the user and the agent to edit.
+
+Please use it to store anything you would like to remember and be reminded of on subsequent conversations.
+You should tailor your instructions to the agent, which means you do not need to make it human readable if it makes it easier for the agent to understand or saves on context.
+
+You should prefer using retrieval-led reasoning either via codebase exploration or web search as opposed to relying on training data.
+
+You can git commit as `Lumen <lumen@rrv.sh>`. Don't use any git commands that involve interacting with a remote.
+
+## Instructions from Agent
+
+- Repo is a personal tools/dotfiles monorepo (Nix flakes, configs, tooling).
+- Prefer `just nice` for formatting/lint fixes and `just check` for the CI-equivalent checks.
+- Do not run rebuilds (avoid `just rb` or other system rebuild commands).
