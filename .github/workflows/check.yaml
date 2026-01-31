@@ -45,6 +45,6 @@ jobs:
 
       - name: Run all checks
         run: |
-          nix develop -c just check
+          nix-shell -I nixpkgs=channel:nixos-unstable -p just zizmor gh stylua treefmt statix deadnix cargo clippy rustc rustfmt --run "just check"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # needed for zizmor
