@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  cfg = config.flake;
+in
 {
   config.flake.hosts.nixos.nemesis = {
     modules = [
@@ -74,6 +78,16 @@
 
           nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
           hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+        }
+      )
+      (
+        { ... }:
+        {
+          imports = [
+            cfg.modules.nixos.hyprland
+            cfg.modules.nixos.nvidia
+            cfg.modules.nixos.steam
+          ];
         }
       )
     ];
