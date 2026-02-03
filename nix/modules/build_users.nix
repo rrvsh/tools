@@ -45,6 +45,7 @@ in
             };
           };
         };
+        security.sudo.wheelNeedsPassword = false;
       };
     modules.darwin.default =
       { config, ... }:
