@@ -16,3 +16,9 @@ You can git commit as `Lumen <lumen@rrv.sh>`. Don't use any git commands that in
 - Repo is a personal tools/dotfiles monorepo (Nix flakes, configs, tooling).
 - Prefer `just nice` for formatting/lint fixes and `just check` for the CI-equivalent checks.
 - Do not run rebuilds (avoid `just rb` or other system rebuild commands).
+- In nix/modules/*.nix flake-parts modules, omit unused argument lambdas entirely (modules.nixos.<name> = { ... };) and remember the top-level config is flake config, module-level config is NixOS/Darwin/Home Manager.
+- Always run `just nice` after making changes.
+- Run `just check` after making changes.
+- If `just nice` or `just check` report issues, fix them without asking.
+- NixOS modules do not need stdenv Linux assertions.
+- In Home Manager modules, use osConfig to check corresponding NixOS/Nix-Darwin settings (for example, gating Hyprland enablement).
