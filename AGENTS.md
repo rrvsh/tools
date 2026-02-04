@@ -22,3 +22,8 @@ You can git commit as `Lumen <lumen@rrv.sh>`. Don't use any git commands that in
 - If `just nice` or `just check` report issues, fix them without asking.
 - NixOS modules do not need stdenv Linux assertions.
 - In Home Manager modules, use osConfig to check corresponding NixOS/Nix-Darwin settings (for example, gating Hyprland enablement).
+- Do not conditionally enable modules via networking.hostName; define named modules and include them per-host in configs (for Darwin, add host modules support in darwinConfigurations and set hosts.darwin.<name>.modules).
+- modules.{darwin,nixos,homeManager}.default is imported for all hosts; name-scoped modules must be manually included via hosts.{darwin,nixos}.modules.
+- nix/imports.nix only imports flake-parts modules.
+- flake.nix uses import-tree to load every file in nix/ as a flake-parts module except those prefixed with "_" (dendritic pattern).
+- If a module only contains Home Manager config, define it under modules.homeManager.rafiq.

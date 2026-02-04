@@ -20,13 +20,14 @@ in
   };
   config.flake = {
     darwinConfigurations = mapAttrs (
-      hostName: _:
+      hostName: host:
       inputs.nix-darwin.lib.darwinSystem {
         specialArgs = { inherit hostName; };
         modules = [
           cfg.modules.darwin.default
           (cfg.modules.darwin.${hostName} or { })
-        ];
+        ]
+        ++ (host.modules or [ ]);
       }
     ) cfg.hosts.darwin;
     modules.darwin.default =
