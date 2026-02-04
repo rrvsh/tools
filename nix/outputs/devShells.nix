@@ -2,25 +2,36 @@
   perSystem =
     { pkgs, ... }:
     let
+      ciBaseInputs = with pkgs; [
+        just
+      ];
       ciInputs = {
-        gha = with pkgs; [
-          gh
-          zizmor
-        ];
-        lua = with pkgs; [
-          stylua
-        ];
-        nix = with pkgs; [
-          deadnix
-          nixfmt-tree
-          statix
-        ];
-        rs = with pkgs; [
-          cargo
-          clippy
-          rustc
-          rustfmt
-        ];
+        gha =
+          ciBaseInputs
+          ++ (with pkgs; [
+            gh
+            zizmor
+          ]);
+        lua =
+          ciBaseInputs
+          ++ (with pkgs; [
+            stylua
+          ]);
+        nix =
+          ciBaseInputs
+          ++ (with pkgs; [
+            deadnix
+            nixfmt-tree
+            statix
+          ]);
+        rs =
+          ciBaseInputs
+          ++ (with pkgs; [
+            cargo
+            clippy
+            rustc
+            rustfmt
+          ]);
       };
       defaultInputs = with pkgs; [
         # general
