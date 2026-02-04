@@ -193,3 +193,18 @@ jobs:
       - name: Run Rust tests
         run: |
           nix develop .#ci-rs -c just test-rs
+
+  check:
+    runs-on: ubuntu-latest
+    needs:
+      - check-gha
+      - check-lua
+      - check-nix
+      - flake-check
+      - check-rs
+      - test-rs
+
+    steps:
+      - name: Check workflow success
+        run: |
+          echo "All checks passed."
