@@ -139,12 +139,12 @@ jobs:
         uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: |
-            ~/.cargo/.crates.toml
-            ~/.cargo/.crates2.json
-            ~/.cargo/bin
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
+            ~/.cache/tools/cargo/.crates.toml
+            ~/.cache/tools/cargo/.crates2.json
+            ~/.cache/tools/cargo/bin
+            ~/.cache/tools/cargo/registry/index
+            ~/.cache/tools/cargo/registry/cache
+            ~/.cache/tools/cargo/git/db
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
@@ -179,12 +179,12 @@ jobs:
         uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: |
-            ~/.cargo/.crates.toml
-            ~/.cargo/.crates2.json
-            ~/.cargo/bin
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
+            ~/.cache/tools/cargo/.crates.toml
+            ~/.cache/tools/cargo/.crates2.json
+            ~/.cache/tools/cargo/bin
+            ~/.cache/tools/cargo/registry/index
+            ~/.cache/tools/cargo/registry/cache
+            ~/.cache/tools/cargo/git/db
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
