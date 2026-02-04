@@ -1,43 +1,72 @@
 {
   perSystem =
     { pkgs, ... }:
-    {
-      devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs; [
-          # general
-          just
-
-          # nix
-          deadnix
+    let
+      ciBaseInputs = with pkgs; [
+        just
+      ];
+      rustShellHook = ''
+        export CARGO_HOME="$HOME/.cache/tools/cargo"
+        export RUSTUP_HOME="$HOME/.cache/tools/rustup"
+        mkdir -p "$CARGO_HOME" "$RUSTUP_HOME"
+      '';
+      ciInputs = {
+        gha =
+          ciBaseInputs
+          ++ (with pkgs; [
+            gh
+            zizmor
+          ]);
+        lua =
+          ciBaseInputs
+          ++ (with pkgs; [
+            stylua
+            luajitPackages.luacheck
+          ]);
+        nix =
+          ciBaseInputs
+          ++ (with pkgs; [
+            deadnix
+            nixfmt-tree
+            statix
+          ]);
+        rs =
+          ciBaseInputs
+          ++ (with pkgs; [
+            cargo
+            clippy
+            rustc
+            rustfmt
+          ]);
+      };
+      defaultInputs =
+        ciInputs.nix
+        ++ ciInputs.lua
+        ++ ciInputs.gha
+        ++ ciInputs.rs
+        ++ (with pkgs; [
           nh
-          nixfmt-tree
-          statix
-
-          # lua
-          luajitPackages.luacheck
-          stylua
-
-          # gha yaml
-          gh
-          zizmor
-
-          # rs
-          cargo
-          clippy
-          rustc
-          rustfmt
           bacon
-
-          # docker
           docker
           colima
-
-          # aws
           awscli2
-
-          # terraform
           opentofu
-        ];
+        ]);
+      mkShell = inputs: pkgs.mkShell { buildInputs = inputs; };
+      mkRustShell =
+        inputs:
+        pkgs.mkShell {
+          buildInputs = inputs;
+          shellHook = rustShellHook;
+        };
+    in
+    {
+      devShells = {
+        default = mkRustShell defaultInputs;
+        ci-gha = mkShell ciInputs.gha;
+        ci-lua = mkShell ciInputs.lua;
+        ci-nix = mkShell ciInputs.nix;
+        ci-rs = mkRustShell ciInputs.rs;
       };
     };
 }

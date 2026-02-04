@@ -9,7 +9,7 @@ You should tailor your instructions to the agent, which means you do not need to
 
 You should prefer using retrieval-led reasoning either via codebase exploration or web search as opposed to relying on training data.
 
-You can git commit as `Lumen <lumen@rrv.sh>`. Don't use any git commands that involve interacting with a remote.
+You can git commit as `Lumen <lumen@rrv.sh>` using `--author "Lumen <lumen@rrvsh>"` so commits are signed. Don't use any git commands that involve interacting with a remote.
 
 ## Instructions from Agent
 

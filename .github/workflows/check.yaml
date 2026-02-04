@@ -4,11 +4,118 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+concurrency:
+  group: check-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  check:
+  check-gha:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
+
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Check GitHub Actions workflow files
+        run: |
+          nix develop .#ci-gha -c just check-gha
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # needed for zizmor
+
+  check-lua:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Check Lua formatting
+        run: |
+          nix develop .#ci-lua -c just check-lua
+
+  check-nix:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Check Nix formatting and lint
+        run: |
+          nix develop .#ci-nix -c just check-nix
+
+  flake-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Run Nix flake checks
+        run: |
+          nix develop .#ci-nix -c just test-nix
+
+  check-rs:
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
@@ -32,19 +139,72 @@ jobs:
         uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
         with:
           path: |
-            ~/.cargo/.crates.toml
-            ~/.cargo/.crates2.json
-            ~/.cargo/bin
-            ~/.cargo/registry/index
-            ~/.cargo/registry/cache
-            ~/.cargo/git/db
+            ~/.cache/tools/cargo/.crates.toml
+            ~/.cache/tools/cargo/.crates2.json
+            ~/.cache/tools/cargo/bin
+            ~/.cache/tools/cargo/registry/index
+            ~/.cache/tools/cargo/registry/cache
+            ~/.cache/tools/cargo/git/db
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Run all checks
+      - name: Check Rust formatting and lint
         run: |
-          nix develop -c just check
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # needed for zizmor
+          nix develop .#ci-rs -c just check-rs
+
+  test-rs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        with:
+          # lets us bypass the rate limiting
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Nix dependencies
+        uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: |
+            ~/.cache/tools/cargo/.crates.toml
+            ~/.cache/tools/cargo/.crates2.json
+            ~/.cache/tools/cargo/bin
+            ~/.cache/tools/cargo/registry/index
+            ~/.cache/tools/cargo/registry/cache
+            ~/.cache/tools/cargo/git/db
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Run Rust tests
+        run: |
+          nix develop .#ci-rs -c just test-rs
+
+  check:
+    runs-on: ubuntu-latest
+    needs:
+      - check-gha
+      - check-lua
+      - check-nix
+      - flake-check
+      - check-rs
+      - test-rs
+
+    steps:
+      - name: Check workflow success
+        run: |
+          echo "All checks passed."
