@@ -17,18 +17,21 @@
         };
       };
       home.shellAliases = {
+        gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
         gc = "git commit";
         gcam = "git commit -am";
         gcamend = "git commit -a --amend --no-edit";
         gcend = "git commit --amend --no-edit";
+        gco = "git checkout";
+        gcob = "git checkout -b";
         gd = "git diff";
         gdh = "git diff HEAD";
         gdm = "git diff $(gparentbranch)";
+        gds = "git diff --staged";
         grc = "git rebase --continue";
         gs = "git status";
         gu = "git push";
-        gupdate = "git add . && git stash && git checkout $(gparentbranch) && git pull && git checkout - && git rebase $(gparentbranch) && git stash pop";
-        gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
+        gy = "git pull";
       };
     };
   };
