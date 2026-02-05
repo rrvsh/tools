@@ -8,7 +8,7 @@
           settings = {
             permission.external_directory = {
               "/tmp/**" = "allow";
-              "/var/folders/**" = "allow";
+              "/private/var/folders/**" = "allow";
             };
           };
         };
