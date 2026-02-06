@@ -80,16 +80,13 @@ in
           hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
         }
       )
-      (
-        { ... }:
-        {
-          imports = [
-            cfg.modules.nixos.hyprland
-            cfg.modules.nixos.nvidia
-            cfg.modules.nixos.steam
-          ];
-        }
-      )
+      {
+        imports = [
+          cfg.modules.nixos.hyprland
+          cfg.modules.nixos.nvidia
+          cfg.modules.nixos.steam
+        ];
+      }
     ];
   };
 }

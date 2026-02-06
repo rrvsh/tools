@@ -1,6 +1,7 @@
 { config, ... }:
 let
-  inherit (config.flake.paths) root;
+  cfg = config.flake;
+  inherit (cfg.paths) root;
 in
 {
   config.flake = {
