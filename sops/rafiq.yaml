@@ -1,5 +1,6 @@
 rafiq:
     password: ENC[AES256_GCM,data:Jv8kGsGhDE+jlEw77nZr88qNJz1VjnPWZQbePtoPJgJoSj9ygV162E1W2gm8GQ1HE+CE3nzjdlAWXOsi8dIFNNJk7XFRGJbD1A==,iv:p9BiT624Rdc7AMYXA/YK27RTgDgU5XbIBKwhgGxtzN8=,tag:NnW7r0WWz3w0wMPKQVMc/w==,type:str]
+    tailscale-authkey: ENC[AES256_GCM,data:lYqCigNVRscWYDsEqq9boAwXGVDzJzTUw01BjXI9ktJULJdk5GEKrtdFY2vlCYOTI1zjsAhYtPqFYqhY0g==,iv:GSz9oAD1bXw+Klm49LzSAcntQrnMN7hJeXBREnCoey0=,tag:lSwzmmGhHqKsldhuNXw2FA==,type:str]
 sops:
     age:
         - recipient: age12l33pas8eptwjc7ewux3d8snyzfzwz0tn9qg5kw8le79fswmjgjqdjgyy6
@@ -11,7 +12,7 @@ sops:
             VVdTRC9VQ3pTSUtQSmRJM21lekw2a1EKQEOnJOpavOLYq9X5yqToQ0G64jQQAsyt
             PQwfRWgCy0sUB4NG9o+5IkaXm7y3rcVjkSNSPaE0aWoW89MZvaYJlg==
             -----END AGE ENCRYPTED FILE-----
-    lastmodified: "2026-01-31T02:02:41Z"
-    mac: ENC[AES256_GCM,data:0/MPoo9ulKLHSTt1YJnEhPvErFUsMGLsX4ZyREver911qb2EqESBTx7nVgxq9yrouOQ7IWRKt4K0QCze6Dv+BLpgLSbnvoL8kP10ldnDJ4YUAiNVpOKVoN31a9rRE/fmJTq5eUyK+cI2cFVtR6GyX459XQDzSPOXS4ndOCXdQkk=,iv:T8laheBO7j+tp1wE7kDTg4QYhaqwtfhJC+nejWTTAzU=,tag:tS6HLKauJQvP5lm3NMuECQ==,type:str]
+    lastmodified: "2026-02-06T02:34:37Z"
+    mac: ENC[AES256_GCM,data:LcRaGnjyo6C2SiSrDf811UEL+wCacvv/Cr4dE8rBxBunDJCRd5ERAH7/1s69RSpEApvD9kzNXMvrGDzTNAKGZpI6P8zeMEO/LiCvPxK/KgyTX67ZHYZUgJXaWOIb6m7L/zSz6Cr7m15H5tozqILbWe0MSAPn/oNDUfrz93zAGRM=,iv:gzt8Ch/7uya5BWJzBlmdUJuwJsuBR+DmAqSqqvrs+hA=,tag:gFenC8Sqrl0+Sk3JyGNs5A==,type:str]
     unencrypted_suffix: _unencrypted
     version: 3.11.0
