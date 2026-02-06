@@ -11,7 +11,7 @@ pub async fn serve() {
     let documents = models::document::load_documents_from_dir(&settings.content_dir);
     let state = Arc::new(state::AppState::new(documents));
     let listener = tokio::net::TcpListener::bind(&settings.addr).await.unwrap();
-    let router = controllers::build_router(state, &settings.content_dir);
+    let router = controllers::build_router(state, &settings.content_dir, &settings.static_dir);
     axum::serve(listener, router)
         .with_graceful_shutdown(shutdown_signal())
         .await

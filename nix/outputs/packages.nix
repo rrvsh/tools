@@ -16,7 +16,10 @@
           pkgs.dockerTools.binSh
         ];
         config = {
-          Env = [ "SITE_CONTENT_DIR=${inputs.site-content}" ];
+          Env = [
+            "SITE_CONTENT_DIR=${inputs.site-content}"
+            "STATIC_DIR=${config.flake.paths.root + /rs/site/static}"
+          ];
           Entrypoint = [
             "/bin/sh"
             "-c"
