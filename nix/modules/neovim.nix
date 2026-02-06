@@ -18,7 +18,7 @@ in
           defaultEditor = true;
           viAlias = true;
           vimAlias = true;
-          extraLuaConfig = "require(\"rafiq\")";
+          initLua = "require(\"rafiq\")";
           plugins = with pkgs.vimPlugins; [
             fidget-nvim
             mini-nvim
