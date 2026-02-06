@@ -33,6 +33,9 @@
           enable = osConfig.programs.hyprland.enable or false;
           package = null;
           portalPackage = null;
+          settings = {
+            "$mod" = "SUPER";
+          };
         };
       };
   };
