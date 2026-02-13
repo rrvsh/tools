@@ -1,7 +1,12 @@
 {
   config.flake.modules = {
     homeManager.rafiq = {
-      programs.fish.enable = true;
+      programs.fish = {
+        enable = true;
+        interactiveShellInit = ''
+          bind \cg 'commandline -r "git add ."; commandline -f execute'
+        '';
+      };
     };
     nixos.rafiq =
       { pkgs, ... }:
