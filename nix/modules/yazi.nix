@@ -8,7 +8,12 @@
       ];
     };
     modules.homeManager.rafiq =
-      { config, pkgs, ... }:
+      {
+        config,
+        pkgs,
+        lib,
+        ...
+      }:
       let
         path-from-root = pkgs.stdenv.mkDerivation {
           pname = "path-from-root";
@@ -20,9 +25,18 @@
             # Keep main.lua as is - that's what yazi expects
           '';
         };
+
+        test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
+          lib.fileContents ../../scripts/test-yazi-plugin.sh
+        );
       in
       {
         home.shellAliases.t = config.programs.yazi.shellWrapperName;
+
+        home.activation.test-yazi-plugin = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${test-yazi-plugin}/bin/test-yazi-plugin || true
+        '';
+
         programs.yazi = {
           enable = true;
           # this will use the binary cache configured above
