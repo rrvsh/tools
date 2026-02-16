@@ -20,6 +20,7 @@
         gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
         gc = "git commit";
         gcam = "git commit -am";
+        quick-commit = "git add . && git commit -m \"$(date +'%Y-%m-%d %H:%M:%S')\" && git push";
         gcamend = "git commit -a --amend --no-edit";
         gcend = "git commit --amend --no-edit";
         gco = "git checkout";
