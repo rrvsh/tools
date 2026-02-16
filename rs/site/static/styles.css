@@ -29,3 +29,9 @@ body {
   border-radius: 15px;
   padding: 5px 8px 6px 8px;
 }
+
+.button-footer {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
