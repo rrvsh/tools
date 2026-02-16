@@ -1,5 +1,10 @@
 # runbook.md
 
+## stacked diffs
+
+To resign one commit per branch:
+git fetch origin prime && git rebase -i origin/prime && git commit --amend '-S' && git rebase --continue && git push -f
+
 ## generating an age key to edit sops-nix secrets
 
 ```bash
