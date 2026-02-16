@@ -1,6 +1,6 @@
 { inputs, config, ... }:
 let
-  flakeRoot = config.flake.paths.root;
+  cfg = config.flake;
 in
 {
   config.flake = {
@@ -25,12 +25,11 @@ in
           installPhase = ''
             mkdir -p $out
             cp -r . $out/
-            # Keep main.lua as is - that's what yazi expects
           '';
         };
 
         test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
-          lib.fileContents (flakeRoot + "/scripts/test-yazi-plugin.sh")
+          lib.fileContents (cfg.paths.root + "/scripts/test-yazi-plugin.sh")
         );
       in
       {
