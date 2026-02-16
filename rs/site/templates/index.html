@@ -1,18 +1,17 @@
 {% extends "base.html" %} {% block content %}
-<h1>rrv.sh index page</h1>
-<p>
-  currently under construction! follow progress
-  <a href="https://github.com/rrvsh/tools">here</a>
-</p>
-<h2>my links</h2>
-<a href="https://github.com/rrvsh">GitHub</a>
-<a href="https://lichess.org/@/bwfiq">Lichess</a>
-<h2>my prose</h2>
-{% for month in months %}
-<h3 style="text-align: left">{{ month.label }}</h3>
-<ul style="text-align: left">
-  {% for article in month.articles %}
-  <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+<div class="content">
+  <h1>rafiq's weblog</h1>
+  <p>hi! i'm rafiq (@rrvsh on various platforms), and i'm a 25 year old software engineer. i've been tinkering and coding since I was 14, and plan to never stop. this website showcases some of my work, though you can find the rest on <a href="https://github.com/rrvsh">GitHub</a>.</p>
+  <h2>my work</h2>
+  <h3>prose</h3>
+  <p>a collection of my writing, sorted by month.</p>
+  {% for month in months %}
+  <h4>{{ month.label }}</h3>
+  <ul>
+    {% for article in month.articles %}
+    <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+    {% endfor %}
+  </ul>
   {% endfor %}
-</ul>
-{% endfor %} {% endblock %}
+</div>
+{% endblock %}

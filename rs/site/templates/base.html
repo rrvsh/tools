@@ -1,11 +1,20 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
+    <link rel="icon" href="/static/favicon.ico">
     <link href="/static/styles.css" rel="stylesheet" />
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <title>rafiq's weblog</title>
+    <script async src="/static/scripts.js"></script>
   </head>
 
   <body>
     <header>{% block header %} {% endblock %}</header>
     <main>{% block content %} {% endblock %}</main>
+    <div class="button-footer">
+      <button id="back-to-top" class="button">Back to top</button>
+      <button id="back-to-home" class="button">Back to home</button>
+    </div>
   </body>
 </html>
