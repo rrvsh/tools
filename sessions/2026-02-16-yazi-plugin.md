@@ -50,6 +50,7 @@ Key learnings:
 - The plugin name in the `plugins` attribute set should NOT include the `.yazi` suffix (home-manager adds it automatically)
 - Yazi plugins use `main.lua`, not `init.lua`
 - Use `config.flake.paths.root` to reference files in the flake (not relative paths like `../../`)
+- **Project convention**: Use `cfg = config.flake;` in a let-binding, then access paths via `cfg.paths.root` (shorter and more idiomatic)
 
 ### 5. Flake Input Setup
 Added the plugin as a flake input in `flake.nix`:
@@ -148,13 +149,13 @@ Used relative path `../../scripts/test-yazi-plugin.sh` which doesn't work correc
 Relative paths can break depending on how the module is evaluated.
 
 #### Solution
-Use `config.flake.paths.root` to reference the flake root:
+Use `config.flake.paths.root` to reference the flake root, following project convention:
 ```nix
 let
-  flakeRoot = config.flake.paths.root;
+  cfg = config.flake;
 in
   test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
-    lib.fileContents (flakeRoot + "/scripts/test-yazi-plugin.sh")
+    lib.fileContents (cfg.paths.root + "/scripts/test-yazi-plugin.sh")
   );
 ```
 
