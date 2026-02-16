@@ -25,6 +25,7 @@
     sops-nix.url = "github:Mic92/sops-nix";
     yazi.url = "github:sxyazi/yazi";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
+    fff-nvim.url = "github:dmtrKovalenko/fff.nvim";
     nix-rosetta-builder = {
       url = "github:cpick/nix-rosetta-builder";
       inputs.nixpkgs.follows = "nixpkgs";

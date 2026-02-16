@@ -4,6 +4,7 @@
 
 require("mini.pick").setup()
 require("fidget").setup()
+require("fff").setup()
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -41,8 +42,13 @@ vim.keymap.set("n", "n", "nzz", { desc = "Center screen on next search" })
 vim.keymap.set("n", "N", "Nzz", { desc = "Center screen on prev search" })
 
 --- ACTIVE
-vim.keymap.set("n", "<leader>ff", ":Pick files<CR>", { desc = "Picker: Files" })
-vim.keymap.set("n", "<leader>fg", ":Pick grep_live<CR>", { desc = "Picker: Live Grep" })
+vim.keymap.set("n", "<leader>ff", function()
+	require("fff").find_files()
+end, { desc = "FFF: Files" })
+
+vim.keymap.set("n", "<leader>fg", function()
+	require("fff").live_grep()
+end, { desc = "FFF: Live Grep" })
 
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
