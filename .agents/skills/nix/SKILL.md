@@ -30,3 +30,13 @@
             - Home Manager modules: Define it under `cfg.modules.homeManager.rafiq`.
         - To include configuration that can be conditionally imported:
             - NixOS/Darwin modules: Define it under `cfg.modules.{nixos,darwin}.<name>` and import it in `nix/configs`.
+
+## Yazi & Home-Manager Patterns
+
+- **Yazi plugins**:
+    - **entry point**: Plugins use `main.lua`, NOT `init.lua` (which is only for the main config)
+    - **Home-manager abbreviated keymap names**: Use `mgr.prepend_keymap` not `manager.prepend_keymap` (home-manager uses abbreviated section names)
+- **Plugin naming convention**: Don't include `.yazi` suffix in plugin names (home-manager adds it automatically)
+- **Flake paths**: Use `config.flake.paths.root` to reference flake files, not relative paths like `../../scripts/`
+- **Non-flake inputs**: Use `flake = false` for plain git repos in flake inputs
+- **Idiomatic pattern**: Use `let cfg = config.flake;` let-binding, then access via `cfg.paths.root`
