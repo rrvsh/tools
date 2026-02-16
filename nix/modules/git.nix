@@ -3,6 +3,9 @@
     modules.homeManager.rafiq = {
       programs.git = {
         enable = true;
+        ignores = [
+          ".direnv/"
+        ];
         signing = {
           signByDefault = true;
           # this needs to be a tilde because git cant use $HOME
