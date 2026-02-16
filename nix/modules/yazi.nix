@@ -1,4 +1,7 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
+let
+  flakeRoot = config.flake.paths.root;
+in
 {
   config.flake = {
     modules.darwin.rafiq = {
@@ -27,7 +30,7 @@
         };
 
         test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
-          lib.fileContents ../../scripts/test-yazi-plugin.sh
+          lib.fileContents (flakeRoot + "/scripts/test-yazi-plugin.sh")
         );
       in
       {
