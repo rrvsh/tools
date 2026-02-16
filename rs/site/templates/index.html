@@ -1,15 +1,14 @@
-{% extends "base.html" %} {% block content %}
-<h1>rrv.sh index page</h1>
-<p>
-  currently under construction! follow progress
-  <a href="https://github.com/rrvsh/tools">here</a>
-</p>
-<h2>my links</h2>
-<a href="https://github.com/rrvsh">GitHub</a>
-<a href="https://lichess.org/@/bwfiq">Lichess</a>
-<h2>my prose</h2>
+{% extends "base.html" %} {% block header %}
+<p>rafiq's weblog</p>
+<img src="static/infernape-header.png" alt="Fanart of the Pokemon Infername" width=128/>
+{% endblock %}
+
+{% block content %}
+<h2 style="text-align: left">my work</h2>
+<h3 style="text-align: left">prose</h3>
+<p style="text-align: left">a collection of my writing sorted by month</p>
 {% for month in months %}
-<h3 style="text-align: left">{{ month.label }}</h3>
+<h4 style="text-align: left">{{ month.label }}</h3>
 <ul style="text-align: left">
   {% for article in month.articles %}
   <li><a href="{{ article.url }}">{{ article.title }}</a></li>
