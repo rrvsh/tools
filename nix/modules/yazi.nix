@@ -28,6 +28,16 @@ in
           '';
         };
 
+        git-commit-browser = pkgs.stdenvNoCC.mkDerivation {
+          pname = "git-commit-browser.yazi";
+          version = "0.1.0";
+          src = cfg.paths.root + /yazi/plugins/git-commit-browser.yazi;
+          installPhase = ''
+            mkdir -p $out/share/yazi/plugins
+            cp -r . $out/share/yazi/plugins/git-commit-browser.yazi
+          '';
+        };
+
         test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
           lib.fileContents (cfg.paths.root + "/scripts/test-yazi-plugin.sh")
         );
@@ -49,6 +59,7 @@ in
           };
           plugins = {
             "path-from-root" = path-from-root;
+            "git-commit-browser" = "${git-commit-browser}/share/yazi/plugins/git-commit-browser.yazi";
           };
           keymap = {
             mgr.prepend_keymap = [
@@ -59,6 +70,26 @@ in
                 ];
                 run = "plugin path-from-root";
                 desc = "Copies path from git root";
+              }
+              {
+                on = "]";
+                run = "plugin git-commit-browser -- next";
+                desc = "Next commit (older)";
+              }
+              {
+                on = "[";
+                run = "plugin git-commit-browser -- prev";
+                desc = "Previous commit (newer)";
+              }
+              {
+                on = [ "g" "[" ];
+                run = "plugin git-commit-browser -- head";
+                desc = "Return to HEAD/original";
+              }
+              {
+                on = [ "g" "]" ];
+                run = "plugin git-commit-browser -- select";
+                desc = "Select commit interactively";
               }
             ];
           };
