@@ -84,6 +84,7 @@ in
         imports = [
           cfg.modules.nixos.hyprland
           cfg.modules.nixos.nvidia
+          cfg.modules.nixos.pipewire
           cfg.modules.nixos.steam
         ];
       }
