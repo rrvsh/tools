@@ -44,6 +44,7 @@ Modified `nix/modules/yazi.nix` to:
 Key learnings:
 - The plugin name in the `plugins` attribute set should NOT include the `.yazi` suffix (home-manager adds it automatically)
 - Need to convert the nix-prefetch-url base32 hash to SRI format using `nix hash to-sri`
+- **CRITICAL**: Use `mgr.prepend_keymap` not `manager.prepend_keymap` in the keymap configuration (home-manager uses abbreviated names)
 
 ### 5. Hash Retrieval
 Got the correct hash for the plugin:
@@ -84,7 +85,41 @@ Removed the temporary worktree:
 git worktree remove /var/folders/r1/kxzs8jw91h938l_8zt1n0s9c0000gn/T/tmp.lGX9yxix0D
 ```
 
+## Bug Fix: Keymap Section Name
+
+### Problem
+Plugin installed but keybinding didn't work. Pressing `c r` had no effect.
+
+### Root Cause
+Used `manager.prepend_keymap` instead of `mgr.prepend_keymap` in the keymap configuration. Home-manager's yazi module uses abbreviated section names.
+
+### Solution
+Changed:
+```nix
+keymap = {
+  manager.prepend_keymap = [  # WRONG
+```
+
+To:
+```nix
+keymap = {
+  mgr.prepend_keymap = [  # CORRECT
+```
+
+### Testing
+Created test scripts to verify configuration:
+- `test_yazi_plugin.sh` - Basic plugin structure tests
+- `test_yazi_final.sh` - Comprehensive verification
+
+To test manually:
+1. `cd` to a git repository
+2. Run `yazi`
+3. Hover over a file
+4. Press `c` then `r` quickly (chord)
+5. Check clipboard: `pbpaste`
+
 ## References
 - https://yazi-rs.github.io/docs/plugins/overview
 - https://github.com/nix-community/home-manager/blob/master/modules/programs/yazi.nix
 - https://wiki.nixos.org/wiki/Yazi
+- https://mynixos.com/home-manager/option/programs.yazi.keymap
