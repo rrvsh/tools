@@ -50,6 +50,18 @@ vim.keymap.set("n", "<leader>fg", function()
 	require("fff").live_grep()
 end, { desc = "FFF: Live Grep" })
 
+vim.keymap.set("n", "<leader>ee", function()
+	local path = vim.fn.input("EPUB path: ", "", "file")
+	if path ~= "" then
+		require("epub").open_epub(path)
+	end
+end, { desc = "Epub: Open file" })
+
+vim.keymap.set("n", "<leader>en", "]c", { desc = "Epub: Next chapter" })
+vim.keymap.set("n", "<leader>ep", "[c", { desc = "Epub: Prev chapter" })
+vim.keymap.set("n", "<leader>et", "gt", { desc = "Epub: Table of contents" })
+vim.keymap.set("n", "<leader>ei", "gi", { desc = "Epub: Open image" })
+
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
 end, { desc = "Code Actions" })
