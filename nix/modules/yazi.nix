@@ -17,7 +17,7 @@
           installPhase = ''
             mkdir -p $out
             cp -r . $out/
-            mv $out/main.lua $out/init.lua
+            # Keep main.lua as is - that's what yazi expects
           '';
         };
       in
