@@ -14,6 +14,7 @@ You may add to this file anything that you think you should remember in the futu
 - Refer to `.agents/skills/just/SKILL.md` for instructions for running formatting, linting, or other checks and testing.
 - Refer to `.agents/skills/nix/SKILL.md` for instructions on the `nix/` folder structure and project conventions.
 - Refer to `.agents/skills/session-management/SKILL.md` for instructions on managing and processing session notes.
+- Refer to `.agents/skills/opencode-docs-index/SKILL.md` for comprehensive documentation on Opencode docs.
 
 ## Instructions from Agent
 
