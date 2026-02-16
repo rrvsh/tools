@@ -1,4 +1,7 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
+let
+  cfg = config.flake;
+in
 {
   config.flake = {
     modules.darwin.rafiq = {
@@ -8,9 +11,34 @@
       ];
     };
     modules.homeManager.rafiq =
-      { config, pkgs, ... }:
+      {
+        config,
+        pkgs,
+        lib,
+        ...
+      }:
+      let
+        path-from-root = pkgs.stdenv.mkDerivation {
+          pname = "path-from-root";
+          version = "unstable-2024-01-01";
+          src = inputs.path-from-root-yazi;
+          installPhase = ''
+            mkdir -p $out
+            cp -r . $out/
+          '';
+        };
+
+        test-yazi-plugin = pkgs.writeShellScriptBin "test-yazi-plugin" (
+          lib.fileContents (cfg.paths.root + "/scripts/test-yazi-plugin.sh")
+        );
+      in
       {
         home.shellAliases.t = config.programs.yazi.shellWrapperName;
+
+        home.activation.test-yazi-plugin = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+          ${test-yazi-plugin}/bin/test-yazi-plugin || true
+        '';
+
         programs.yazi = {
           enable = true;
           # this will use the binary cache configured above
@@ -18,6 +46,21 @@
           # so comment this package out the first time you rebuild, then uncomment it and rebuild again
           package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
             runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
+          };
+          plugins = {
+            "path-from-root" = path-from-root;
+          };
+          keymap = {
+            mgr.prepend_keymap = [
+              {
+                on = [
+                  "c"
+                  "r"
+                ];
+                run = "plugin path-from-root";
+                desc = "Copies path from git root";
+              }
+            ];
           };
         };
       };

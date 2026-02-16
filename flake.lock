@@ -883,6 +883,22 @@
         "type": "github"
       }
     },
+    "path-from-root-yazi": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1766610270,
+        "narHash": "sha256-2jW+NoEd5ZrcoPnS7Pv7xfWH/lypUJdjF7z3CYZM7Lg=",
+        "owner": "aresler",
+        "repo": "path-from-root.yazi",
+        "rev": "3daa62fa01681cff8bb62eb0bd72e59245486846",
+        "type": "github"
+      },
+      "original": {
+        "owner": "aresler",
+        "repo": "path-from-root.yazi",
+        "type": "github"
+      }
+    },
     "pre-commit-hooks": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -922,6 +938,7 @@
         "nixpkgs": "nixpkgs_2",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
         "nvf": "nvf",
+        "path-from-root-yazi": "path-from-root-yazi",
         "site-content": "site-content",
         "sops-nix": "sops-nix",
         "yazi": "yazi"
