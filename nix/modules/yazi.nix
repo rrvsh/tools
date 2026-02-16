@@ -82,12 +82,18 @@ in
                 desc = "Previous commit (newer)";
               }
               {
-                on = [ "g" "[" ];
+                on = [
+                  "g"
+                  "["
+                ];
                 run = "plugin git-commit-browser -- head";
                 desc = "Return to HEAD/original";
               }
               {
-                on = [ "g" "]" ];
+                on = [
+                  "g"
+                  "]"
+                ];
                 run = "plugin git-commit-browser -- select";
                 desc = "Select commit interactively";
               }
