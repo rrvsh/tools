@@ -1,17 +1,20 @@
 {% extends "base.html" %} {% block header %}
-<p>rafiq's weblog</p>
+<h1>rafiq's weblog!</h1>
 <img src="static/infernape-header.png" alt="Fanart of the Pokemon Infername" width=128/>
 {% endblock %}
 
 {% block content %}
-<h2 style="text-align: left">my work</h2>
-<h3 style="text-align: left">prose</h3>
-<p style="text-align: left">a collection of my writing sorted by month</p>
-{% for month in months %}
-<h4 style="text-align: left">{{ month.label }}</h3>
-<ul style="text-align: left">
-  {% for article in month.articles %}
-  <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+<div class="content">
+  <h2>my work</h2>
+  <h3>prose</h3>
+  <p>a collection of my writing sorted by month</p>
+  {% for month in months %}
+  <h4 style="text-align: left">{{ month.label }}</h3>
+  <ul>
+    {% for article in month.articles %}
+    <li><a href="{{ article.url }}">{{ article.title }}</a></li>
+    {% endfor %}
+  </ul>
   {% endfor %}
-</ul>
-{% endfor %} {% endblock %}
+</div>
+{% endblock %}
