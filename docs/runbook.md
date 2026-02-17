@@ -1,5 +1,9 @@
 # runbook.md
 
+## to kill Hyprland from an SSH session
+
+pkill .Hyprland-wrapp
+
 ## stacked diffs
 
 To resign one commit per branch:
