@@ -40,6 +40,10 @@
               ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
               ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
               ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+              "CTRL_SHIFT, 1, exec, ghostty"
+              "CTRL_SHIFT, 2, exec, firefox"
+              "CTRL_SHIFT, 3, exec, steam"
+              "CTRL_SHIFT, 4, exec, obs"
             ];
           };
         };
