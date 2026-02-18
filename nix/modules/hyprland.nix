@@ -34,7 +34,10 @@
           package = null;
           portalPackage = null;
           settings = {
-            "$mod" = "SUPER";
+            monitor = [
+              "HDMI-A-1, 3840x2160@160, auto, 1.5"
+              ", preferred, auto, 1"
+            ];
             bind = [
               ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
               ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
