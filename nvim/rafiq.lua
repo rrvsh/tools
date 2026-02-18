@@ -5,6 +5,10 @@
 require("mini.pick").setup()
 require("fidget").setup()
 require("fff").setup()
+local epub = require("epub")
+epub.setup({
+	auto_open = true,
+})
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -50,6 +54,18 @@ vim.keymap.set("n", "<leader>fg", function()
 	require("fff").live_grep()
 end, { desc = "FFF: Live Grep" })
 
+vim.keymap.set("n", "<leader>ee", function()
+	local path = vim.fn.input("EPUB path: ", "", "file")
+	if path ~= "" then
+		epub.open_epub(path)
+	end
+end, { desc = "Epub: Open file" })
+
+vim.keymap.set("n", "<leader>en", "]c", { desc = "Epub: Next chapter" })
+vim.keymap.set("n", "<leader>ep", "[c", { desc = "Epub: Prev chapter" })
+vim.keymap.set("n", "<leader>et", "gt", { desc = "Epub: Table of contents" })
+vim.keymap.set("n", "<leader>ei", "gi", { desc = "Epub: Open image" })
+
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
 end, { desc = "Code Actions" })
@@ -81,6 +97,70 @@ vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
+
+local function edit_note(path)
+	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+	if vim.fn.filereadable(path) == 0 then
+		vim.fn.writefile({}, path)
+	end
+	vim.cmd.edit(vim.fn.fnameescape(path))
+end
+
+local function open_note_picker(dir)
+	local expanded_dir = vim.fn.expand(dir)
+	vim.fn.mkdir(expanded_dir, "p")
+	vim.g.rafiq_note_create_dir = expanded_dir
+	require("fff").find_files_in_dir(expanded_dir)
+end
+
+local function create_note_from_picker_query()
+	local picker = require("fff.picker_ui")
+	local query = (picker.state and picker.state.query) or ""
+	local dir = vim.g.rafiq_note_create_dir
+
+	if dir == nil or dir == "" then
+		vim.notify("No note directory set for picker", vim.log.levels.WARN)
+		return
+	end
+
+	if query == "" then
+		vim.notify("Type a note name first", vim.log.levels.WARN)
+		return
+	end
+
+	local name = query
+	if not name:match("%.md$") then
+		name = name .. ".md"
+	end
+
+	picker.close()
+	edit_note(dir .. "/" .. name)
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "fff_input",
+	callback = function(event)
+		local opts = { buffer = event.buf, noremap = true, silent = true }
+		vim.keymap.set({ "i", "n" }, "<M-CR>", create_note_from_picker_query, opts)
+		vim.keymap.set({ "i", "n" }, "<C-y>", create_note_from_picker_query, opts)
+	end,
+})
+
+vim.keymap.set("n", "<leader>nd", function()
+	edit_note(vim.fn.expand("~/0_library/notes/daily/" .. os.date("%F") .. ".md"))
+end, { desc = "Open daily note" })
+
+vim.keymap.set("n", "<leader>nm", function()
+	edit_note(vim.fn.expand("~/0_library/notes/monthly/" .. os.date("%Y-%m") .. ".md"))
+end, { desc = "Open monthly note" })
+
+vim.keymap.set("n", "<leader>np", function()
+	open_note_picker("~/0_library/notes/process")
+end, { desc = "Process notes picker" })
+
+vim.keymap.set("n", "<leader>nP", function()
+	open_note_picker("~/1_repos/pedia")
+end, { desc = "Pedia notes picker" })
 
 -- LSP
 

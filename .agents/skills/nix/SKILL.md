@@ -40,3 +40,12 @@
 - **Flake paths**: Use `config.flake.paths.root` to reference flake files, not relative paths like `../../scripts/`
 - **Non-flake inputs**: Use `flake = false` for plain git repos in flake inputs
 - **Idiomatic pattern**: Use `let cfg = config.flake;` let-binding, then access via `cfg.paths.root`
+
+## Neovim + Flake Patterns
+
+- Add Neovim plugins through flake inputs and module wiring, not ad-hoc local paths.
+    - For plain git repos, set `flake = false` in `flake.nix` and update `flake.lock`.
+- Keep plugin and runtime dependency wiring in `nix/modules/neovim.nix`.
+    - Add required binaries via Neovim extra packages (example: `unzip` for `epub.nvim`).
+- Prefer upstream flake outputs when available (example: `packages.<system>.fff-nvim`) to avoid custom build glue.
+- Initialize plugins in Lua with minimal `require("<plugin>").setup(...)` unless custom behavior is required.

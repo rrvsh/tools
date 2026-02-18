@@ -10,6 +10,13 @@ in
   config.flake = {
     modules.homeManager.rafiq =
       { pkgs, ... }:
+      let
+        epub-nvim = pkgs.vimUtils.buildVimPlugin {
+          pname = "epub.nvim";
+          version = "main";
+          src = inputs.epub-nvim;
+        };
+      in
       {
         xdg.configFile."nvim/lua".source = root + /nvim;
         programs.neovim = {
@@ -27,6 +34,7 @@ in
             plenary-nvim
             which-key-nvim
             yazi-nvim
+            epub-nvim
           ];
           extraPackages = with pkgs; [
             cargo
@@ -39,6 +47,7 @@ in
             rustc
             rustfmt
             stylua
+            unzip
           ];
         };
       };
