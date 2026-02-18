@@ -100,17 +100,51 @@ vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 
 local function edit_note(path)
 	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+	if vim.fn.filereadable(path) == 0 then
+		vim.fn.writefile({}, path)
+	end
 	vim.cmd.edit(vim.fn.fnameescape(path))
 end
 
-local function run_process(dir)
-	local command = "process"
-	if dir then
-		command = command .. " " .. vim.fn.shellescape(dir)
+local function open_note_picker(dir)
+	local expanded_dir = vim.fn.expand(dir)
+	vim.fn.mkdir(expanded_dir, "p")
+	vim.g.rafiq_note_create_dir = expanded_dir
+	require("fff").find_files_in_dir(expanded_dir)
+end
+
+local function create_note_from_picker_query()
+	local picker = require("fff.picker_ui")
+	local query = (picker.state and picker.state.query) or ""
+	local dir = vim.g.rafiq_note_create_dir
+
+	if dir == nil or dir == "" then
+		vim.notify("No note directory set for picker", vim.log.levels.WARN)
+		return
 	end
 
-	vim.cmd("split | terminal " .. command)
+	if query == "" then
+		vim.notify("Type a note name first", vim.log.levels.WARN)
+		return
+	end
+
+	local name = query
+	if not name:match("%.md$") then
+		name = name .. ".md"
+	end
+
+	picker.close()
+	edit_note(dir .. "/" .. name)
 end
+
+vim.api.nvim_create_autocmd("FileType", {
+	pattern = "fff_input",
+	callback = function(event)
+		local opts = { buffer = event.buf, noremap = true, silent = true }
+		vim.keymap.set({ "i", "n" }, "<M-CR>", create_note_from_picker_query, opts)
+		vim.keymap.set({ "i", "n" }, "<C-y>", create_note_from_picker_query, opts)
+	end,
+})
 
 vim.keymap.set("n", "<leader>nd", function()
 	edit_note(vim.fn.expand("~/0_library/notes/daily/" .. os.date("%F") .. ".md"))
@@ -121,11 +155,11 @@ vim.keymap.set("n", "<leader>nm", function()
 end, { desc = "Open monthly note" })
 
 vim.keymap.set("n", "<leader>np", function()
-	run_process()
+	open_note_picker("~/0_library/notes/process")
 end, { desc = "Process notes picker" })
 
 vim.keymap.set("n", "<leader>nP", function()
-	run_process(vim.fn.expand("~/1_repos/pedia"))
+	open_note_picker("~/1_repos/pedia")
 end, { desc = "Pedia notes picker" })
 
 -- LSP
