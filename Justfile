@@ -16,7 +16,13 @@ run-docker:
 rb:
   just nice
   just check
+  just _rb-{{os()}}
+
+_rb-macos:
   nh darwin switch .
+
+_rb-linux:
+  nh os switch .
 
 nice: format lint
 
