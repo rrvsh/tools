@@ -2,6 +2,17 @@
 {
   config.flake.modules.homeManager.rafiq =
     { osConfig, pkgs, ... }:
+    let
+      obsWrapped = pkgs.symlinkJoin {
+        name = "obs-studio-wrapped";
+        paths = [ pkgs.obs-studio ];
+        buildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          wrapProgram $out/bin/obs \
+            --set QT_QPA_PLATFORM xcb
+        '';
+      };
+    in
     {
       assertions = [
         {
@@ -15,6 +26,9 @@
           message = "You must enable pipewire and wireplumber for screencapturing to work.";
         }
       ];
-      programs.obs-studio.enable = true;
+      programs.obs-studio = {
+        enable = true;
+        package = obsWrapped;
+      };
     };
 }
