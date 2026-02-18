@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, lib, ... }:
 {
   config.flake = {
     modules.nixos.hyprland =
@@ -27,7 +27,7 @@
         environment.sessionVariables.NIXOS_OZONE_WL = "1";
       };
     modules.homeManager.rafiq =
-      { osConfig, ... }:
+      { osConfig, pkgs, ... }:
       {
         wayland.windowManager.hyprland = {
           enable = osConfig.programs.hyprland.enable or false;
@@ -43,6 +43,8 @@
               ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
               ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
               ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+              ", F7, exec, ${lib.getExe pkgs.ddcutil} setvcp 10 - 5"
+              ", F8, exec, ${lib.getExe pkgs.ddcutil} setvcp 10 + 5"
               # ctrl alt for window opening/closing
               "ALT_CTRL, 1, exec, ghostty"
               "ALT_CTRL, 2, exec, firefox"
