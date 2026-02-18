@@ -17,7 +17,7 @@
           modesetting.enable = true;
           nvidiaSettings = true;
           package = config.boot.kernelPackages.nvidiaPackages.stable;
-          open = true;
+          open = false;
         };
         environment.sessionVariables = {
           GBM_BACKEND = "nvidia-drm";
