@@ -5,6 +5,10 @@
 require("mini.pick").setup()
 require("fidget").setup()
 require("fff").setup()
+local epub = require("epub")
+epub.setup({
+	auto_open = true,
+})
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -53,7 +57,7 @@ end, { desc = "FFF: Live Grep" })
 vim.keymap.set("n", "<leader>ee", function()
 	local path = vim.fn.input("EPUB path: ", "", "file")
 	if path ~= "" then
-		require("epub").open_epub(path)
+		epub.open_epub(path)
 	end
 end, { desc = "Epub: Open file" })
 

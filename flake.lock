@@ -65,6 +65,22 @@
         "type": "github"
       }
     },
+    "epub-nvim": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1753485546,
+        "narHash": "sha256-AFr2IkcdRdb/C769Kp+x57XrPzgWnazFH/U84qN9Eew=",
+        "owner": "CrystalDime",
+        "repo": "epub.nvim",
+        "rev": "c112d80dfea3ca687b7b8e7415b0e8dfade6baa1",
+        "type": "github"
+      },
+      "original": {
+        "owner": "CrystalDime",
+        "repo": "epub.nvim",
+        "type": "github"
+      }
+    },
     "fff-nvim": {
       "inputs": {
         "crane": "crane",
@@ -956,6 +972,7 @@
     },
     "root": {
       "inputs": {
+        "epub-nvim": "epub-nvim",
         "fff-nvim": "fff-nvim",
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",

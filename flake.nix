@@ -26,6 +26,10 @@
     yazi.url = "github:sxyazi/yazi";
     neovim-nightly-overlay.url = "github:nix-community/neovim-nightly-overlay";
     fff-nvim.url = "github:dmtrKovalenko/fff.nvim";
+    epub-nvim = {
+      url = "github:CrystalDime/epub.nvim";
+      flake = false;
+    };
     nix-rosetta-builder = {
       url = "github:cpick/nix-rosetta-builder";
       inputs.nixpkgs.follows = "nixpkgs";
