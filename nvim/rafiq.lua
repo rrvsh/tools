@@ -19,84 +19,7 @@ vim.api.nvim_create_autocmd("UIEnter", {
 	end,
 })
 
--- OPTIONS
-
-vim.g.mapleader = " "
-
-vim.o.cursorline = true
-vim.o.expandtab = true -- insert tabs with space characters
-vim.o.number = true
-vim.o.relativenumber = true
-vim.o.shiftwidth = 2 -- amount of space characters builtins use by default
-vim.o.ignorecase = true -- case insensitive search
-vim.o.smartcase = true -- case sensitive search if it includes capital letters
-vim.o.smarttab = true -- start of line uses shiftwidth, else tabstop
-vim.o.softtabstop = 2 -- amount of space characters tab should indent
-vim.o.tabstop = 2 -- amount of space characters a tab character represents
-vim.o.termguicolors = true
-vim.o.undofile = true
-vim.o.signcolumn = "number"
-
--- KEYMAPS
-
---- PASSIVE
-vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
-vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
-vim.keymap.set("n", "n", "nzz", { desc = "Center screen on next search" })
-vim.keymap.set("n", "N", "Nzz", { desc = "Center screen on prev search" })
-
---- ACTIVE
-vim.keymap.set("n", "<leader>ff", function()
-	require("fff").find_files()
-end, { desc = "FFF: Files" })
-
-vim.keymap.set("n", "<leader>fg", function()
-	require("fff").live_grep()
-end, { desc = "FFF: Live Grep" })
-
-vim.keymap.set("n", "<leader>ee", function()
-	local path = vim.fn.input("EPUB path: ", "", "file")
-	if path ~= "" then
-		epub.open_epub(path)
-	end
-end, { desc = "Epub: Open file" })
-
-vim.keymap.set("n", "<leader>en", "]c", { desc = "Epub: Next chapter" })
-vim.keymap.set("n", "<leader>ep", "[c", { desc = "Epub: Prev chapter" })
-vim.keymap.set("n", "<leader>et", "gt", { desc = "Epub: Table of contents" })
-vim.keymap.set("n", "<leader>ei", "gi", { desc = "Epub: Open image" })
-
-vim.keymap.set("n", "<leader>la", function()
-	vim.lsp.buf.code_action()
-end, { desc = "Code Actions" })
-
-vim.keymap.set("n", "<leader>lh", function()
-	vim.lsp.buf.hover()
-end, { desc = "Hover" })
-
-vim.keymap.set("n", "<leader>lgd", function()
-	vim.lsp.buf.definition()
-end, { desc = "Go to definition" })
-
-vim.keymap.set("n", "<leader>lgr", function()
-	vim.lsp.buf.references()
-end, { desc = "List all references" })
-
-vim.keymap.set("n", "<leader>lf", function()
-	vim.lsp.buf.format()
-end, { desc = "Format" })
-
-vim.keymap.set("n", "<leader>lr", function()
-	vim.lsp.buf.rename()
-end, { desc = "Rename all references" })
-
-vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
-	desc = "Change all file refs",
-})
-
-vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
-vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
-vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
+-- CUSTOM LOGIC
 
 local function edit_note(path)
 	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
@@ -146,21 +69,94 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- OPTIONS
+
+vim.g.mapleader = " "
+
+vim.o.cursorline = true
+vim.o.expandtab = true -- insert tabs with space characters
+vim.o.number = true
+vim.o.relativenumber = true
+vim.o.shiftwidth = 2 -- amount of space characters builtins use by default
+vim.o.ignorecase = true -- case insensitive search
+vim.o.smartcase = true -- case sensitive search if it includes capital letters
+vim.o.smarttab = true -- start of line uses shiftwidth, else tabstop
+vim.o.softtabstop = 2 -- amount of space characters tab should indent
+vim.o.tabstop = 2 -- amount of space characters a tab character represents
+vim.o.termguicolors = true
+vim.o.undofile = true
+vim.o.signcolumn = "number"
+
+-- KEYMAPS
+
+--- PASSIVE
+vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll down" })
+vim.keymap.set("n", "", "zz", { desc = "Center screen on scroll up" })
+vim.keymap.set("n", "n", "nzz", { desc = "Center screen on next search" })
+vim.keymap.set("n", "N", "Nzz", { desc = "Center screen on prev search" })
+
+--- ACTIVE
+vim.keymap.set("n", "<leader>ee", function()
+	local path = vim.fn.input("EPUB path: ", "", "file")
+	if path ~= "" then
+		epub.open_epub(path)
+	end
+end, { desc = "Epub: Open file" })
+vim.keymap.set("n", "<leader>ei", "gi", { desc = "Epub: Open image" })
+vim.keymap.set("n", "<leader>en", "]c", { desc = "Epub: Next chapter" })
+vim.keymap.set("n", "<leader>ep", "[c", { desc = "Epub: Prev chapter" })
+vim.keymap.set("n", "<leader>et", "gt", { desc = "Epub: Table of contents" })
+vim.keymap.set("n", "<leader>ff", function()
+	require("fff").find_files()
+end, { desc = "FFF: Files" })
+vim.keymap.set("n", "<leader>fg", function()
+	require("fff").live_grep()
+end, { desc = "FFF: Live Grep" })
+vim.keymap.set("n", "<leader>gpd", function()
+	edit_note(vim.fn.expand("~/1_repos/pedia/playbooks/daily.md"))
+end, { desc = "Open daily playbook" })
+vim.keymap.set("n", "<leader>gpl", function()
+	edit_note(vim.fn.expand("~/1_repos/pedia/playbooks/laundry.md"))
+end, { desc = "Open daily playbook" })
+vim.keymap.set("n", "<leader>gpn", function()
+	edit_note(vim.fn.expand("~/1_repos/pedia/playbooks/notes.md"))
+end, { desc = "Open daily playbook" })
+vim.keymap.set("n", "<leader>la", function()
+	vim.lsp.buf.code_action()
+end, { desc = "Code Actions" })
+vim.keymap.set("n", "<leader>lf", function()
+	vim.lsp.buf.format()
+end, { desc = "Format" })
+vim.keymap.set("n", "<leader>lgd", function()
+	vim.lsp.buf.definition()
+end, { desc = "Go to definition" })
+vim.keymap.set("n", "<leader>lgr", function()
+	vim.lsp.buf.references()
+end, { desc = "List all references" })
+vim.keymap.set("n", "<leader>lh", function()
+	vim.lsp.buf.hover()
+end, { desc = "Hover" })
+vim.keymap.set("n", "<leader>lr", function()
+	vim.lsp.buf.rename()
+end, { desc = "Rename all references" })
 vim.keymap.set("n", "<leader>nd", function()
 	edit_note(vim.fn.expand("~/0_library/notes/daily/" .. os.date("%F") .. ".md"))
 end, { desc = "Open daily note" })
-
 vim.keymap.set("n", "<leader>nm", function()
 	edit_note(vim.fn.expand("~/0_library/notes/monthly/" .. os.date("%Y-%m") .. ".md"))
 end, { desc = "Open monthly note" })
-
 vim.keymap.set("n", "<leader>np", function()
 	open_note_picker("~/0_library/notes/process")
 end, { desc = "Process notes picker" })
-
 vim.keymap.set("n", "<leader>nP", function()
 	open_note_picker("~/1_repos/pedia")
 end, { desc = "Pedia notes picker" })
+vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
+	desc = "Change all file refs",
+})
+vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
+vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
+vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 
 -- LSP
 
