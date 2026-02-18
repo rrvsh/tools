@@ -94,6 +94,36 @@ vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
 
+local function edit_note(path)
+	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
+	vim.cmd.edit(vim.fn.fnameescape(path))
+end
+
+local function run_process(dir)
+	local command = "process"
+	if dir then
+		command = command .. " " .. vim.fn.shellescape(dir)
+	end
+
+	vim.cmd("split | terminal " .. command)
+end
+
+vim.keymap.set("n", "<leader>nd", function()
+	edit_note(vim.fn.expand("~/0_library/notes/daily/" .. os.date("%F") .. ".md"))
+end, { desc = "Open daily note" })
+
+vim.keymap.set("n", "<leader>nm", function()
+	edit_note(vim.fn.expand("~/0_library/notes/monthly/" .. os.date("%Y-%m") .. ".md"))
+end, { desc = "Open monthly note" })
+
+vim.keymap.set("n", "<leader>np", function()
+	run_process()
+end, { desc = "Process notes picker" })
+
+vim.keymap.set("n", "<leader>nP", function()
+	run_process(vim.fn.expand("~/1_repos/pedia"))
+end, { desc = "Pedia notes picker" })
+
 -- LSP
 
 vim.diagnostic.config({ virtual_text = { current_line = true } })

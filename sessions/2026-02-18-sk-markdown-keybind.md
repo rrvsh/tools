@@ -62,3 +62,32 @@ Practical pattern:
 ## Notes
 
 - `nix/modules/aliases.nix` now follows the project convention `let cfg = config.flake;` so root paths are referenced through `cfg.paths.root`.
+
+## Additional Follow-up
+
+- Added a dedicated alias for the same workflow in the pedia repo path:
+  - `pedia = "process \"$HOME/1_repos/pedia\""` in `nix/modules/aliases.nix`.
+- This reuses the existing `process` command behavior (file/content search, Enter open, Alt-Enter create markdown), but scopes it to `$HOME/1_repos/pedia` by default when using `pedia`.
+- Added note convenience aliases in `nix/modules/aliases.nix`:
+  - `day = "v ~/0_library/notes/daily/$(date +%F).md"`
+  - `month = "v ~/0_library/notes/monthly/$(date +%Y-%m).md"`
+
+## Neovim Keymaps Follow-up
+
+- Added Neovim keymaps in `nvim/rafiq.lua` to mirror the new alias workflows:
+  - `<leader>nd` opens/creates the daily note for today at `~/0_library/notes/daily/YYYY-MM-DD.md`.
+  - `<leader>nm` opens/creates the monthly note at `~/0_library/notes/monthly/YYYY-MM.md`.
+  - `<leader>np` opens the `process` picker in a terminal split.
+  - `<leader>nP` opens the `process` picker scoped to `~/1_repos/pedia`.
+- Added small helpers:
+  - `edit_note(path)` ensures parent directories exist before opening.
+  - `run_process(dir)` centralizes terminal command execution for process/pedia keymaps.
+
+## EPUB Input Fix Follow-up
+
+- Investigated failing `just check` for missing `epub-nvim` flake input used by `nix/modules/neovim.nix`.
+- Confirmed upstream plugin source via GitHub (`CrystalDime/epub.nvim`).
+- Added missing flake input in `flake.nix` as a non-flake source:
+  - `epub-nvim = { url = "github:CrystalDime/epub.nvim"; flake = false; };`
+- Updated lockfile with `nix flake lock --update-input epub-nvim`, which added pinned commit and nar hash.
+- Re-ran `just check`; full check suite passed.
