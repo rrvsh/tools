@@ -45,6 +45,14 @@
               "CTRL_SHIFT, 3, exec, steam"
               "CTRL_SHIFT, 4, exec, obs"
             ];
+            # on release
+            bindc = [ "ALT_SHIFT, mouse:272, togglefloating" ];
+            # bindm for mouse movement
+            bindm = [
+              "ALT, mouse:272, movewindow"
+              "ALT, mouse:273, resizewindow 2"
+              "ALT_SHIFT, mouse:273, resizewindow 1"
+            ];
           };
         };
       };
