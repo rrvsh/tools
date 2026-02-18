@@ -91,3 +91,48 @@ Practical pattern:
   - `epub-nvim = { url = "github:CrystalDime/epub.nvim"; flake = false; };`
 - Updated lockfile with `nix flake lock --update-input epub-nvim`, which added pinned commit and nar hash.
 - Re-ran `just check`; full check suite passed.
+
+## EPUB Activation Follow-up
+
+- Looked up upstream `epub.nvim` README and confirmed explicit activation is done with `require("epub").setup(opts)`.
+- Updated `nvim/rafiq.lua` to initialize the plugin at startup:
+  - `local epub = require("epub")`
+  - `epub.setup({ auto_open = true })`
+- Switched the EPUB open keymap to reuse the initialized module (`epub.open_epub(path)`) instead of requiring inline.
+
+## FFF Process/Pedia Keymaps Follow-up
+
+- Looked up `fff.nvim` upstream usage and confirmed `require("fff").find_files_in_dir(path)` is the right API for directory-scoped pickers.
+- Updated Neovim keymaps in `nvim/rafiq.lua`:
+  - `<leader>np` now opens FFF in `~/0_library/notes/process`.
+  - `<leader>nP` now opens FFF in `~/1_repos/pedia`.
+- Removed the old `run_process` terminal helper since these keymaps no longer shell out to `process`.
+- Re-ran `just check`; full check suite passed.
+
+## Process/Pedia Create-If-Missing Follow-up
+
+- Added `browse_or_create_note(dir, prompt)` in `nvim/rafiq.lua` to preserve create-on-demand behavior in Lua:
+  - prompts for a note name,
+  - opens FFF picker for the directory when input is empty,
+  - otherwise opens/creates `<input>.md` under the target directory.
+- Updated `edit_note(path)` to ensure files are created on disk when missing (`writefile({}, path)`), not just opened as unsaved buffers.
+- Updated keymaps:
+  - `<leader>np` now uses `browse_or_create_note("~/0_library/notes/process", "Process")`.
+  - `<leader>nP` now uses `browse_or_create_note("~/1_repos/pedia", "Pedia")`.
+- Re-ran `just check`; full check suite passed.
+
+## In-Picker Create Keybind Follow-up
+
+- Requirement clarified: creation should happen from inside the FFF picker via a keybind (matching `process.sh` UX), not via pre-picker prompt.
+- Checked `fff.nvim` source and found no built-in "create from query" action in picker keymaps; used picker internals to implement this safely.
+- Replaced prompt flow with in-picker workflow in `nvim/rafiq.lua`:
+  - Added `open_note_picker(dir)` to set active note directory context and open `find_files_in_dir`.
+  - Added `create_note_from_picker_query()` that reads current picker query from `require("fff.picker_ui").state.query`, closes picker, and opens/creates `<query>.md` in active note dir.
+  - Added `FileType` autocmd for `fff_input` to bind create action in picker on:
+    - `<M-CR>` (Alt+Enter, terminal-dependent)
+    - `<C-y>` (reliable fallback)
+  - Keeps standard Enter behavior for opening existing files untouched.
+- Updated keymaps:
+  - `<leader>np` -> `open_note_picker("~/0_library/notes/process")`
+  - `<leader>nP` -> `open_note_picker("~/1_repos/pedia")`
+- Re-ran `just check`; full check suite passed.

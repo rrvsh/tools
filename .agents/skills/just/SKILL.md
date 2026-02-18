@@ -2,3 +2,4 @@
     - Don't run `just rb` or apply NixOS/nix-darwin configurations unless the user explicitly asks you to.
     - Ensure `just nice` and `just check` fully pass after making changes.
         - Do not ask if you should fix them, just fix it.
+    - If `just check` fails due to a missing flake input referenced by config, add the input to `flake.nix`, update `flake.lock`, and rerun checks.

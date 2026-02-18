@@ -1,0 +1,22 @@
+- Use detached tmux sessions to run end-to-end terminal workflows for CLI agents.
+    - Create session: `tmux new-session -d -s <name> '<command>'`
+    - Send deterministic inputs: `tmux send-keys -t <name> '<keys>' C-m`
+    - Capture execution trace: `tmux capture-pane -pt <name>`
+- Prefer a repeatable E2E harness shape:
+    - Start session and target app.
+    - Drive interaction with explicit key sequences.
+    - Capture pane output at checkpoints.
+    - Assert filesystem side effects for ground truth.
+    - Kill session in teardown.
+- Handle timing and flakiness explicitly:
+    - Add short waits before assertions, or poll capture output until expected text appears.
+    - Avoid assumptions about immediate redraws in full-screen TUI apps.
+- Treat modifier keys as terminal-dependent:
+    - Alt/Meta can vary by terminal and tmux config.
+    - Keep fallback control-key bindings for critical actions.
+- Use control baselines when debugging behavior drift:
+    - Run with minimal config where possible (for Neovim: `nvim -u NONE`).
+    - Compare baseline vs full-config traces to isolate plugin/config effects.
+- Clean up after runs:
+    - Remove temp artifacts created for assertions.
+    - Close tmux sessions to avoid cross-test interference.

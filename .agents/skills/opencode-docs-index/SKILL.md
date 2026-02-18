@@ -37,3 +37,7 @@ Search terms are suggestions for queries. Key points summarize what the page cov
 | server, opencode serve, openapi, endpoints, events, auth | HTTP server usage, OpenAPI spec, and API surface overview. | [Server](https://opencode.ai/docs/server/) |
 | plugins, hooks, events, plugin install, bun cache | Plugin loading, hooks, events, and local/npm plugin setup. | [Plugins](https://opencode.ai/docs/plugins/) |
 | ecosystem, plugins list, projects, community agents | Community plugins, projects, and agent collections. | [Ecosystem](https://opencode.ai/docs/ecosystem/) |
+
+Maintenance notes:
+- Keep all links as absolute `https://opencode.ai/docs/...` URLs.
+- Validate links with `curl` checks when rebuilding the index.
