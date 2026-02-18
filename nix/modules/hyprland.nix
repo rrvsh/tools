@@ -35,7 +35,7 @@
           portalPackage = null;
           settings = {
             monitor = [
-              "HDMI-A-1, 3840x2160@160, auto, 1.5"
+              "HDMI-A-1, 3840x2160@160, auto, 2"
               ", preferred, auto, 1"
             ];
             bind = [
