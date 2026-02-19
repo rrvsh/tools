@@ -38,6 +38,17 @@
               "HDMI-A-1, 3840x2160@160, auto, 2"
               ", preferred, auto, 1"
             ];
+            input = {
+              accel_profile = builtins.concatStringsSep " " [
+                "custom"
+                "0.5"
+                "0.0" # step * 0
+                "0.5" # step * 1
+                "1.0" # step * 2
+                "1.5" # step * 3
+              ];
+              sensitivity = 1.0;
+            };
             bind = [
               ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
               ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
