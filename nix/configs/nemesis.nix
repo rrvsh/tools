@@ -82,6 +82,7 @@ in
       )
       {
         imports = [
+          cfg.modules.nixos.docker
           cfg.modules.nixos.hyprland
           cfg.modules.nixos.nvidia
           cfg.modules.nixos.pipewire
