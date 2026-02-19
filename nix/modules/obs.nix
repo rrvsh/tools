@@ -1,19 +1,13 @@
 { inputs, ... }:
 {
   config.flake.modules.homeManager.rafiq =
-    { osConfig, pkgs, ... }:
-    let
-      obsWrapped = pkgs.symlinkJoin {
-        name = "obs-studio-wrapped";
-        paths = [ pkgs.obs-studio ];
-        buildInputs = [ pkgs.makeWrapper ];
-        postBuild = ''
-          wrapProgram $out/bin/obs \
-            --set QT_QPA_PLATFORM xcb
-        '';
-      };
-    in
     {
+      pkgs,
+      osConfig,
+      lib,
+      ...
+    }:
+    lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
       assertions = [
         {
           assertion =
@@ -28,7 +22,15 @@
       ];
       programs.obs-studio = {
         enable = true;
-        package = obsWrapped;
+        package = pkgs.symlinkJoin {
+          name = "obs-studio-wrapped";
+          paths = [ pkgs.obs-studio ];
+          buildInputs = [ pkgs.makeWrapper ];
+          postBuild = ''
+            wrapProgram $out/bin/obs \
+              --set QT_QPA_PLATFORM xcb
+          '';
+        };
       };
     };
 }
