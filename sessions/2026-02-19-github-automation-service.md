@@ -36,3 +36,12 @@ Implement an end-to-end MVP for daily GitHub automation to:
   - Result: controller completed successfully and generated report/summary.
 - Ran: `just check`
   - Result: passed all formatting, linting, flake checks, and Rust tests.
+
+## Draft PR Validation
+
+- Opened draft PR: `https://github.com/rrvsh/tools/pull/191`.
+- Monitored CI checks on the PR with `gh pr checks 191 --watch`.
+  - Result: all checks passed (`changes`, `check-gha`, and aggregate `check`; conditional jobs skipped as expected for changed files).
+- Confirmed status rollup via `gh pr view 191 --json statusCheckRollup`.
+- Attempted to trigger `github-automation.yaml` via `workflow_dispatch` on branch ref.
+  - GitHub returned `404 workflow not found on default branch`, which is expected before merge for newly added workflow files.
