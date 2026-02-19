@@ -1,0 +1,49 @@
+name: OpenCode proactive scan
+
+on:
+  repository_dispatch:
+    types: [automation.scan]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  proactive-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run OpenCode proactive scan
+        timeout-minutes: 35
+        uses: anomalyco/opencode/github@3a416f6f33254e541de05cb2d661bdc0d010dd9e
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        with:
+          model: anthropic/claude-sonnet-4-20250514
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            You are running a periodic proactive maintenance scan.
+
+            Goals:
+            1) Identify one high-confidence improvement in this repository:
+               - bug fix,
+               - reliability/maintainability improvement,
+               - or missing documentation.
+            2) Implement the change if confidence is high and it is safe.
+            3) Open at most one PR labeled automation/proactive.
+            4) If no safe code change is warranted, open at most one issue labeled automation/proactive with findings.
+
+            Constraints:
+            - Avoid speculative or broad refactors.
+            - Respect repository conventions and existing tooling.
+            - Run the project checks/tests relevant to your changes before opening a PR.
+            - Keep the change scoped and easy to review.

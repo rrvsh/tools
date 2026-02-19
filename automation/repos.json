@@ -1,0 +1,23 @@
+{
+  "defaults": {
+    "skip_labels": [
+      "no-auto-rebase"
+    ],
+    "max_pr_updates_per_run": 5,
+    "scan_cooldown_days": 7,
+    "agent_dispatch": {
+      "event_type": "automation.scan",
+      "open_pr_label": "automation/proactive"
+    }
+  },
+  "repos": [
+    {
+      "name": "rrvsh/tools",
+      "enabled": true,
+      "rules": {
+        "auto_rebase_ready_prs": true,
+        "dispatch_agent_scan": true
+      }
+    }
+  ]
+}

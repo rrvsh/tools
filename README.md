@@ -13,6 +13,12 @@ these are the tools i currently use
 - `just rb` rebuilds the local Darwin system configuration after running `nice`, then `check`.
     *- planned: allow specifying remote to rebuild, add support for not-Darwins*
 
+### github automation
+- daily controller workflow: `.github/workflows/github-automation.yaml`
+- proactive scan worker workflow: `.github/workflows/opencode-proactive-scan.yaml`
+- configuration: `automation/repos.json`
+- documentation: `docs/github-automation.md`
+
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
