@@ -9,6 +9,7 @@ in
       {
         home.packages = [
           (pkgs.writeShellScriptBin "process" (lib.fileContents (cfg.paths.root + "/scripts/process.sh")))
+          cfg.packages.${pkgs.stdenv.hostPlatform.system}.yt-meta
         ];
 
         home.shellAliases = {
