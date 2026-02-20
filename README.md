@@ -12,6 +12,7 @@ these are the tools i currently use
 - `just check` runs the same check run in CI for formatting, linting, and testing
 - `just rb` rebuilds the local Darwin system configuration after running `nice`, then `check`.
     *- planned: allow specifying remote to rebuild, add support for not-Darwins*
+- `workspace <task-name> [app-dir]` starts a tmux workspace with process note + app shell.
 
 ## acknowledgements
 

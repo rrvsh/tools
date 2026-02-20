@@ -16,6 +16,8 @@ You may add to this file anything that you think you should remember in the futu
 - Refer to `.agents/skills/session-management/SKILL.md` for instructions on managing and processing session notes.
 - Refer to `.agents/skills/opencode-docs-index/SKILL.md` for comprehensive documentation on Opencode docs.
 - For tmux orchestration patterns for CLI-agent E2E runs, use `.agents/skills/tmux-e2e-cli-agent/SKILL.md`.
+- Always keep a process note open as an engineering notebook for every task.
+- Deploy workspaces as a pair: process note + app context.
 
 ## Instructions from Agent
 
