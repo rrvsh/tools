@@ -40,3 +40,20 @@ User asked for research before implementation: can dependencies be scoped to the
 - Initial statix warning occurred due to repeated `packages.<name>` keys in `nix/outputs/packages.nix`.
 - Fixed by refactoring to a single `packages = { ... };` attrset.
 - Re-ran checks successfully.
+
+## Home Manager wiring
+
+- Added `yt-meta` to `home.packages` in `nix/modules/aliases.nix`.
+- Used flake-parts transposed package output keyed by host architecture:
+  - `cfg.packages.${pkgs.stdenv.hostPlatform.system}.yt-meta`
+- This keeps one declaration working across `x86_64-linux` and `aarch64-darwin` by selecting the current host system at evaluation time.
+
+## Live verification
+
+- Ran `just rb` (including `nh os switch .`) after wiring Home Manager package.
+- Switch output showed `yt-meta` integration artifacts (including fish completion derivation).
+- Verified command available on native PATH:
+  - `command -v yt-meta` -> `/home/rafiq/.nix-profile/bin/yt-meta`
+- Verified command output from PATH executable:
+  - `yt-meta "https://www.youtube.com/watch?v=9M7pKi-3o18"`
+  - `How Do Cultures Evolve? - featuring Edward Burnett Tylor — Anthropology Theory #1, a partial perspective, 13/12/2017`
