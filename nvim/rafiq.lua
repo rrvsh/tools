@@ -60,6 +60,33 @@ local function create_note_from_picker_query()
 	edit_note(dir .. "/" .. name)
 end
 
+local function insert_interstitial_notes_header()
+	local row = vim.api.nvim_win_get_cursor(0)[1]
+	local timestamp = os.date("%H%Mhrs")
+	local bufnr = vim.api.nvim_get_current_buf()
+
+	vim.api.nvim_buf_set_lines(0, row, row, false, {
+		timestamp .. ":",
+		"- ",
+	})
+
+	vim.api.nvim_win_set_cursor(0, { row + 2, 2 })
+	vim.cmd("startinsert")
+
+	vim.api.nvim_create_autocmd("InsertLeave", {
+		buffer = bufnr,
+		once = true,
+		callback = function()
+			local leave_row = vim.api.nvim_win_get_cursor(0)[1]
+			local next_line = vim.api.nvim_buf_get_lines(bufnr, leave_row, leave_row + 1, false)[1]
+
+			if next_line ~= "" then
+				vim.api.nvim_buf_set_lines(bufnr, leave_row, leave_row, false, { "" })
+			end
+		end,
+	})
+end
+
 vim.api.nvim_create_autocmd("FileType", {
 	pattern = "fff_input",
 	callback = function(event)
@@ -154,6 +181,7 @@ end, { desc = "Pedia notes picker" })
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
+vim.keymap.set("n", "<leader>tm", insert_interstitial_notes_header, { desc = "Interstitial notes header" })
 vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
