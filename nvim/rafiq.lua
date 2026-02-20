@@ -154,6 +154,7 @@ end, { desc = "Pedia notes picker" })
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
+vim.keymap.set("n", "<leader>tm", 'o<CR><C-r>=strftime("%H%Mhrs")<CR>:<CR>- ', { desc = "Interstitial notes header" })
 vim.keymap.set("n", "<leader>tt", ":Yazi<CR>", { desc = "Open Yazi" })
 vim.keymap.set("n", "<leader>w", ":w ++p<CR>", { desc = "Write all" })
 vim.keymap.set("v", "<leader>y", '"+y', { desc = "Copy to system clipboard" })
