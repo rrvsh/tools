@@ -35,6 +35,7 @@ in
           # keep only one backup of files
           backupFileExtension = "bak";
           overwriteBackup = true;
+          useUserPackages = true;
           useGlobalPkgs = true;
           users.rafiq = {
             imports = [ cfg.modules.homeManager.rafiq ];
@@ -70,6 +71,7 @@ in
           # keep only one backup of files
           backupFileExtension = "bak";
           overwriteBackup = true;
+          useUserPackages = true;
           useGlobalPkgs = true;
           users.rafiq = {
             imports = [ cfg.modules.homeManager.rafiq ];
