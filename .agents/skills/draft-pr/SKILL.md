@@ -1,0 +1,1 @@
+Please checkout a branch, commit only the changes from this conversation including docs and sessions, push this up to the remote and use the gh cli to create a draft pr with an appropriate title, then once done go back to the prime branch.
