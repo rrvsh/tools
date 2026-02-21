@@ -3,6 +3,24 @@
   perSystem =
     { pkgs, self', ... }:
     {
+      packages.git-peer-sync = pkgs.rustPlatform.buildRustPackage {
+        name = "git-peer-sync";
+        src = config.flake.paths.root + /rs;
+        cargoLock.lockFile = config.flake.paths.root + /rs/Cargo.lock;
+        cargoBuildFlags = [
+          "-p"
+          "git-peer-sync"
+        ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        nativeCheckInputs = [ pkgs.git ];
+        postFixup = ''
+          wrapProgram "$out/bin/git-peer-sync" \
+            --prefix PATH : ${pkgs.lib.makeBinPath [
+              pkgs.git
+              pkgs.openssh
+            ]}
+        '';
+      };
       packages.site-bin = pkgs.rustPlatform.buildRustPackage {
         name = "site";
         src = config.flake.paths.root + /rs;

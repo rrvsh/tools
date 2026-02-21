@@ -1,0 +1,30 @@
+[package]
+name = "git-peer-sync"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+description = "Watch a git repo, auto-commit changes, and sync peers"
+readme = "../../README.md"
+repository = "https://github.com/rrvsh/tools"
+keywords = ["git", "sync", "watcher"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+anyhow = "1.0.100"
+clap = { version = "4.5.48", features = ["derive"] }
+hostname = "0.4.1"
+notify = "8.2.0"
+
+[dev-dependencies]
+tempfile = "3.24.0"
+
+[lints.clippy]
+correctness = "deny"
+suspicious = "deny"
+complexity = "deny"
+perf = "deny"
+style = "deny"
+pedantic = "deny"
+cargo = "deny"
+nursery = "deny"
+multiple-crate-versions = "allow"
