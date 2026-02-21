@@ -29,6 +29,39 @@
     modules.homeManager.rafiq =
       { osConfig, pkgs, ... }:
       {
+        programs.waybar = {
+          enable = true;
+          systemd.enable = true;
+          style = ''
+            window#waybar {
+              background: transparent;
+              border: none;
+              box-shadow: none;
+            }
+
+            #clock {
+              color: #ffffff;
+              background: transparent;
+              border: none;
+              box-shadow: none;
+              padding: 0;
+              margin: 0;
+            }
+          '';
+          settings = {
+            mainBar = {
+              layer = "top";
+              position = "top";
+              modules-left = [ ];
+              modules-center = [ ];
+              modules-right = [ "clock" ];
+              clock = {
+                format = "{:%A, %d/%m/%Y %H:%M:%S}";
+                interval = 1;
+              };
+            };
+          };
+        };
         wayland.windowManager.hyprland = {
           enable = osConfig.programs.hyprland.enable or false;
           package = null;
