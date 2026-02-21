@@ -8,6 +8,7 @@ in
       { pkgs, ... }:
       {
         home.packages = [
+          config.flake.packages.${pkgs.stdenv.hostPlatform.system}.hyprctl-split
           (pkgs.writeShellScriptBin "process" (lib.fileContents (cfg.paths.root + "/scripts/process.sh")))
         ];
 
