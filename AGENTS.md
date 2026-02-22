@@ -1,28 +1,58 @@
 # AGENTS.md
 
-## Instructions from User
+## Role
 
-This file is for both the user and the agent to edit.
-When the user tells you to remember something, add it to this file.
-You may add to this file anything that you think you should remember in the future.
+This is the root instruction file for the entire repository.
+It is co-maintained by the user and the agent.
+When the user says to remember something, add it here (or in the most local `AGENTS.md` when scope is clearly local).
 
-### Things to remember
+## Core Operating Rules
 
-- Always use retrieval-led reasoning either via codebase exploration or web search. Never rely on training data.
-    - Refer to `.agents/skills/web-search/SKILL.md` for web search instructions.
-- Refer to `.agents/skills/git/SKILL.md` for instructions on committing and working with the remotes.
-- Refer to `.agents/skills/just/SKILL.md` for instructions for running formatting, linting, or other checks and testing.
-- Refer to `.agents/skills/nix/SKILL.md` for instructions on the `nix/` folder structure and project conventions.
-- Refer to `.agents/skills/session-management/SKILL.md` for instructions on managing and processing session notes.
-- Refer to `.agents/skills/opencode-docs-index/SKILL.md` for comprehensive documentation on Opencode docs.
-- For tmux orchestration patterns for CLI-agent E2E runs, use `.agents/skills/tmux-e2e-cli-agent/SKILL.md`.
+- Always use retrieval-led reasoning through codebase exploration and, when needed, web search.
+- Never rely on training memory when repository or web evidence is available.
+- Keep changes cohesive with local directory conventions and architecture.
+- Do not perform git remote operations unless explicitly requested by the user.
 
-## Instructions from Agent
+## Session Lifecycle (Always Active)
 
-### Session Files
+- Maintain a session note for each substantive task in `sessions/`.
+- Use `YYYY-MM-DD-<task-name>.md` naming.
+- Keep the active note updated throughout the task lifecycle.
+- Include: scope, steps taken, decisions made, bugs encountered, fixes, and follow-up ideas.
+- Session structure:
+  - `sessions/*.md`: active or unprocessed notes
+  - `sessions/archived/*.md`: processed historical notes
+  - `sessions/raw/*.md`: raw exported transcripts
 
-Always maintain a session file for the current task. Session files:
-- Go in `sessions/` directory
-- Use format: `YYYY-MM-DD-<task-name>.md`
-- Contain: detailed breakdown of work, reasoning/decisions made, learning points discovered, bugs encountered and solutions
-- Update existing session files for ongoing work; create new ones for new tasks
+## Skills Index (Hardcoded)
+
+- `.agents/skills/git/SKILL.md`
+- `.agents/skills/just/SKILL.md`
+- `.agents/skills/neovim-automation/SKILL.md`
+- `.agents/skills/nix/SKILL.md`
+- `.agents/skills/opencode-docs-index/SKILL.md`
+- `.agents/skills/session-management/SKILL.md`
+- `.agents/skills/tmux-e2e-cli-agent/SKILL.md`
+- `.agents/skills/web-search/SKILL.md`
+
+## Repository Mental Model
+
+- `.agents/`: reusable agent skill playbooks.
+- `.github/workflows/`: CI, docs checks, build-and-deploy automation.
+- `docs/`: runbook and cheatsheet notes.
+- `nix/`: flake module architecture (`configs`, `modules`, `outputs`).
+- `nvim/`: Neovim runtime config source.
+- `rs/`: Rust workspace, including the `site` web app.
+- `scripts/`: helper scripts for checks and local flows.
+- `sessions/`: active memory and archived task notes.
+- `sops/`: encrypted secret files and usage notes.
+- `tf/`: Terraform/OpenTofu infrastructure definitions.
+
+## Local AGENTS Policy
+
+- Every directory in this repository has its own `AGENTS.md`.
+- On entry to a directory, read its local `AGENTS.md` and follow its scope-specific rules.
+- If instructions conflict, priority is:
+  1. Explicit user instruction
+  2. Nearest local `AGENTS.md`
+  3. This root `AGENTS.md`
