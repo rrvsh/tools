@@ -8,13 +8,16 @@ in
       { pkgs, ... }:
       {
         home.packages = [
-          (pkgs.writeShellScriptBin "process" (lib.fileContents (cfg.paths.root + "/scripts/process.sh")))
+          (pkgs.writeShellScriptBin "fooc" (
+            lib.fileContents (cfg.paths.root + "/scripts/fuzzy-open-or-create.sh")
+          ))
         ];
 
         home.shellAliases = {
           v = "$EDITOR";
           e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-          pedia = "process \"$HOME/1_repos/pedia\"";
+          lib = "fooc \"$HOME/0_library\"";
+          process = "fooc \"$HOME/0_library/notes/process\"";
           day = "v ~/0_library/notes/daily/$(date +%F).md";
           month = "v ~/0_library/notes/monthly/$(date +%Y-%m).md";
         };
