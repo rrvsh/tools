@@ -29,6 +29,7 @@ in
           plugins = with pkgs.vimPlugins; [
             inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
             fidget-nvim
+            gitsigns-nvim
             mini-nvim
             nvim-lspconfig
             plenary-nvim

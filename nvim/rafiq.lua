@@ -85,7 +85,7 @@ vim.o.softtabstop = 2 -- amount of space characters tab should indent
 vim.o.tabstop = 2 -- amount of space characters a tab character represents
 vim.o.termguicolors = true
 vim.o.undofile = true
-vim.o.signcolumn = "number"
+vim.o.signcolumn = "yes"
 
 -- KEYMAPS
 
@@ -96,6 +96,11 @@ vim.keymap.set("n", "n", "nzz", { desc = "Center screen on next search" })
 vim.keymap.set("n", "N", "Nzz", { desc = "Center screen on prev search" })
 
 --- ACTIVE
+vim.keymap.set("n", "<leader>gh", ":Gitsigns preview_hunk<CR>", { desc = "Preview diff in popup" })
+vim.keymap.set("n", "<leader>gj", ":Gitsigns nav_hunk next<CR>", { desc = "Go to next hunk" })
+vim.keymap.set("n", "<leader>gk", ":Gitsigns nav_hunk prev<CR>", { desc = "Go to previous hunk" })
+vim.keymap.set("n", "<leader>gk", ":Gitsigns reset_hunk<CR>", { desc = "Restore hunk" })
+vim.keymap.set("n", "<leader>gs", ":Gitsigns stage_hunk<CR>", { desc = "Stage hunk" })
 vim.keymap.set("n", "<leader>ee", function()
 	local path = vim.fn.input("EPUB path: ", "", "file")
 	if path ~= "" then
