@@ -38,12 +38,8 @@ resource "aws_iam_role_policy" "github_actions_ecs" {
       {
         Effect   = "Allow"
         Action   = "ecs:UpdateService"
-        Resource = aws_ecs_service.site.arn
+        Resource = module.site.service_arn
       }
     ]
   })
-}
-
-output "github_actions_iam_role_arn" {
-  value = aws_iam_role.github_actions.arn
 }
