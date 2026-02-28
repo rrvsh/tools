@@ -1,13 +1,17 @@
+{ config, ... }:
+let
+  account = config.flake.accounts.rafiq;
+in
 {
   config.flake.modules.nixos.default = {
     users.mutableUsers = false;
-    users.users.rafiq = {
-      description = "Mohammad Rafiq";
-      uid = 1000;
+    users.users.${account.username} = {
+      description = account.fullName;
+      uid = account.nixosUid;
       isNormalUser = true;
       extraGroups = [ "wheel" ];
       openssh.authorizedKeys.keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+        account.sshPublicKey
       ];
     };
   };

@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  inherit (config.flake.accounts.rafiq) username;
+in
 {
   config.flake.modules = {
     homeManager.rafiq = {
@@ -11,13 +15,13 @@
     nixos.rafiq =
       { pkgs, ... }:
       {
-        users.users.rafiq.shell = pkgs.fish;
+        users.users.${username}.shell = pkgs.fish;
         programs.fish.enable = true;
       };
     darwin.rafiq =
       { pkgs, ... }:
       {
-        users.users.rafiq.shell = pkgs.fish;
+        users.users.${username}.shell = pkgs.fish;
         programs.fish.enable = true;
       };
   };

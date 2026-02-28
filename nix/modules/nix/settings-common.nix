@@ -1,8 +1,13 @@
+{ config, ... }:
+let
+  account = config.flake.accounts.rafiq;
+  inherit (account) username;
+in
 {
   config.flake = {
     modules.nixos.default = {
       nix.settings = {
-        trusted-users = [ "rafiq" ];
+        trusted-users = [ username ];
         experimental-features = "nix-command flakes";
         extra-substituters = [
           "https://nix-community.cachix.org"
@@ -16,7 +21,7 @@
     };
     modules.darwin.default = {
       nix.settings = {
-        trusted-users = [ "rafiq" ];
+        trusted-users = [ username ];
         experimental-features = "nix-command flakes";
         extra-substituters = [
           "https://nix-community.cachix.org"

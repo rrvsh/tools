@@ -1,3 +1,7 @@
+{ config, ... }:
+let
+  account = config.flake.accounts.rafiq;
+in
 {
   config.flake.modules.homeManager.rafiq = {
     programs.git = {
@@ -11,8 +15,8 @@
         key = "~/.ssh/id_ed25519.pub";
       };
       settings = {
-        user.name = "Mohammad Rafiq";
-        user.email = "rafiq@rrv.sh";
+        user.name = account.fullName;
+        user.email = account.email;
         gpg.format = "ssh";
         init.defaultBranch = "prime";
         push.autoSetupRemote = true;

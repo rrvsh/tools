@@ -1,6 +1,7 @@
-{ inputs, ... }:
+{ config, inputs, ... }:
 let
   inherit (builtins) attrNames;
+  account = config.flake.accounts.rafiq;
   taps = {
     "homebrew/homebrew-core" = inputs.homebrew-core;
     "homebrew/homebrew-cask" = inputs.homebrew-cask;
@@ -19,7 +20,7 @@ in
         inherit taps;
         enable = true;
         enableRosetta = true;
-        user = "rafiq";
+        user = account.username;
         mutableTaps = false;
       };
     };

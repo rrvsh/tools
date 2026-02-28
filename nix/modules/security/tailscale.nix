@@ -1,7 +1,9 @@
 { config, ... }:
 let
   cfg = config.flake;
+  account = cfg.accounts.rafiq;
   inherit (cfg.paths) root;
+  authKeySecretName = "${account.username}/tailscale-authkey";
 in
 {
   config.flake = {
@@ -9,9 +11,9 @@ in
       { config, ... }:
       {
         services.tailscale.enable = true;
-        services.tailscale.authKeyFile = config.sops.secrets."rafiq/tailscale-authkey".path;
-        sops.secrets."rafiq/tailscale-authkey" = {
-          sopsFile = root + /sops/rafiq.yaml;
+        services.tailscale.authKeyFile = config.sops.secrets.${authKeySecretName}.path;
+        sops.secrets.${authKeySecretName} = {
+          sopsFile = root + "/sops/${account.username}.yaml";
         };
       };
     modules.darwin.default = {

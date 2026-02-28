@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
   cfg = config.flake;
+  inherit (cfg.accounts.rafiq) username;
 in
 {
   config.flake = {
@@ -16,11 +17,11 @@ in
           overwriteBackup = true;
           useUserPackages = true;
           useGlobalPkgs = true;
-          users.rafiq = {
+          users.${username} = {
             imports = [ cfg.modules.homeManager.rafiq ];
             home = {
-              username = "rafiq";
-              homeDirectory = config.users.users.rafiq.home;
+              inherit username;
+              homeDirectory = config.users.users.${username}.home;
               stateVersion = "25.11";
             };
           };
@@ -38,11 +39,11 @@ in
           overwriteBackup = true;
           useUserPackages = true;
           useGlobalPkgs = true;
-          users.rafiq = {
+          users.${username} = {
             imports = [ cfg.modules.homeManager.rafiq ];
             home = {
-              username = "rafiq";
-              homeDirectory = config.users.users.rafiq.home;
+              inherit username;
+              homeDirectory = config.users.users.${username}.home;
               stateVersion = "25.11";
             };
           };

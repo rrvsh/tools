@@ -1,12 +1,16 @@
+{ config, ... }:
+let
+  account = config.flake.accounts.rafiq;
+in
 {
   config.flake.modules.darwin.default = {
-    system.primaryUser = "rafiq";
-    users.knownUsers = [ "rafiq" ];
-    users.users.rafiq = {
-      home = "/Users/rafiq";
-      uid = 501;
+    system.primaryUser = account.username;
+    users.knownUsers = [ account.username ];
+    users.users.${account.username} = {
+      home = "/Users/${account.username}";
+      uid = account.darwinUid;
       openssh.authorizedKeys.keys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+        account.sshPublicKey
       ];
     };
   };
