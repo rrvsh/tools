@@ -1,9 +1,11 @@
 - `flake.nix` imports all files (without an underscore prefix e.g. `_example.nix`) in `nix/` as `flake-parts` modules.
+    - New module files under `nix/` must be git-tracked (not untracked), or flake evaluation from git source may ignore them.
+    - Do not create aggregator imports like `nix/modules/<group>.nix` that path-import submodules; rely on import-tree + `config.flake.modules.*` wiring.
     - `config.flake.paths.root` provides the path to the repository root for referencing directories in the repo.
     - You should never import Nix modules by using paths. Only use `config.flake.modules.{darwin,nixos}`.
     - The top level arguments for each file provide `config` (the flake config, including the flake outputs) and `lib` (from nixpkgs).
-        - Project convention is to declare `{config,...}: let cfg = config.flake; in {...}` to avoid conflicts with the module-level `config`.
-        - You never need to include empty lambda arguments like `{ ... }:` or `{ _ }:`.
+        - Project convention is to declare `{ config, ... }:` (or with `lib`/others as needed), then `let cfg = config.flake; in {...}` to avoid conflicts with module-level `config`.
+        - If a module takes no args, omit the lambda entirely (no `{ ... }:` / `{ _ }:`).
     - `nix/outputs` consumes the configuration from `nix/configs` and `nix/modules` to build flake outputs.
         - `{darwin,nixos}Configurations.nix` builds `nix-darwin` and NixOS configurations.
             - `hosts.{darwin,nixos}.<name>.modules` is exposed as an option for importing modules for that host.
@@ -49,3 +51,10 @@
     - Add required binaries via Neovim extra packages (example: `unzip` for `epub.nvim`).
 - Prefer upstream flake outputs when available (example: `packages.<system>.fff-nvim`) to avoid custom build glue.
 - Initialize plugins in Lua with minimal `require("<plugin>").setup(...)` unless custom behavior is required.
+
+## Refactor Regression Checks
+
+- For Nix module refactors, verify no closure-level regression with before/after `nvd` diffs:
+    - Build both revisions with `nix build --no-link --print-out-paths` for each affected output (e.g. `.#nixosConfigurations.<host>.config.system.build.toplevel`, `.#darwinConfigurations.<host>.system`).
+    - Compare store paths using `nix run nixpkgs#nvd -- diff <before> <after>`.
+    - Run `nix flake check` as a companion eval/assertion safety check.

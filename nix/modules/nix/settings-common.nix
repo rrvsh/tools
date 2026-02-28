@@ -1,4 +1,3 @@
-{ inputs, ... }:
 {
   config.flake = {
     modules.nixos.default = {
@@ -16,7 +15,6 @@
       };
     };
     modules.darwin.default = {
-      nixpkgs.hostPlatform = "aarch64-darwin";
       nix.settings = {
         trusted-users = [ "rafiq" ];
         experimental-features = "nix-command flakes";
@@ -29,8 +27,6 @@
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
         ];
       };
-      system.configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
-      system.stateVersion = 6;
     };
   };
 }

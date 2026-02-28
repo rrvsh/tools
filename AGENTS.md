@@ -13,6 +13,9 @@ You may add to this file anything that you think you should remember in the futu
 - Refer to `.agents/skills/git/SKILL.md` for instructions on committing and working with the remotes.
 - Refer to `.agents/skills/just/SKILL.md` for instructions for running formatting, linting, or other checks and testing.
 - Refer to `.agents/skills/nix/SKILL.md` for instructions on the `nix/` folder structure and project conventions.
+    - For Nix module refactors under `nix/`, new files must be git-tracked (untracked files can be skipped by git-based flake source).
+    - Do not add path-based aggregator imports for module grouping; rely on import-tree discovery and `config.flake.modules.*` wiring.
+    - If a Nix module does not use arguments, omit the lambda header (no `{ ... }:`).
 - Refer to `.agents/skills/session-management/SKILL.md` for instructions on managing and processing session notes.
 - Refer to `.agents/skills/opencode-docs-index/SKILL.md` for comprehensive documentation on Opencode docs.
 - For tmux orchestration patterns for CLI-agent E2E runs, use `.agents/skills/tmux-e2e-cli-agent/SKILL.md`.
