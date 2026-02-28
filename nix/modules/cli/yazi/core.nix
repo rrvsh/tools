@@ -5,6 +5,7 @@
     {
       programs.yazi = {
         enable = true;
+        shellWrapperName = "yy";
         package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
           runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
         };
