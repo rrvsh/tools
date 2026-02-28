@@ -11,6 +11,17 @@ in
     modules.homeManager.rafiq =
       { pkgs, ... }:
       let
+        useUpstreamFffNvim = false;
+        fff-nvim =
+          if useUpstreamFffNvim then
+            inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
+          else
+            pkgs.vimUtils.buildVimPlugin {
+              pname = "fff-nvim";
+              version = "main";
+              src = inputs.fff-nvim;
+              doCheck = false;
+            };
         epub-nvim = pkgs.vimUtils.buildVimPlugin {
           pname = "epub.nvim";
           version = "main";
@@ -27,7 +38,7 @@ in
           vimAlias = true;
           initLua = "require(\"rafiq\")";
           plugins = with pkgs.vimPlugins; [
-            inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
+            fff-nvim
             fidget-nvim
             gitsigns-nvim
             mini-nvim
