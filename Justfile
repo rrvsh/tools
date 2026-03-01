@@ -60,7 +60,7 @@ lint-rs:
 test: test-nix test-rs
 
 test-nix:
-  nix flake check --all-systems
+  if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --all-systems; else nix flake check; fi
 
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all

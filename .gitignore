@@ -1,3 +1,6 @@
 result
 .direnv
 .env
+
+# Session profiling artifacts
+sessions/profiles/
