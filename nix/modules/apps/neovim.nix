@@ -11,17 +11,7 @@ in
     modules.homeManager.rafiq =
       { pkgs, ... }:
       let
-        useUpstreamFffNvim = false;
-        fff-nvim =
-          if useUpstreamFffNvim then
-            inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
-          else
-            pkgs.vimUtils.buildVimPlugin {
-              pname = "fff-nvim";
-              version = "main";
-              src = inputs.fff-nvim;
-              doCheck = false;
-            };
+        inherit (inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}) fff-nvim;
         epub-nvim = pkgs.vimUtils.buildVimPlugin {
           pname = "epub.nvim";
           version = "main";
