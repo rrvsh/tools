@@ -58,3 +58,10 @@
     - Build both revisions with `nix build --no-link --print-out-paths` for each affected output (e.g. `.#nixosConfigurations.<host>.config.system.build.toplevel`, `.#darwinConfigurations.<host>.system`).
     - Compare store paths using `nix run nixpkgs#nvd -- diff <before> <after>`.
     - Run `nix flake check` as a companion eval/assertion safety check.
+
+## Flake-Parts and Output Wiring Gotchas
+
+- In flake-parts trees, use `flake-parts.modules` class typing in larger module sets to avoid accidental cross-target imports.
+- Use `import-tree` underscore ignore behavior (`/_`) for helper code that should not be auto-imported as modules.
+- Keep host-level module fan-in symmetrical: if NixOS appends `hosts.nixos.<name>.modules`, ensure Darwin output generation also appends `hosts.darwin.<name>.modules`.
+- For opaque `nix flake check` store-path failures, rerun with `--show-trace` and isolate suspected inputs with direct `nix build` commands.

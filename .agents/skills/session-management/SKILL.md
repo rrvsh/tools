@@ -25,7 +25,7 @@ For each unprocessed session file, spawn a subagent to extract learning points:
 
 ```
 Task(description="Extract learnings from session", prompt="""
-Read the session file at /Users/rafiq/tools/sessions/<filename>.md
+Read the session file at /home/rafiq/1_repos/tools/sessions/<filename>.md
 
 Extract the following from this session:
 1. Key learnings - new techniques, patterns, or solutions discovered
@@ -68,8 +68,10 @@ After subagents return their findings:
 
 After extracting learnings and updating skills:
 ```bash
-mv /Users/rafiq/tools/sessions/<filename>.md /Users/rafiq/tools/sessions/archived/
+mv /home/rafiq/1_repos/tools/sessions/<filename>.md /home/rafiq/1_repos/tools/sessions/archived/
 ```
+
+If `sessions/*.md` returns no files, cleanup is complete and no archive step is needed.
 
 ## Skill Naming Conventions
 

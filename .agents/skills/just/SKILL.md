@@ -3,3 +3,5 @@
     - Ensure `just nice` and `just check` fully pass after making changes.
         - Do not ask if you should fix them, just fix it.
     - If `just check` fails due to a missing flake input referenced by config, add the input to `flake.nix`, update `flake.lock`, and rerun checks.
+    - `just test-nix` is optimized for local feedback; use `ALL_SYSTEMS=1 just test-nix` when full cross-system checks are required.
+    - For rebuild/check performance work, profile by phase (eval, plan, build, switch) and store artifacts under `sessions/profiles/`.

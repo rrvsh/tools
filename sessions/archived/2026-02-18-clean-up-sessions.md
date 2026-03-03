@@ -50,3 +50,16 @@ Task: Clean up sessions directory and process unreviewed notes.
 - Reduced overlap in Neovim-specific automation guidance by pointing tmux orchestration details to the new skill:
   - `.agents/skills/neovim-automation/SKILL.md`
 - Reasoning: keeps transport/orchestration concerns (tmux E2E harness) separate from app-specific Neovim behavior and keymap patterns.
+
+## Additional Update (2026-03-03)
+
+- Re-ran full session cleanup across all remaining root-level files in `sessions/*.md`.
+- Used one subagent per session to extract Learnings, Bugs & Fixes, References, and Conventions, then merged non-duplicate points into skills.
+- Updated existing skills:
+  - `.agents/skills/nix/SKILL.md`
+  - `.agents/skills/just/SKILL.md`
+  - `.agents/skills/web-search/SKILL.md`
+  - `.agents/skills/session-management/SKILL.md`
+- Added a new Terraform/OpenTofu-focused skill:
+  - `.agents/skills/opentofu/SKILL.md`
+- Archived all root-level session markdown files into `sessions/archived/`, leaving `sessions/` root clear of pending session notes.

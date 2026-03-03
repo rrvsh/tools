@@ -1,0 +1,4 @@
+- For large Terraform/OpenTofu refactors, prove safety with plan-before/plan-after JSON comparisons, not only textual plan output.
+- Use `moved` blocks when resource/module addresses change so state migrations remain declarative and no-op.
+- Keep shared data sources in root, move stack-specific resources into reusable modules, and expose needed values through module outputs.
+- Validate module refactors with `tofu fmt -recursive` and `tofu validate` plus actionable-change counts from JSON plans.
