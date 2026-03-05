@@ -97,7 +97,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
@@ -126,7 +126,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
@@ -153,7 +153,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
@@ -180,7 +180,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
@@ -207,7 +207,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
@@ -249,7 +249,7 @@ jobs:
 
       - name: Install Nix
         timeout-minutes: 5
-        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
           # lets us bypass the rate limiting
           extra_nix_config: |
