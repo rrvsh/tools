@@ -1,6 +1,7 @@
 # OpenCode Documentation Index
 
 Search terms are suggestions for queries. Key points summarize what the page covers.
+Always use subagents for research.
 
 | Search terms | Key points | Link |
 | --- | --- | --- |
