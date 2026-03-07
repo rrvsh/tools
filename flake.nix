@@ -68,5 +68,6 @@
       url = "github:aresler/path-from-root.yazi";
       flake = false;
     };
+    mac-app-util.url = "github:hraban/mac-app-util";
   };
 }
