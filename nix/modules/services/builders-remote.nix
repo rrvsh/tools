@@ -42,8 +42,8 @@ in
               "x86_64-darwin"
             ];
             protocol = "ssh";
-            maxJobs = 4;
-            speedFactor = 1;
+            maxJobs = 8;
+            speedFactor = 2;
             supportedFeatures = [ "big-parallel" ];
             sshKey = nixosRootSshKey;
           }
@@ -78,22 +78,9 @@ in
           ];
           sshKey = darwinRootSshKey;
         }
-        {
-          hostName = "rafiq@alpha";
-          systems = [
-            "aarch64-darwin"
-            "x86_64-darwin"
-          ];
-          protocol = "ssh";
-          maxJobs = 4;
-          speedFactor = 1;
-          supportedFeatures = [ "big-parallel" ];
-          sshKey = darwinRootSshKey;
-        }
       ];
       programs.ssh.knownHosts = {
         nemesis.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOM5K6SV4mAjtRB/OJOpyirgpHxJrOqaS7ZbbedNLYFV";
-        alpha.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8wLSVTv2/4n5vgZxWXnGT/mHpCqBCareAg7t6yoE9W";
       };
     };
   };
