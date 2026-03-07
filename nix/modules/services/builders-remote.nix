@@ -20,7 +20,7 @@ in
             '';
         nix.buildMachines = [
           {
-            hostName = "nemesis";
+            hostName = "rafiq@nemesis";
             systems = [
               "x86_64-linux"
               "aarch64-linux"
@@ -36,7 +36,7 @@ in
             sshKey = nixosRootSshKey;
           }
           {
-            hostName = "alpha";
+            hostName = "rafiq@alpha";
             systems = [
               "aarch64-darwin"
               "x86_64-darwin"
@@ -63,23 +63,23 @@ in
       '';
       nix.buildMachines = [
         {
-          hostName = "nemesis";
-          systems = [
-            "x86_64-linux"
-            "aarch64-linux"
-          ];
-          protocol = "ssh";
-          maxJobs = 8;
-          speedFactor = 2;
-          supportedFeatures = [
-            "nixos-test"
-            "big-parallel"
-            "kvm"
-          ];
-          sshKey = darwinRootSshKey;
-        }
-        {
-          hostName = "alpha";
+            hostName = "rafiq@nemesis";
+            systems = [
+              "x86_64-linux"
+              "aarch64-linux"
+            ];
+            protocol = "ssh";
+            maxJobs = 8;
+            speedFactor = 2;
+            supportedFeatures = [
+              "nixos-test"
+              "big-parallel"
+              "kvm"
+            ];
+            sshKey = darwinRootSshKey;
+          }
+          {
+            hostName = "rafiq@alpha";
           systems = [
             "aarch64-darwin"
             "x86_64-darwin"
