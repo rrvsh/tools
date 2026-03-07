@@ -13,6 +13,7 @@ in
         system.activationScripts.remote-builder-ssh-key.text =
           lib.optionalString (config.users.users ? ${username})
             ''
+              echo >&2 "copying ssh key to root for remote builders..."
               mkdir -p ${builtins.dirOf nixosRootSshKey}
               cp /home/${username}/.ssh/id_ed25519 ${nixosRootSshKey} 2>/dev/null || true
               chmod 600 ${nixosRootSshKey} 2>/dev/null || true
@@ -52,9 +53,9 @@ in
     modules.darwin.default = {
       system.activationScripts.extraActivation.text = lib.mkAfter ''
         echo >&2 "copying ssh key to root for remote builders..."
-        sudo mkdir -p ${builtins.dirOf darwinRootSshKey}
-        sudo cp /Users/${username}/.ssh/id_ed25519 ${darwinRootSshKey} 2>/dev/null || true
-        sudo chmod 600 ${darwinRootSshKey} 2>/dev/null || true
+        mkdir -p ${builtins.dirOf darwinRootSshKey}
+        cp /Users/${username}/.ssh/id_ed25519 ${darwinRootSshKey} 2>/dev/null || true
+        chmod 600 ${darwinRootSshKey} 2>/dev/null || true
       '';
       nix.buildMachines = [
         {
