@@ -10,36 +10,6 @@ let
     cp ${from} ${to} 2>/dev/null || true
     chmod 600 ${to} 2>/dev/null || true
   '';
-  mkBuildMachines = rootKeyPath: [
-    {
-      hostName = "nemesis";
-      systems = [
-        "aarch64-linux"
-        "x86_64-linux"
-      ];
-      protocol = "ssh";
-      maxJobs = 8;
-      speedFactor = 2;
-      supportedFeatures = [
-        "nixos-test"
-        "big-parallel"
-        "kvm"
-      ];
-      sshKey = rootKeyPath;
-    }
-    {
-      hostName = "alpha";
-      systems = [
-        "aarch64-darwin"
-        "x86_64-darwin"
-      ];
-      protocol = "ssh";
-      maxJobs = 4;
-      speedFactor = 1;
-      supportedFeatures = [ "big-parallel" ];
-      sshKey = rootKeyPath;
-    }
-  ];
 in
 {
   config.flake = {
@@ -49,14 +19,72 @@ in
         system.activationScripts.remote-builder-ssh-key.text = lib.optionalString (
           config.users.users ? ${username}
         ) (mkActivationScript "/home/${username}/.ssh/id_ed25519" nixosRootSshKey);
-        nix.buildMachines = mkBuildMachines nixosRootSshKey;
+        nix.buildMachines = [
+          {
+            hostName = "nemesis";
+            systems = [
+              "x86_64-linux"
+              "aarch64-linux"
+            ];
+            protocol = "ssh";
+            maxJobs = 8;
+            speedFactor = 2;
+            supportedFeatures = [
+              "nixos-test"
+              "big-parallel"
+              "kvm"
+            ];
+            sshKey = nixosRootSshKey;
+          }
+          {
+            hostName = "alpha";
+            systems = [
+              "aarch64-darwin"
+              "x86_64-darwin"
+            ];
+            protocol = "ssh";
+            maxJobs = 4;
+            speedFactor = 1;
+            supportedFeatures = [ "big-parallel" ];
+            sshKey = nixosRootSshKey;
+          }
+        ];
       };
 
     modules.darwin.default = {
       system.activationScripts.extraActivation.text = lib.mkAfter (
         mkActivationScript "/Users/${username}/.ssh/id_ed25519" darwinRootSshKey
       );
-      nix.buildMachines = mkBuildMachines darwinRootSshKey;
+      nix.buildMachines = [
+        {
+          hostName = "nemesis";
+          systems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+          protocol = "ssh";
+          maxJobs = 8;
+          speedFactor = 2;
+          supportedFeatures = [
+            "nixos-test"
+            "big-parallel"
+            "kvm"
+          ];
+          sshKey = darwinRootSshKey;
+        }
+        {
+          hostName = "alpha";
+          systems = [
+            "aarch64-darwin"
+            "x86_64-darwin"
+          ];
+          protocol = "ssh";
+          maxJobs = 4;
+          speedFactor = 1;
+          supportedFeatures = [ "big-parallel" ];
+          sshKey = darwinRootSshKey;
+        }
+      ];
     };
   };
 }
