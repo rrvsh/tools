@@ -48,6 +48,10 @@ in
             sshKey = nixosRootSshKey;
           }
         ];
+        programs.ssh.knownHosts = {
+          nemesis.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOM5K6SV4mAjtRB/OJOpyirgpHxJrOqaS7ZbbedNLYFV";
+          alpha.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8wLSVTv2/4n5vgZxWXnGT/mHpCqBCareAg7t6yoE9W";
+        };
       };
 
     modules.darwin.default = {
@@ -84,9 +88,13 @@ in
           maxJobs = 4;
           speedFactor = 1;
           supportedFeatures = [ "big-parallel" ];
-          sshKey = darwinRootSshKey;
-        }
-      ];
+            sshKey = darwinRootSshKey;
+          }
+        ];
+      programs.ssh.knownHosts = {
+        nemesis.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOM5K6SV4mAjtRB/OJOpyirgpHxJrOqaS7ZbbedNLYFV";
+        alpha.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8wLSVTv2/4n5vgZxWXnGT/mHpCqBCareAg7t6yoE9W";
+      };
     };
   };
 }
