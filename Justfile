@@ -14,8 +14,7 @@ run-docker:
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
 
 rb:
-  just nice
-  just check
+  just check-nix
   just _rb-{{os()}}
 
 _rb-macos:
