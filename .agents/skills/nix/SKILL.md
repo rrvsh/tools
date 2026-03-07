@@ -65,3 +65,30 @@
 - Use `import-tree` underscore ignore behavior (`/_`) for helper code that should not be auto-imported as modules.
 - Keep host-level module fan-in symmetrical: if NixOS appends `hosts.nixos.<name>.modules`, ensure Darwin output generation also appends `hosts.darwin.<name>.modules`.
 - For opaque `nix flake check` store-path failures, rerun with `--show-trace` and isolate suspected inputs with direct `nix build` commands.
+
+## Activation Scripts: NixOS vs nix-darwin
+
+**NixOS:**
+- Use `deps` attribute to specify execution order dependencies
+- Define custom script names freely
+- Set `supportsDryActivation = true` for dry-run support
+  - Allows the script to run during `nixos-rebuild dry-activate`
+  - Script must not modify the system when dry-activating
+- Check `$NIXOS_ACTION` environment variable to detect dry activation
+  - Variable is set to `dry-activate` when running in dry mode
+  - Use this to gate any system-modifying operations
+- Use `system.userActivationScripts` for user-level activation scripts
+  - Runs via systemd user service after system activation
+  - Useful for per-user setup like rebuilding desktop caches
+
+**nix-darwin:**
+- Use only predefined hooks (custom names won't execute)
+  - `system.activationScripts.preActivation.text` — Runs at the very beginning before any standard activation steps
+    - Use case: Validating prerequisites or backing up files before system changes
+  - `system.activationScripts.extraActivation.text` — Runs in the middle of activation; append with `lib.mkAfter` to run after other extra scripts
+    - Use case: Copying SSH keys or credentials needed by services during activation
+  - `system.activationScripts.postActivation.text` — Runs at the very end after all standard activation completes
+    - Use case: Installing Rosetta or running cleanup tasks after all system changes
+- Do not use `deps` attribute (ignored)
+- Do not use `supportsDryActivation` (not supported)
+- Do not use `system.userActivationScripts` (removed)
