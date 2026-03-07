@@ -2,37 +2,43 @@
 let
   cfg = config.flake;
   inherit (cfg.accounts.rafiq) username;
+  nixosRootSshKey = "/root/.ssh/id_ed25519";
+  darwinRootSshKey = "/var/root/.ssh/id_ed25519";
   mkActivationScript = from: to: ''
     echo >&2 "copying ssh key to root for remote builders..."
     mkdir -p ${builtins.dirOf to}
     cp ${from} ${to} 2>/dev/null || true
     chmod 600 ${to} 2>/dev/null || true
   '';
-  mkBuildMachine =
+  mkBuildMachines = rootKeyPath: [
     {
-      hostName,
-      kernel,
-      maxJobs ? 4,
-      speedFactor ? 1,
-    }:
-    {
-      inherit hostName maxJobs speedFactor;
+      hostName = "nemesis";
       systems = [
-        "aarch64-${kernel}"
-        "x86_64-${kernel}"
+        "aarch64-linux"
+        "x86_64-linux"
       ];
       protocol = "ssh";
+      maxJobs = 8;
+      speedFactor = 2;
       supportedFeatures = [
-        "big-parallel"
-      ]
-      ++ lib.optionals (kernel == "linux") [
         "nixos-test"
+        "big-parallel"
         "kvm"
       ];
-    };
-  mkBuildMachines = rootKeyPath: [
-    ((mkBuildMachine "nemesis" "linux" 8 2) // { sshKey = rootKeyPath; })
-    ((mkBuildMachine "alpha" "darwin") // { sshKey = rootKeyPath; })
+      sshKey = rootKeyPath;
+    }
+    {
+      hostName = "alpha";
+      systems = [
+        "aarch64-darwin"
+        "x86_64-darwin"
+      ];
+      protocol = "ssh";
+      maxJobs = 4;
+      speedFactor = 1;
+      supportedFeatures = [ "big-parallel" ];
+      sshKey = rootKeyPath;
+    }
   ];
 in
 {
@@ -42,15 +48,15 @@ in
       {
         system.activationScripts.remote-builder-ssh-key.text = lib.optionalString (
           config.users.users ? ${username}
-        ) (mkActivationScript "/home/${username}/.ssh/id_ed25519" "/root/.ssh/id_ed25519");
-        nix.buildMachines = mkBuildMachines "/root/.ssh/id_ed25519";
+        ) (mkActivationScript "/home/${username}/.ssh/id_ed25519" nixosRootSshKey);
+        nix.buildMachines = mkBuildMachines nixosRootSshKey;
       };
 
     modules.darwin.default = {
       system.activationScripts.extraActivation.text = lib.mkAfter (
-        mkActivationScript "/Users/${username}/.ssh/id_ed25519" "/var/root/.ssh/id_ed25519"
+        mkActivationScript "/Users/${username}/.ssh/id_ed25519" darwinRootSshKey
       );
-      nix.buildMachines = mkBuildMachines "/var/root/.ssh/id_ed25519";
+      nix.buildMachines = mkBuildMachines darwinRootSshKey;
     };
   };
 }
