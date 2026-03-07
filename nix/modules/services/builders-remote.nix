@@ -63,23 +63,23 @@ in
       '';
       nix.buildMachines = [
         {
-            hostName = "rafiq@nemesis";
-            systems = [
-              "x86_64-linux"
-              "aarch64-linux"
-            ];
-            protocol = "ssh";
-            maxJobs = 8;
-            speedFactor = 2;
-            supportedFeatures = [
-              "nixos-test"
-              "big-parallel"
-              "kvm"
-            ];
-            sshKey = darwinRootSshKey;
-          }
-          {
-            hostName = "rafiq@alpha";
+          hostName = "rafiq@nemesis";
+          systems = [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+          protocol = "ssh";
+          maxJobs = 8;
+          speedFactor = 2;
+          supportedFeatures = [
+            "nixos-test"
+            "big-parallel"
+            "kvm"
+          ];
+          sshKey = darwinRootSshKey;
+        }
+        {
+          hostName = "rafiq@alpha";
           systems = [
             "aarch64-darwin"
             "x86_64-darwin"
@@ -88,9 +88,9 @@ in
           maxJobs = 4;
           speedFactor = 1;
           supportedFeatures = [ "big-parallel" ];
-            sshKey = darwinRootSshKey;
-          }
-        ];
+          sshKey = darwinRootSshKey;
+        }
+      ];
       programs.ssh.knownHosts = {
         nemesis.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOM5K6SV4mAjtRB/OJOpyirgpHxJrOqaS7ZbbedNLYFV";
         alpha.publicKey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8wLSVTv2/4n5vgZxWXnGT/mHpCqBCareAg7t6yoE9W";
