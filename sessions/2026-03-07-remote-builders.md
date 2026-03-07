@@ -150,6 +150,33 @@ in
 
 5. **Automatic Import**: The module is automatically imported via `import-tree` - no manual import needed.
 
+## Important: Nix-Darwin Activation Scripts
+
+**Key Difference from NixOS:**
+
+Unlike NixOS, nix-darwin has a **hardcoded list** of activation scripts it runs. Custom scripts must use predefined hooks:
+
+- `system.activationScripts.preActivation.text`
+- `system.activationScripts.extraActivation.text` (use `lib.mkAfter` to append)
+- `system.activationScripts.postActivation.text`
+
+**Incorrect (doesn't execute):**
+```nix
+system.activationScripts.remote-builder-ssh-key = {
+  deps = [ "users" ];  # NixOS-only feature
+  text = ''...'';
+};
+```
+
+**Correct (executes during activation):**
+```nix
+system.activationScripts.extraActivation.text = lib.mkAfter ''
+  # Your script here
+'';
+```
+
+**Reference:** nix-darwin source: `modules/system/activation-scripts.nix` explicitly lists which scripts are called.
+
 ## Testing & Deployment
 
 ### Pre-deployment Checks
