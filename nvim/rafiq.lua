@@ -21,6 +21,8 @@ vim.api.nvim_create_autocmd("UIEnter", {
 
 -- CUSTOM LOGIC
 
+-- Custom Picker
+
 local function edit_note(path)
 	vim.fn.mkdir(vim.fn.fnamemodify(path, ":h"), "p")
 	if vim.fn.filereadable(path) == 0 then
@@ -69,23 +71,33 @@ vim.api.nvim_create_autocmd("FileType", {
 	end,
 })
 
+-- Indentation Rules ---
+
+vim.cmd("filetype plugin indent on")
+local indent_group = vim.api.nvim_create_augroup("IndentationRules", { clear = true })
+vim.api.nvim_create_autocmd("FileType", {
+	group = indent_group,
+	pattern = "*",
+	callback = function()
+		vim.bo.expandtab = true
+		vim.bo.softtabstop = 2
+		vim.bo.shiftwidth = 2
+		vim.bo.tabstop = 2
+	end,
+})
+
 -- OPTIONS
 
 vim.g.mapleader = " "
 
 vim.o.cursorline = true
-vim.o.expandtab = true -- insert tabs with space characters
+vim.o.ignorecase = true -- case insensitive search
 vim.o.number = true
 vim.o.relativenumber = true
-vim.o.shiftwidth = 2 -- amount of space characters builtins use by default
-vim.o.ignorecase = true -- case insensitive search
+vim.o.signcolumn = "yes"
 vim.o.smartcase = true -- case sensitive search if it includes capital letters
-vim.o.smarttab = true -- start of line uses shiftwidth, else tabstop
-vim.o.softtabstop = 2 -- amount of space characters tab should indent
-vim.o.tabstop = 2 -- amount of space characters a tab character represents
 vim.o.termguicolors = true
 vim.o.undofile = true
-vim.o.signcolumn = "yes"
 
 -- KEYMAPS
 
