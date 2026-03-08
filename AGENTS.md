@@ -16,16 +16,8 @@ You may add to this file anything that you think you should remember in the futu
     - For Nix module refactors under `nix/`, new files must be git-tracked (untracked files can be skipped by git-based flake source).
     - Do not add path-based aggregator imports for module grouping; rely on import-tree discovery and `config.flake.modules.*` wiring.
     - If a Nix module does not use arguments, omit the lambda header (no `{ ... }:`).
-- Refer to `.agents/skills/session-management/SKILL.md` for instructions on managing and processing session notes.
 - Refer to `.agents/skills/opencode-docs-index/SKILL.md` for comprehensive documentation on Opencode docs.
 - For tmux orchestration patterns for CLI-agent E2E runs, use `.agents/skills/tmux-e2e-cli-agent/SKILL.md`.
 
 ## Instructions from Agent
 
-### Session Files
-
-Always maintain a session file for the current task. Session files:
-- Go in `sessions/` directory
-- Use format: `YYYY-MM-DD-<task-name>.md`
-- Contain: detailed breakdown of work, reasoning/decisions made, learning points discovered, bugs encountered and solutions
-- Update existing session files for ongoing work; create new ones for new tasks
