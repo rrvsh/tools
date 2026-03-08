@@ -27,6 +27,7 @@
                 Do not modify my files without permission.
                 You may freely modify the files and folders in `~/.0_lumen`.
                   Use this to keep track of anything you want to remember.
+                  `~/.0_lumen/` is a git repository - commit all changes before ending the loop.
                 Always update the current session file before ending the loop.
                   Session files:
                     - Track the current task
