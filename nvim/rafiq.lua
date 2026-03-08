@@ -59,6 +59,7 @@ local function create_note_from_picker_query()
 	end
 
 	picker.close()
+	dir = dir:gsub("/+$", "") -- remove all trailing frontslashes
 	edit_note(dir .. "/" .. name)
 end
 
@@ -148,17 +149,14 @@ vim.keymap.set("n", "<leader>lr", function()
 	vim.lsp.buf.rename()
 end, { desc = "Rename all references" })
 vim.keymap.set("n", "<leader>nd", function()
-	edit_note(vim.fn.expand("~/0_library/notes/daily/" .. os.date("%F") .. ".md"))
-end, { desc = "Open daily note" })
-vim.keymap.set("n", "<leader>nm", function()
-	edit_note(vim.fn.expand("~/0_library/notes/monthly/" .. os.date("%Y-%m") .. ".md"))
-end, { desc = "Open monthly note" })
+	edit_note(vim.fn.expand("~/0_library/logs/daily/" .. os.date("%d%m%Y") .. ".md"))
+end, { desc = "Open daily log" })
+vim.keymap.set("n", "<leader>nD", function()
+	open_note_picker("~/0_library/logs/daily")
+end, { desc = "Picker: Daily Logs" })
 vim.keymap.set("n", "<leader>np", function()
-	open_note_picker("~/0_library/notes/process")
-end, { desc = "Process notes picker" })
-vim.keymap.set("n", "<leader>nP", function()
-	open_note_picker("~/0_library/playbooks")
-end, { desc = "Playbook picker" })
+	open_note_picker("~/0_library/logs/process/")
+end, { desc = "Picker: Process Logs" })
 vim.keymap.set("n", "<leader>ra", [[:%s/\<\>//gI<Left><Left><Left>]], {
 	desc = "Change all file refs",
 })
