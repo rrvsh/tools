@@ -7,9 +7,15 @@ in
     { pkgs, ... }:
     {
       home.packages = [
-        (pkgs.writeShellScriptBin "fooc" (
-          lib.fileContents (cfg.paths.root + "/scripts/fuzzy-open-or-create.sh")
-        ))
+        (pkgs.writeShellApplication {
+          name = "fooc";
+          text = lib.fileContents (cfg.paths.root + "/scripts/fuzzy-open-or-create.sh");
+          runtimeInputs = [
+            pkgs.ripgrep
+            pkgs.skim
+            pkgs.gnused
+          ];
+        })
       ];
       home.shellAliases = {
         v = "$EDITOR";

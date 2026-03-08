@@ -9,7 +9,7 @@ mkdir -p "$dir"
 
 mapfile -t out < <(
   {
-    find "$dir" -type f 2>/dev/null
+    rg --files "$dir"
     rg --line-number --no-heading --color=never "." "$dir" 2>/dev/null || true
   } | sk --print-query --bind "enter:accept,alt-enter:accept(__CREATE_MD__)"
 )
