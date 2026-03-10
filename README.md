@@ -3,7 +3,9 @@ caa 10032026
 
 these are the tools i currently use :3
 
-## the repo
+`just setup` -> set up the development environment
+`just generate-age-keys` -> generate age keys from ssh keys
+`just diff` -> build the nix deriviation specified from the current working directory and the git HEAD and diff them against each other
 
 ## acknowledgements
 

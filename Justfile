@@ -17,6 +17,9 @@ _generate-age-keys-macos:
   printf "age pubkey: %s\n" \
       $(age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt")
 
+diff *ARGS:
+  nix run .#nix-build-diff {{ ARGS }}
+
 watch-site:
   bacon run -- --manifest-path rs/Cargo.toml --package site
 
