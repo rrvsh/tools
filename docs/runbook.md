@@ -9,25 +9,6 @@ pkill .Hyprland-wrapp
 To resign one commit per branch:
 git fetch origin prime && git rebase -i origin/prime && git commit --amend '-S' && git rebase --continue && git push -f
 
-## generating an age key to edit sops-nix secrets
-
-```bash
-# linux
-ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
-age-keygen -y $HOME/.config/sops/age/keys.txt
-
-# darwin
-ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > "$HOME/Library/Application Support/sops/age/keys.txt"
-age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt"
-```
-
-## referencing home directories
-
-```nix
-config.home.homeDirectory # home manager
-config.users.users.rafiq.home # nixos/darwin
-```
-
 ## random
 
 reload direnv or nix develop: `direnv reload`

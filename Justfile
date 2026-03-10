@@ -1,13 +1,27 @@
+setup: generate-age-keys
+
+generate-age-keys:
+  just _generate-age-keys-{{os()}}
+
+_generate-age-keys-linux:
+  mkdir -p "$HOME/.config/sops/age"
+  ssh-to-age -private-key -i "$HOME/.ssh/id_ed25519" \
+    > "$HOME/.config/sops/age/keys.txt"
+  printf "age pubkey: %s\n" \
+      $(age-keygen -y "$HOME/.config/sops/age/keys.txt")
+
+_generate-age-keys-macos:
+  mkdir -p "$HOME/Library/Application Support/sops/age"
+  ssh-to-age -private-key -i "$HOME/.ssh/id_ed25519" \
+    > "$HOME/Library/Application Support/sops/age/keys.txt"
+  printf "age pubkey: %s\n" \
+      $(age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt")
+
 watch-site:
   bacon run -- --manifest-path rs/Cargo.toml --package site
 
 watch-clippy:
   bacon clippy -- --manifest-path rs/Cargo.toml --all
-
-setup:
-  cp .env.template .env
-  aws sts get-caller-identity > /dev/null 2>&1 || aws configure
-  colima status > /dev/null 2>&1 || colima start
 
 run-docker:
   docker load -i $(nix build .#packages.aarch64-linux.site-image --print-out-paths)
