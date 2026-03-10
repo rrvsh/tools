@@ -1,46 +1,31 @@
-{ config, ... }:
+{ inputs, config, ... }:
 let
   cfg = config.flake;
+  inherit (inputs.nixpkgs.lib) nixosSystem;
 in
 {
-  config.flake.hosts.nixos.nemesis = {
+  config.flake.nixosConfigurations.nemesis = nixosSystem {
     modules = [
+      cfg.modules.nixos.default
+      cfg.modules.nixos.rafiq
       (
         {
           pkgs,
-          ...
-        }:
-        {
-          boot = {
-            loader.systemd-boot = {
-              enable = true;
-              edk2-uefi-shell.enable = true;
-              windows."11-pro" = {
-                title = "Windows 11 Pro";
-                efiDeviceHandle = "HD0d";
-              };
-            };
-            loader.efi.canTouchEfiVariables = true;
-            kernelPackages = pkgs.linuxPackages_latest;
-          };
-
-          networking.hostName = "nemesis";
-          networking.networkmanager.enable = true;
-
-          time.timeZone = "Asia/Singapore";
-
-        }
-      )
-      (
-        {
           config,
           lib,
           modulesPath,
           ...
         }:
         {
+          networking.hostName = "nemesis";
+
           imports = [
             (modulesPath + "/installer/scan/not-detected.nix")
+            cfg.modules.nixos.hyprland
+            cfg.modules.nixos.nvidia
+            cfg.modules.nixos.pipewire
+            cfg.modules.nixos.steam
+            cfg.modules.nixos.i2c
           ];
 
           boot = {
@@ -75,17 +60,24 @@ in
 
           nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
           hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+
+          boot = {
+            loader.systemd-boot = {
+              enable = true;
+              edk2-uefi-shell.enable = true;
+              windows."11-pro" = {
+                title = "Windows 11 Pro";
+                efiDeviceHandle = "HD0d";
+              };
+            };
+            loader.efi.canTouchEfiVariables = true;
+            kernelPackages = pkgs.linuxPackages_latest;
+          };
+
+          networking.networkmanager.enable = true;
+          time.timeZone = "Asia/Singapore";
         }
       )
-      {
-        imports = [
-          cfg.modules.nixos.hyprland
-          cfg.modules.nixos.nvidia
-          cfg.modules.nixos.pipewire
-          cfg.modules.nixos.steam
-          cfg.modules.nixos.i2c
-        ];
-      }
     ];
   };
 }

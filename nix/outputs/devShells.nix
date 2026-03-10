@@ -45,12 +45,14 @@
         ++ ciInputs.gha
         ++ ciInputs.rs
         ++ (with pkgs; [
-          nh
-          bacon
-          docker
-          colima
+          age
           awscli2
+          bacon
+          colima
+          docker
+          nh
           opentofu
+          ssh-to-age
         ]);
       mkShell = inputs: pkgs.mkShell { buildInputs = inputs; };
       mkRustShell =

@@ -1,9 +1,5 @@
-{ config, ... }:
 let
-  account = config.flake.accounts.rafiq;
-  inherit (account) username;
   sharedNixSettings = {
-    trusted-users = [ username ];
     experimental-features = "nix-command flakes";
 
     eval-cache = true;
