@@ -1,12 +1,4 @@
-{
-  config,
-  lib,
-  inputs,
-  ...
-}:
-let
-  cfg = config.flake;
-in
+{ inputs, ... }:
 {
   config.flake = {
     modules.darwin.rafiq = {
@@ -49,13 +41,6 @@ in
           };
         };
         home.shellAliases.t = config.programs.yazi.shellWrapperName;
-        home.activation.test-yazi-plugin = inputs.home-manager.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-          ${
-            pkgs.writeShellScriptBin "test-yazi-plugin" (
-              lib.fileContents (cfg.paths.root + "/scripts/test-yazi-plugin.sh")
-            )
-          }/bin/test-yazi-plugin || true
-        '';
       };
   };
 }

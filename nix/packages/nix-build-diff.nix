@@ -8,7 +8,7 @@ in
     {
       packages.nix-build-diff = pkgs.writeShellApplication {
         name = "nbd";
-        text = lib.fileContents (cfg.paths.root + "/scripts/nix-build-diff.sh");
+        text = lib.fileContents (cfg.paths.root + "/sh/nix-build-diff.sh");
         runtimeInputs = [ pkgs.nvd ];
       };
     };

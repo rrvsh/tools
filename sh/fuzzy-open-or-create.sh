@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-dir="${1:-$HOME/0_library/notes/process}"
+dir="${1:-.}"
 editor="${EDITOR:-nvim}"
 
 mkdir -p "$dir"

@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: scripts/nix-build-diff.sh [options] [flake-attr ...]
+Usage: ./nix-build-diff.sh [options] [flake-attr ...]
 
 Options:
   -b, --base REF    Compare against git REF (default: HEAD)
@@ -15,10 +15,10 @@ then compares closures with nvd.
 If no flake-attr is provided, auto-detects based on hostname and OS.
 
 Examples:
-  scripts/nix-build-diff.sh
-  scripts/nix-build-diff.sh -b main
-  scripts/nix-build-diff.sh nixosConfigurations.nemesis.config.system.build.toplevel
-  scripts/nix-build-diff.sh -b abc123 .#nixosConfigurations.nemesis.config.system.build.toplevel
+  ./nix-build-diff.sh
+  ./nix-build-diff.sh -b main
+  ./nix-build-diff.sh nixosConfigurations.nemesis.config.system.build.toplevel
+  ./nix-build-diff.sh -b abc123 .#nixosConfigurations.nemesis.config.system.build.toplevel
 EOF
 }
 

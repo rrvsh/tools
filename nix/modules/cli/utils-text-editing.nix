@@ -9,7 +9,7 @@ in
       home.packages = [
         (pkgs.writeShellApplication {
           name = "fooc";
-          text = lib.fileContents (cfg.paths.root + "/scripts/fuzzy-open-or-create.sh");
+          text = lib.fileContents (cfg.paths.root + "/sh/fuzzy-open-or-create.sh");
           runtimeInputs = [
             pkgs.ripgrep
             pkgs.skim
