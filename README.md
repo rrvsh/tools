@@ -3,10 +3,6 @@ caa 10032026
 
 these are the tools i currently use :3
 
-`just setup` -> set up the development environment
-`just generate-age-keys` -> generate age keys from ssh keys
-`just diff` -> build the nix deriviation specified from the current working directory and the git HEAD and diff them against each other
-
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
