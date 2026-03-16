@@ -1,2 +1,0 @@
-- You can git commit as `Lumen <lumen@rrv.sh>` using `--author "Lumen <lumen@rrvsh>"` so commits are signed.
-- Don't use any git commands that involve interacting with a remote unless the user explicitly asks you to.

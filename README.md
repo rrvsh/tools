@@ -1,17 +1,16 @@
 # tools
+caa 10032026
 
-these are the tools i currently use
+these are the tools i currently use :3
 
-## working with the repo
+## notes
 
-### setup
-- run `gh auth login` to authenticate (for zizmor)
+- `__curPos.file` will give the full evaluated path of the nix file it is called in. See [this issue](https://github.com/NixOS/nix/issues/5897#issuecomment-1012165198) for more information.
+- to get home-manager logs on darwin, use `darwin-rebuild` instead of `nh`
 
-### day to day
-- `just nice` formats and auto-fixes lints
-- `just check` runs the same check run in CI for formatting, linting, and testing
-- `just rb` rebuilds the local Darwin system configuration after running `nice`, then `check`.
-    *- planned: allow specifying remote to rebuild, add support for not-Darwins*
+### to kill Hyprland from an SSH session
+
+pkill .Hyprland-wrapp
 
 ## acknowledgements
 

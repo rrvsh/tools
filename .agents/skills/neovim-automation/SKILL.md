@@ -1,6 +1,0 @@
-- Treat Alt/Meta key handling as terminal-dependent; keep a reliable fallback mapping (for example, `<C-y>`).
-- Use `nvim -u NONE` as a baseline control when debugging config/plugin-induced behavior.
-- For `sk`-based note creation, use `--bind` action chaining with guards:
-    - `if-query-not-empty(...)` to avoid empty filenames.
-    - `execute-silent(...)` + `accept(...)` to create and immediately open the selected path.
-- For `fff.nvim`, preserve normal Enter behavior for existing entries and add explicit create keybinds when needed.

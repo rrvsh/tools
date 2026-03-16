@@ -1,21 +1,20 @@
+# common tools
+
+diff *ARGS:
+  nix run .#nix-build-diff {{ ARGS }}
+
 watch-site:
   bacon run -- --manifest-path rs/Cargo.toml --package site
 
 watch-clippy:
   bacon clippy -- --manifest-path rs/Cargo.toml --all
 
-setup:
-  cp .env.template .env
-  aws sts get-caller-identity > /dev/null 2>&1 || aws configure
-  colima status > /dev/null 2>&1 || colima start
-
 run-docker:
   docker load -i $(nix build .#packages.aarch64-linux.site-image --print-out-paths)
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
 
 rb:
-  just nice
-  just check
+  just check-nix
   just _rb-{{os()}}
 
 _rb-macos:
@@ -23,6 +22,8 @@ _rb-macos:
 
 _rb-linux:
   nh os switch .
+
+# checks
 
 nice: format lint
 
@@ -60,7 +61,7 @@ lint-rs:
 test: test-nix test-rs
 
 test-nix:
-  nix flake check --all-systems
+  if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --all-systems; else nix flake check; fi
 
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all
@@ -81,3 +82,29 @@ check-nix:
 check-rs:
   cargo clippy --manifest-path rs/Cargo.toml --all
   cargo fmt --manifest-path rs/Cargo.toml --check --all
+
+# uncommon tools
+
+generate-age-keys:
+  just _generate-age-keys-{{os()}}
+
+_generate-age-keys-linux:
+  mkdir -p "$HOME/.config/sops/age"
+  ssh-to-age -private-key -i "$HOME/.ssh/id_ed25519" \
+    > "$HOME/.config/sops/age/keys.txt"
+  printf "age pubkey: %s\n" \
+      $(age-keygen -y "$HOME/.config/sops/age/keys.txt")
+
+_generate-age-keys-macos:
+  mkdir -p "$HOME/Library/Application Support/sops/age"
+  ssh-to-age -private-key -i "$HOME/.ssh/id_ed25519" \
+    > "$HOME/Library/Application Support/sops/age/keys.txt"
+  printf "age pubkey: %s\n" \
+      $(age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt")
+
+generate-ssh-pubkey:
+  ssh-keygen -f $HOME/.ssh/id_ed25519 -y > $HOME/.ssh/id_ed25519.pub
+
+clear-macos-dns-cache:
+  sudo dscacheutil -flushcache
+  sudo killall -HUP mDNSResponder
