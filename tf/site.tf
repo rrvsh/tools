@@ -1,14 +1,5 @@
-locals {
-  environment = [
-    for key, value in var.environment : {
-      name  = key
-      value = value
-    }
-  ]
-}
-
 resource "aws_acm_certificate" "site" {
-  domain_name       = var.domain_name
+  domain_name       = "rrv.sh"
   validation_method = "DNS"
 }
 
@@ -20,48 +11,18 @@ resource "aws_acm_certificate_validation" "site" {
   ]
 }
 
-resource "aws_security_group" "http_ingress" {
-  description = "Allows HTTP and HTTPS inbound traffic and all outbound traffic."
-  name        = "http_ingress"
-}
-
-resource "aws_vpc_security_group_ingress_rule" "allow_http_ipv4" {
-  security_group_id = aws_security_group.http_ingress.id
-  description       = "Allows HTTP inbound traffic."
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
-  ip_protocol       = "tcp"
-  to_port           = 80
-}
-
-resource "aws_vpc_security_group_ingress_rule" "allow_https_ipv4" {
-  security_group_id = aws_security_group.http_ingress.id
-  description       = "Allows HTTPS inbound traffic."
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 443
-  ip_protocol       = "tcp"
-  to_port           = 443
-}
-
-resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.http_ingress.id
-  description       = "Allows all outbound traffic."
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1"
-}
-
 resource "aws_lb" "site" {
-  name            = var.name
-  subnets         = var.subnet_ids
+  name            = "site"
+  subnets         = data.aws_subnets.default.ids
   security_groups = [aws_security_group.http_ingress.id]
 }
 
 resource "aws_lb_target_group" "site" {
-  name        = var.name
-  port        = var.container_port
+  name        = "site"
+  port        = 80
   protocol    = "HTTP"
   target_type = "ip"
-  vpc_id      = var.vpc_id
+  vpc_id      = data.aws_vpc.default.id
 }
 
 resource "aws_lb_listener" "site_http" {
@@ -88,15 +49,15 @@ resource "aws_lb_listener" "site_https" {
 
 resource "aws_security_group" "site" {
   description = "Allows HTTP traffic from ALB."
-  name        = var.name
+  name        = "site"
 }
 
 resource "aws_vpc_security_group_ingress_rule" "site_from_alb_http" {
   security_group_id            = aws_security_group.site.id
   referenced_security_group_id = aws_security_group.http_ingress.id
   description                  = "Allows HTTP inbound traffic from ALB."
-  from_port                    = var.container_port
-  to_port                      = var.container_port
+  from_port                    = 80
+  to_port                      = 80
   ip_protocol                  = "tcp"
 }
 
@@ -107,45 +68,50 @@ resource "aws_vpc_security_group_egress_rule" "site_to_all" {
   ip_protocol       = "-1"
 }
 
+
 resource "aws_ecs_cluster" "site" {
-  name = var.name
+  name = "site"
 }
 
 resource "aws_ecs_task_definition" "site" {
-  family                   = var.name
+  family                   = "site"
   requires_compatibilities = ["FARGATE"]
   network_mode             = "awsvpc"
-  cpu                      = var.cpu
-  memory                   = var.memory
+  cpu                      = 256
+  memory                   = 512
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
   }
   container_definitions = jsonencode([
     {
-      name         = var.name
-      image        = var.image
+      name         = "site"
+      image        = "ghcr.io/rrvsh/site:latest"
       essential    = true
-      portMappings = [{ containerPort = var.container_port }]
-      environment  = local.environment
+      portMappings = [{ containerPort = 80 }]
+      environment  = [{ name = "PORT", value = "80" }]
     }
   ])
 }
 
 resource "aws_ecs_service" "site" {
-  name            = var.name
+  name            = "site"
   cluster         = aws_ecs_cluster.site.id
   task_definition = aws_ecs_task_definition.site.arn
-  desired_count   = var.desired_count
+  desired_count   = 1
   launch_type     = "FARGATE"
   network_configuration {
-    subnets          = var.subnet_ids
+    subnets          = data.aws_subnets.default.ids
     security_groups  = [aws_security_group.site.id]
-    assign_public_ip = var.assign_public_ip
+    assign_public_ip = true
   }
   load_balancer {
-    container_name   = var.name
-    container_port   = var.container_port
+    container_name   = "site"
+    container_port   = 80
     target_group_arn = aws_lb_target_group.site.arn
   }
+}
+
+output "acm_dns_validation_records" {
+  value = aws_acm_certificate.site.domain_validation_options
 }
