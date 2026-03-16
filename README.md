@@ -12,29 +12,6 @@ these are the tools i currently use :3
 
 pkill .Hyprland-wrapp
 
-### generating an age key to edit sops-nix secrets
-
-```bash
-# linux
-ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > $HOME/.config/sops/age/keys.txt
-age-keygen -y $HOME/.config/sops/age/keys.txt
-
-# darwin
-ssh-to-age -private-key -i $HOME/.ssh/id_ed25519 > "$HOME/Library/Application Support/sops/age/keys.txt"
-age-keygen -y "$HOME/Library/Application Support/sops/age/keys.txt"
-```
-
-### generating ssh pubkey
-
-`ssh-keygen -f $HOME/.ssh/id_ed25519 -y > $HOME/.ssh/id_ed25519.pub`
-
-### clearing macos dns cache
-
-```bash
-sudo dscacheutil -flushcache
-sudo killall -HUP mDNSResponder
-```
-
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
