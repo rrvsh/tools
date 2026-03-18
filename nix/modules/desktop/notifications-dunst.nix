@@ -1,5 +1,7 @@
 {
-  config.flake.modules.homeManager.rafiq = {
-    services.dunst.enable = true;
-  };
+  config.flake.modules.homeManager.rafiq =
+    { pkgs, ... }:
+    {
+      services.dunst.enable = pkgs.stdenv.isLinux;
+    };
 }
