@@ -9,7 +9,7 @@ let
 in
 {
   config.flake = {
-    modules.nixos.remote-darwin-builder =
+    modules.nixos.default =
       { config, ... }:
       {
         system.activationScripts.remote-builder-ssh-key.text =
@@ -41,7 +41,7 @@ in
           ${darwinHostname}.publicKey = pubkey;
         };
       };
-    modules.darwin.remote-builder-darwin = {
+    modules.darwin.default = {
       system.activationScripts.extraActivation.text = lib.mkAfter ''
         echo >&2 "copying ssh key to root..."
         mkdir -p ${builtins.dirOf darwinRootSshKeyPath}
