@@ -39,9 +39,10 @@ impl AppState {
                     .collect::<Vec<ArticleLink>>();
 
                 articles.sort_by(|left, right| {
-                    left.date
-                        .cmp(&right.date)
-                        .then_with(|| right.title.cmp(&left.title))
+                    right
+                        .date
+                        .cmp(&left.date)
+                        .then_with(|| left.title.cmp(&right.title))
                 });
 
                 MonthGroup::new(year, month, articles)
