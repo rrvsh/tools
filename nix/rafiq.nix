@@ -1,39 +1,7 @@
-# Contains all configuration personal to Rafiq
-# exports modules.{nixos,darwin}.rafiq
-# consumed by hosts/{nemesis,alpha}.nix
-{
-  config,
-  inputs,
-  ...
-}:
+{ config, inputs, ... }:
 let
   cfg = config.flake;
-  inherit (config.flake.paths) root;
-  sharedOsConfig =
-    { config, pkgs, ... }:
-    let
-      homeDir = config.users.users.rafiq.home;
-    in
-    {
-      sops.age.sshKeyPaths = [ "${homeDir}/.ssh/id_ed25519" ];
-      nix.settings.trusted-users = [ "rafiq" ];
-      users.users.rafiq.shell = pkgs.fish;
-      home-manager = {
-        backupFileExtension = "bak";
-        overwriteBackup = true;
-        useUserPackages = true;
-        useGlobalPkgs = true;
-        users.rafiq = {
-          imports = [ homeConfig ];
-          home = {
-            username = "rafiq";
-            homeDirectory = homeDir;
-            stateVersion = "25.11";
-          };
-        };
-      };
-    };
-
+  inherit (cfg.paths) root;
   homeConfig =
     {
       config,
@@ -42,22 +10,10 @@ let
       lib,
       ...
     }:
-    let
-      inherit (inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}) fff-nvim;
-      epub-nvim = pkgs.vimUtils.buildVimPlugin {
-        pname = "epub.nvim";
-        version = "main";
-        src = inputs.epub-nvim;
-      };
-    in
     {
-      imports = [
-        inputs.nix-index-database.homeModules.nix-index
-      ];
-
+      imports = [ inputs.nix-index-database.homeModules.nix-index ];
       xdg.configFile."nvim/lua".source = root + /nvim;
       programs = {
-        # shell
         fish = {
           enable = true;
           interactiveShellInit = ''
@@ -98,8 +54,6 @@ let
             };
           };
         };
-
-        # navigation
         zoxide.enable = true;
         direnv = {
           enable = true;
@@ -113,8 +67,6 @@ let
         ripgrep-all.enable = true;
         nix-index.enable = true;
         nix-index-database.comma.enable = true;
-
-        # git
         git = {
           enable = true;
           ignores = [ ".direnv/" ];
@@ -130,8 +82,6 @@ let
             push.autoSetupRemote = true;
           };
         };
-
-        # editor
         neovim = {
           enable = true;
           package = inputs.neovim-nightly-overlay.packages.${pkgs.stdenv.hostPlatform.system}.default;
@@ -140,7 +90,7 @@ let
           vimAlias = true;
           initLua = ''require("rafiq")'';
           plugins = with pkgs.vimPlugins; [
-            fff-nvim
+            inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
             fidget-nvim
             gitsigns-nvim
             mini-nvim
@@ -148,7 +98,11 @@ let
             plenary-nvim
             which-key-nvim
             yazi-nvim
-            epub-nvim
+            (pkgs.vimUtils.buildVimPlugin {
+              pname = "epub.nvim";
+              version = "main";
+              src = inputs.epub-nvim;
+            })
           ];
           extraPackages = with pkgs; [
             cargo
@@ -164,77 +118,41 @@ let
             unzip
           ];
         };
-
-        # file browser
         yazi = {
           enable = true;
           shellWrapperName = "yy";
           package = inputs.yazi.packages.${pkgs.stdenv.hostPlatform.system}.default.override {
             runtimeDeps = ps: ps ++ [ pkgs.exiftool ];
           };
-          plugins = {
-            "path-from-root" = pkgs.stdenv.mkDerivation {
-              pname = "path-from-root";
-              version = "unstable-2024-01-01";
-              src = inputs.path-from-root-yazi;
-              installPhase = ''
-                mkdir -p $out
-                cp -r . $out/
-              '';
-            };
+          plugins."path-from-root" = pkgs.stdenv.mkDerivation {
+            pname = "path-from-root";
+            version = "unstable-2024-01-01";
+            src = inputs.path-from-root-yazi;
+            installPhase = ''
+              mkdir -p $out
+              cp -r . $out/
+            '';
           };
-          keymap = {
-            mgr.prepend_keymap = [
-              {
-                on = [
-                  "c"
-                  "r"
-                ];
-                run = "plugin path-from-root";
-                desc = "Copies path from git root";
-              }
-            ];
-          };
+          keymap.mgr.prepend_keymap = [
+            {
+              on = [
+                "c"
+                "r"
+              ];
+              run = "plugin path-from-root";
+              desc = "Copies path from git root";
+            }
+          ];
         };
-
-        # opencode
-        opencode = {
-          enable = true;
-          enableMcpIntegration = true;
-          settings = {
-            permission.external_directory = {
-              "/tmp/**" = "allow";
-              "/private/var/folders/**" = "allow";
-              "/nix/store/**" = "allow";
-              "~/0_library/**" = "allow";
-              "~/1_repos/**" = "allow";
-              "~/.0_lumen/**" = "allow";
-            };
-            default_agent = "wolf";
-            agent = {
-              wolf = {
-                mode = "all";
-                color = "#FFFFFF";
-                description = "Rafiq's personal assistant.";
-                prompt = "You are Wolf, Rafiq's personal assistant.";
-              };
-            };
-          };
-        };
-
-        # terminal
+        opencode.enable = true;
         ghostty = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty;
         };
-
-        # browser
         firefox = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
         };
-
-        # obs (linux only)
         obs-studio = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
           enable = true;
           package = pkgs.symlinkJoin {
@@ -248,8 +166,6 @@ let
           };
         };
       };
-
-      # desktop (linux)
       wayland.windowManager.hyprland = {
         enable = osConfig.programs.hyprland.enable or false;
         package = null;
@@ -298,10 +214,7 @@ let
           ];
         };
       };
-
       services.dunst.enable = pkgs.stdenv.isLinux;
-
-      # darwin desktop utils
       home.packages =
         (lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin)
         ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.alt-tab-macos)
@@ -309,21 +222,8 @@ let
         ++ [
           pkgs.gh
           pkgs.ddgr
-          (pkgs.writeShellApplication {
-            name = "fooc";
-            text = lib.fileContents (root + "/sh/fuzzy-open-or-create.sh");
-            runtimeInputs = [
-              pkgs.ripgrep
-              pkgs.skim
-              pkgs.gnused
-            ];
-          })
         ];
-
-      # mac-app-util: disable copyApps on Darwin
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
-
-      # obs assertions (linux only)
       assertions = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         {
           assertion =
@@ -336,13 +236,9 @@ let
           message = "You must enable pipewire and wireplumber for screencapturing to work.";
         }
       ];
-
       home.shellAliases = {
-        # zoxide
         cd = "echo \"Please use z\"";
-        # ripgrep-all
         rg = "rga";
-        # git
         gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
         gc = "git commit";
         gcam = "git commit -am";
@@ -359,14 +255,33 @@ let
         gs = "git status";
         gu = "git push";
         gy = "git pull";
-        # editor
         v = "$EDITOR";
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         lib = "fooc \"$HOME/0_library\"";
-        # tools
         t = config.programs.yazi.shellWrapperName;
         oc = "opencode";
         search = "ddgr -n 5 -C -x --np";
+      };
+    };
+  sharedOsConfig =
+    { config, pkgs, ... }:
+    {
+      sops.age.sshKeyPaths = [ "${config.users.users.rafiq.home}/.ssh/id_ed25519" ];
+      nix.settings.trusted-users = [ "rafiq" ];
+      users.users.rafiq.shell = pkgs.fish;
+      home-manager = {
+        backupFileExtension = "bak";
+        overwriteBackup = true;
+        useUserPackages = true;
+        useGlobalPkgs = true;
+        users.rafiq = {
+          imports = [ homeConfig ];
+          home = {
+            username = "rafiq";
+            homeDirectory = config.users.users.rafiq.home;
+            stateVersion = "25.11";
+          };
+        };
       };
     };
 in
@@ -377,8 +292,8 @@ in
       imports = [
         sharedOsConfig
         inputs.home-manager.nixosModules.home-manager
-        { programs.fish.enable = true; }
       ];
+      programs.fish.enable = true;
       users.mutableUsers = false;
       users.users.rafiq = {
         description = "Mohammad Rafiq";
@@ -391,17 +306,16 @@ in
         hashedPasswordFile = config.sops.secrets."rafiq/password".path;
       };
       sops.secrets."rafiq/password" = {
-        sopsFile = cfg.paths.root + "/sops/rafiq.yaml";
+        sopsFile = root + "/sops/rafiq.yaml";
         neededForUsers = true;
       };
     };
-
   config.flake.modules.darwin.rafiq = {
     imports = [
       sharedOsConfig
       inputs.home-manager.darwinModules.home-manager
-      { programs.fish.enable = true; }
     ];
+    programs.fish.enable = true;
     system.primaryUser = "rafiq";
     users.knownUsers = [ "rafiq" ];
     users.users.rafiq = {

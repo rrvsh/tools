@@ -5,38 +5,9 @@
 }:
 let
   cfg = config.flake;
-  inherit (inputs.nixpkgs.lib) nixosSystem;
-  username = "rafiq";
-  darwinHostname = "alpha";
-  linuxRootSshKeyPath = "/root/.ssh/id_ed25519";
-  remoteBuilderPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIM8wLSVTv2/4n5vgZxWXnGT/mHpCqBCareAg7t6yoE9W";
-  sharedNixSettings = {
-    experimental-features = "nix-command flakes";
-    eval-cache = true;
-    fallback = false;
-    use-registries = false;
-    flake-registry = "";
-    tarball-ttl = 86400;
-    connect-timeout = 10;
-    http-connections = 50;
-    max-substitution-jobs = 32;
-    narinfo-cache-negative-ttl = 60;
-    max-jobs = "auto";
-    cores = 0;
-    builders-use-substitutes = true;
-    allow-import-from-derivation = false;
-    extra-substituters = [
-      "https://nix-community.cachix.org"
-      "https://hyprland.cachix.org"
-    ];
-    extra-trusted-public-keys = [
-      "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-      "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
-    ];
-  };
 in
 {
-  config.flake.nixosConfigurations.nemesis = nixosSystem {
+  config.flake.nixosConfigurations.nemesis = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       cfg.modules.nixos.rafiq
       (
@@ -53,11 +24,8 @@ in
             inputs.hyprland.nixosModules.default
             (modulesPath + "/installer/scan/not-detected.nix")
           ];
-
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
-
-          # nix
           nixpkgs = {
             hostPlatform = lib.mkDefault "x86_64-linux";
             config.allowUnfreePredicate =
@@ -72,46 +40,36 @@ in
                 "steam-unwrapped"
               ];
           };
-          nix = {
-            distributedBuilds = true;
-            buildMachines = [
-              {
-                hostName = "${username}@${darwinHostname}";
-                systems = [
-                  "aarch64-darwin"
-                  "x86_64-darwin"
-                ];
-                protocol = "ssh";
-                maxJobs = 8;
-                speedFactor = 2;
-                supportedFeatures = [ "big-parallel" ];
-                sshKey = linuxRootSshKeyPath;
-              }
+          nix.settings = {
+            experimental-features = "nix-command flakes";
+            eval-cache = true;
+            fallback = false;
+            use-registries = false;
+            flake-registry = "";
+            tarball-ttl = 86400;
+            connect-timeout = 10;
+            http-connections = 50;
+            max-substitution-jobs = 32;
+            narinfo-cache-negative-ttl = 60;
+            max-jobs = "auto";
+            cores = 0;
+            builders-use-substitutes = true;
+            allow-import-from-derivation = false;
+            extra-substituters = [
+              "https://nix-community.cachix.org"
+              "https://hyprland.cachix.org"
             ];
-            settings = sharedNixSettings;
+            extra-trusted-public-keys = [
+              "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+              "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
+            ];
           };
           system.stateVersion = "25.11";
-
-          # remote builder ssh key
-          system.activationScripts.remote-builder-ssh-key.text =
-            lib.optionalString (config.users.users ? ${username})
-              ''
-                echo >&2 "copying ssh key to root..."
-                mkdir -p ${builtins.dirOf linuxRootSshKeyPath}
-                cp /home/${username}/.ssh/id_ed25519 \
-                  ${linuxRootSshKeyPath} 2>/dev/null \
-                  || true
-                chmod 600 ${linuxRootSshKeyPath} 2>/dev/null \
-                  || true
-              '';
-          # security
           security = {
             sudo.wheelNeedsPassword = false;
             polkit.enable = true;
             rtkit.enable = true;
           };
-
-          # services
           services = {
             openssh = {
               enable = true;
@@ -121,17 +79,11 @@ in
                 PermitRootLogin = "no";
               };
             };
-
-            # tailscale
             tailscale = {
               enable = true;
               authKeyFile = config.sops.secrets."tailscale/authkey".path;
             };
-
-            # nvidia
             xserver.videoDrivers = [ "nvidia" ];
-
-            # pipewire
             pipewire = {
               enable = true;
               alsa.enable = true;
@@ -144,8 +96,6 @@ in
           sops.secrets."tailscale/authkey" = {
             sopsFile = cfg.paths.root + "/sops/tailscale.yaml";
           };
-
-          # hardware
           boot = {
             initrd.availableKernelModules = [
               "nvme"
@@ -169,7 +119,6 @@ in
             loader.efi.canTouchEfiVariables = true;
             kernelPackages = pkgs.linuxPackages_latest;
           };
-
           fileSystems."/" = {
             device = "/dev/disk/by-uuid/13ad8c18-69ff-4288-8dec-bc50f0f5374c";
             fsType = "ext4";
@@ -204,10 +153,7 @@ in
             LIBVA_DRIVER_NAME = "nvidia";
             NIXOS_OZONE_WL = "1";
           };
-
-          # hyprland + steam + desktop programs
           programs = {
-            ssh.knownHosts.${darwinHostname}.publicKey = remoteBuilderPubkey;
             hyprland = {
               enable = true;
               xwayland.enable = true;
