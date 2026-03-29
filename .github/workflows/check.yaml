@@ -233,7 +233,7 @@ jobs:
 
       - name: Check Rust formatting and lint
         run: |
-          nix develop .#ci-rs -c just check-rs
+          nix develop .#ci-rust -c just check-rs
 
   test-rs:
     needs: changes
@@ -275,7 +275,7 @@ jobs:
 
       - name: Run Rust tests
         run: |
-          nix develop .#ci-rs -c just test-rs
+          nix develop .#ci-rust -c just test-rs
 
   check:
     if: ${{ always() }}
