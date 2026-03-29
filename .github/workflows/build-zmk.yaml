@@ -1,0 +1,208 @@
+name: Build ZMK firmware
+
+on:
+  push:
+    paths:
+      - "zmk-config/**"
+  pull_request:
+    paths:
+      - "zmk-config/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+    BUILD_MATRIX_PATH: "zmk-config/build.yaml"
+    CONFIG_PATH: "zmk-config"
+    FALLBACK_BINARY: "bin"
+    ARCHIVE_NAME: "firmware"
+
+jobs:
+  matrix:
+    runs-on: ubuntu-22.04
+    name: Fetch Build Keyboards
+    outputs:
+      build_matrix: ${{ env.BUILD_MATRIX }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Fetch Build Matrix
+        run: |
+          echo "BUILD_MATRIX=$(yq -oj -I0 \"${BUILD_MATRIX_PATH}\")" >> "$GITHUB_ENV"
+          yq -oj "${BUILD_MATRIX_PATH}"
+
+  build:
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    needs: matrix
+    name: Build
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.matrix.outputs.build_matrix) }}
+    steps:
+      - name: Act Workaround # https://github.com/nektos/act/issues/973
+        if: ${{ env.ACT }}
+        run: |
+          apt-get update && apt-get install -y curl unzip
+          curl -fsSL https://deb.nodesource.com/setup_22.x | bash && apt install -y nodejs
+
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          persist-credentials: false
+
+      - name: Create build directory
+        run: |
+          echo "BUILD_DIR=$(mktemp -d)" >> $GITHUB_ENV
+
+      - name: Prepare variables
+        shell: bash -x {0}
+        env:
+          board: ${{ matrix.board }}
+          shield: ${{ matrix.shield }}
+          artifact_name: ${{ matrix.artifact-name }}
+          snippet: ${{ matrix.snippet }}
+        run: |
+          if [ -e zephyr/module.yml ]; then
+            zmk_load_arg=" -DZMK_EXTRA_MODULES='${GITHUB_WORKSPACE}'"
+            new_tmp_dir="${TMPDIR:-/tmp}/zmk-config"
+            mkdir -p "${new_tmp_dir}"
+            echo "BASE_DIR=${new_tmp_dir}" >> $GITHUB_ENV
+          else
+            echo "BASE_DIR=${GITHUB_WORKSPACE}" >> $GITHUB_ENV
+          fi
+
+          if [ -n "${snippet}" ]; then
+            extra_west_args="-S \"${snippet}\""
+          fi
+
+          echo "ZEPHYR_VERSION=${ZEPHYR_VERSION}" >> $GITHUB_ENV
+          echo "EXTRA_WEST_ARGS=${extra_west_args}" >> $GITHUB_ENV
+          echo "EXTRA_CMAKE_ARGS=${shield:+-DSHIELD=\"$shield\"}${zmk_load_arg}" >> $GITHUB_ENV
+          echo "DISPLAY_NAME=${shield:+$shield - }${board}" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=${artifact_name:-${shield:+$shield-}${board//\//_}-zmk}" >> $GITHUB_ENV
+
+      - name: Copy config files to isolated temporary directory
+        run: |
+          if [ "${BASE_DIR}" != "${GITHUB_WORKSPACE}" ]; then
+            mkdir "${BASE_DIR}/${CONFIG_PATH}"
+            cp -R "${CONFIG_PATH}"/* "${BASE_DIR}/${CONFIG_PATH}/"
+          fi
+
+      - name: Cache west modules
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        continue-on-error: true
+        env:
+          cache_name: cache-zephyr-${{ env.ZEPHYR_VERSION }}-modules
+        with:
+          path: |
+            ${{ env.BASE_DIR }}/modules/
+            ${{ env.BASE_DIR }}/tools/
+            ${{ env.BASE_DIR }}/zephyr/
+            ${{ env.BASE_DIR }}/bootloader/
+            ${{ env.BASE_DIR }}/zmk/
+          key: ${{ runner.os }}-build-${{ env.cache_name }}-${{ hashFiles('**/west.yml', '**/build.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache_name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: West Init
+        working-directory: ${{ env.BASE_DIR }}
+        run: west init -l "${BASE_DIR}/${CONFIG_PATH}"
+
+      - name: West Update
+        working-directory: ${{ env.BASE_DIR }}
+        run: west update --fetch-opt=--filter=tree:0
+
+      - name: Check ZMK revision
+        working-directory: ${{ env.BASE_DIR }}
+        run: |
+          zmk_revision=$(west list -f "{revision}" zmk)
+          echo "zmk_revision=${zmk_revision}" >> $GITHUB_ENV
+          echo "ZMK revision: ${zmk_revision}"
+
+      - name: West Zephyr export
+        working-directory: ${{ env.BASE_DIR }}
+        run: west zephyr-export
+
+      - name: West Build (${{ env.DISPLAY_NAME }})
+        working-directory: ${{ env.BASE_DIR }}
+        shell: sh -x {0}
+        run: west build -s zmk/app -d "${BUILD_DIR}" -b "${MATRIX_BOARD}" ${EXTRA_WEST_ARGS} -- -DZMK_CONFIG=${BASE_DIR}/${CONFIG_PATH} ${EXTRA_CMAKE_ARGS} ${MATRIX_CMAKE_ARGS}
+        env:
+          MATRIX_BOARD: ${{ matrix.board }}
+          MATRIX_CMAKE_ARGS: ${{ matrix.cmake-args }}
+
+      - name: Warn about building from main if build fails
+        if: failure() && env.zmk_revision == 'main'
+        run: |
+          echo "# Consider Pinning ZMK" >> $GITHUB_STEP_SUMMARY
+          echo "Your recent build failure might be the result of breaking changes made to ZMK's main branch." >> $GITHUB_STEP_SUMMARY
+          echo "Consider [pinning your ZMK version](https://zmk.dev/blog/2025/06/20/pinned-zmk) to a release for increased stability." >> $GITHUB_STEP_SUMMARY
+          echo "See also the [list of released versions](https://github.com/zmkfirmware/zmk/releases)." >> $GITHUB_STEP_SUMMARY
+          echo "If you wish to stay on main, check the most recent pending release PR for breaking changes. [Our blog](https://zmk.dev/blog) may have upgrade information if breaking changes are significant." >> $GITHUB_STEP_SUMMARY
+
+      - name: ${{ env.DISPLAY_NAME }} Kconfig file
+        run: |
+          if [ -f "${BUILD_DIR}/zephyr/.config" ]
+          then
+            grep -v -e "^#" -e "^$" "${BUILD_DIR}/zephyr/.config" | sort
+          else
+            echo "No Kconfig output"
+          fi
+        if: ${{ !cancelled() }}
+
+      - name: ${{ env.DISPLAY_NAME }} Devicetree file
+        run: |
+          if [ -f "${BUILD_DIR}/zephyr/zephyr.dts" ]
+          then
+            cat "${BUILD_DIR}/zephyr/zephyr.dts"
+          elif [ -f "${BUILD_DIR}/zephyr/zephyr.dts.pre" ]
+          then
+            cat -s "${BUILD_DIR}/zephyr/zephyr.dts.pre"
+          else
+            echo "No Devicetree output"
+          fi
+        if: ${{ !cancelled() }}
+
+      - name: Rename artifacts
+        shell: sh -x {0}
+        run: |
+          mkdir "${BUILD_DIR}/artifacts"
+          if [ -f "${BUILD_DIR}/zephyr/zmk.uf2" ]
+          then
+            cp "${BUILD_DIR}/zephyr/zmk.uf2" "${BUILD_DIR}/artifacts/${ARTIFACT_NAME}.uf2"
+          elif [ -f "${BUILD_DIR}/zephyr/zmk.${FALLBACK_BINARY}" ]
+          then
+            cp "${BUILD_DIR}/zephyr/zmk.${FALLBACK_BINARY}" "${BUILD_DIR}/artifacts/${ARTIFACT_NAME}.${FALLBACK_BINARY}"
+          fi
+
+      - name: Archive (${{ env.DISPLAY_NAME }})
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: artifact-${{ env.ARTIFACT_NAME }}
+          path: ${{ env.BUILD_DIR }}/artifacts
+
+  merge:
+    permissions:
+      actions: write
+      contents: read
+    runs-on: ubuntu-latest
+    needs: build
+    name: Merge Output Artifacts
+    steps:
+      - name: Merge Artifacts
+        uses: actions/upload-artifact/merge@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ env.ARCHIVE_NAME }}
+          pattern: artifact-*
+          delete-merged: true

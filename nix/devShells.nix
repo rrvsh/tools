@@ -24,6 +24,7 @@
         luajitPackages.luacheck
       ];
       ghaTools = with pkgs; [
+        act
         gh
         zizmor
       ];
