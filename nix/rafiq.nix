@@ -219,6 +219,7 @@ let
         (lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin)
         ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.alt-tab-macos)
         ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.monitorcontrol)
+        ++ (lib.lists.optional pkgs.stdenv.isLinux pkgs.mixxx)
         ++ [
           pkgs.gh
           pkgs.ddgr
@@ -325,7 +326,10 @@ in
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
       ];
     };
-    homebrew.casks = [ "ghostty" ];
+    homebrew.casks = [
+      "ghostty"
+      "mixxx"
+    ];
     nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
     nix.settings.extra-substituters = [ "https://yazi.cachix.org" ];
     nix.settings.extra-trusted-public-keys = [
