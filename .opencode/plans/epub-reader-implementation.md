@@ -35,6 +35,10 @@ Delivery Plan (atomic commits)
    - Add index link to `/reader`.
    - Reader-specific CSS aligned with existing style.
    - Mobile layout pass and UX polish.
+   - Status: completed.
+
+Overall status
+- Implementation complete.
 
 Execution log
 - 2026-04-01: Plan initialized.
@@ -42,3 +46,4 @@ Execution log
 - 2026-04-01: Commit 1 completed after green checks.
 - 2026-04-01: Commit 2 completed (IndexedDB + library overlay + routing skeleton).
 - 2026-04-01: Commit 3 completed (epub rendering + progress + bookmarks).
+- 2026-04-01: Commit 4 completed (site integration + polish).

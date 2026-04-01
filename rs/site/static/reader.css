@@ -1,5 +1,6 @@
 .reader-page {
   width: min(960px, calc(100vw - 40px));
+  backdrop-filter: blur(2px);
 }
 
 .reader-app {
@@ -13,6 +14,11 @@
   padding: 16px;
   margin-bottom: 12px;
   background-color: rgba(0, 0, 0, 0.92);
+}
+
+#epub-file-input {
+  margin: 6px 0 10px;
+  width: 100%;
 }
 
 .book-list,
@@ -70,6 +76,7 @@
   border: 1px solid #666;
   border-radius: 10px;
   padding: 10px;
+  background: #050505;
 }
 
 .reader-placeholder,
