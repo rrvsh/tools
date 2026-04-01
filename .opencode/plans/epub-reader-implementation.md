@@ -22,6 +22,7 @@ Delivery Plan (atomic commits)
    - IndexedDB setup (`books`, `progress` stores).
    - Library overlay for import/open/delete.
    - Hash-based router (`#bookId` and `#bookId/cfi=...`).
+   - Status: completed.
 
 3) Reader rendering and persistence
    - epub.js continuous scroll rendition.
@@ -38,3 +39,4 @@ Execution log
 - 2026-04-01: Plan initialized.
 - 2026-04-01: Commit 1 implementation started (route + handler + template shell).
 - 2026-04-01: Commit 1 completed after green checks.
+- 2026-04-01: Commit 2 completed (IndexedDB + library overlay + routing skeleton).
