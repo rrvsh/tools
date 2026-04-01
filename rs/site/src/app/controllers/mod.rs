@@ -1,5 +1,6 @@
 mod article;
 mod index;
+mod reader;
 
 use crate::app::state::AppState;
 use axum::routing::get;
@@ -15,6 +16,7 @@ pub fn build_router(state: Arc<AppState>, content_dir: &str, static_dir: &str) -
         .nest_service("/static", ServeDir::new(static_dir))
         .nest_service("/assets", ServeDir::new(assets_dir))
         .route("/", get(index::get))
+        .route("/reader", get(reader::get))
         .route("/{year}/{month}/{day}/{slug}", get(article::get))
         .with_state(state)
 }

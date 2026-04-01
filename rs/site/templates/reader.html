@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link href="/static/reader.css" rel="stylesheet" />
+<script defer src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/epubjs@0.3.93/dist/epub.min.js"></script>
+<script defer src="/static/reader.js"></script>
+
+<div class="content reader-page">
+  <h1>epub reader</h1>
+  <p>store epubs in your browser and keep reading progress and bookmarks locally.</p>
+
+  <div id="reader-app" class="reader-app">
+    <div id="reader-overlay" class="reader-overlay">
+      <h2>library</h2>
+      <p>import one or more <code>.epub</code> files to get started.</p>
+      <input id="epub-file-input" type="file" accept=".epub,application/epub+zip" multiple>
+      <ul id="book-list" class="book-list"></ul>
+    </div>
+
+    <div id="reader-view" class="reader-view" hidden>
+      <div id="reader-controls" class="reader-controls">
+        <button id="open-library" class="button">Library</button>
+        <button id="add-bookmark" class="button">Add bookmark</button>
+        <button id="show-bookmarks" class="button">Bookmarks</button>
+        <span id="reading-progress" class="reading-progress">0%</span>
+      </div>
+      <div id="bookmarks-panel" class="bookmarks-panel" hidden>
+        <h3>bookmarks</h3>
+        <ul id="bookmark-list" class="bookmark-list"></ul>
+      </div>
+      <div id="reader-container" class="reader-container"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
