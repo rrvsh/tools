@@ -29,6 +29,7 @@ Delivery Plan (atomic commits)
    - Save/restore CFI progress.
    - Bookmark create/list/jump/delete.
    - Reading progress indicator.
+   - Status: completed.
 
 4) Site integration and polish
    - Add index link to `/reader`.
@@ -40,3 +41,4 @@ Execution log
 - 2026-04-01: Commit 1 implementation started (route + handler + template shell).
 - 2026-04-01: Commit 1 completed after green checks.
 - 2026-04-01: Commit 2 completed (IndexedDB + library overlay + routing skeleton).
+- 2026-04-01: Commit 3 completed (epub rendering + progress + bookmarks).
