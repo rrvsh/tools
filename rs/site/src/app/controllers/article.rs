@@ -1,5 +1,5 @@
 use crate::app::state::AppState;
-use crate::app::views::format_article_date;
+use crate::app::views::{base_template_github_url, current_commit_hash, format_article_date};
 use askama::Template;
 use axum::{
     extract::{Path, State},
@@ -16,6 +16,8 @@ struct ArticleTemplate {
     title: String,
     date: String,
     content: String,
+    base_template_url: String,
+    commit_hash: String,
 }
 
 pub async fn get(
@@ -31,6 +33,8 @@ pub async fn get(
         title: document.title.clone(),
         date: format_article_date(requested_date),
         content: to_html(&document.content),
+        base_template_url: base_template_github_url(),
+        commit_hash: current_commit_hash(),
     }
     .render()
     .map_or_else(

@@ -12,3 +12,11 @@ if (window.location.pathname ===  "/") {
 backToHomeButton.addEventListener("click", () => {
   window.location.href = "/";
 });
+
+const pageBottomSentinel = document.querySelector("#page-bottom-sentinel");
+if (pageBottomSentinel) {
+  const observer = new IntersectionObserver(([entry]) => {
+    document.body.classList.toggle("is-at-page-bottom", entry.isIntersecting);
+  });
+  observer.observe(pageBottomSentinel);
+}
