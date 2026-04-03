@@ -29,10 +29,8 @@
       ];
     in
     {
-      devShells = {
-        default = pkgs.mkShell {
-          buildInputs = common;
-        };
+      devShells = rec {
+        default = ci-all;
 
         ci-nix = pkgs.mkShell {
           buildInputs = common ++ nixTools;
