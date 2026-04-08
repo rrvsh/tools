@@ -171,6 +171,7 @@ in
             gamemode.enable = true;
             gamescope.enable = true;
           };
+          virtualisation.docker.enable = true;
           assertions = [
             {
               assertion = config.networking.hostName != "";
