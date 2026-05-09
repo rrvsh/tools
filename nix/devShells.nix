@@ -58,12 +58,8 @@
             ++ rustTools
             ++ (with pkgs; [
               age
-              awscli2
               bacon
-              colima
-              docker
               nh
-              opentofu
               ssh-to-age
             ]);
           shellHook = rustShellHook;

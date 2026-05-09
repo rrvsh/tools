@@ -27,7 +27,7 @@ _rb-linux:
 
 nice: format lint
 
-format: format-gha format-lua format-nix format-rs format-tf
+format: format-gha format-lua format-nix format-rs
 
 format-gha:
   zizmor . --gh-token $(gh auth token) --fix=all
@@ -40,9 +40,6 @@ format-nix:
 
 format-rs:
   cargo fmt --manifest-path rs/Cargo.toml --all
-
-format-tf:
-  tofu -chdir=tf fmt
 
 lint: lint-lua lint-nix lint-rs
 
