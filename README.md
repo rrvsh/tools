@@ -8,6 +8,16 @@ these are the tools i currently use :3
 - `__curPos.file` will give the full evaluated path of the nix file it is called in. See [this issue](https://github.com/NixOS/nix/issues/5897#issuecomment-1012165198) for more information.
 - to get home-manager logs on darwin, use `darwin-rebuild` instead of `nh`
 
+## nemesis midnight shutdown
+
+- hypridle writes `idle`/`active` state to `/run/user/<uid>/hypridle-state` on nemesis.
+- idle timeout is `60` seconds.
+- `daily-midnight-poweroff` runs at `00:00` local time daily.
+- at `00:00`, if state is not `idle`, service exits immediately.
+- if state is `idle`, service sends a desktop notification that shutdown will happen in 1 minute.
+- service waits 60 seconds, checks state again, and powers off immediately if still `idle`.
+- service logs each step to journald (view with `journalctl -u daily-midnight-poweroff.service`).
+
 ### to kill Hyprland from an SSH session
 
 pkill .Hyprland-wrapp

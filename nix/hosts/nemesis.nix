@@ -18,6 +18,11 @@ in
           modulesPath,
           ...
         }:
+        let
+          uid = toString config.users.users.rafiq.uid;
+          runtimeDir = "/run/user/${uid}";
+          idleStateFile = "${runtimeDir}/hypridle-state";
+        in
         {
           imports = [
             inputs.sops-nix.nixosModules.sops
@@ -92,6 +97,54 @@ in
               jack.enable = true;
               wireplumber.enable = true;
             };
+          };
+          systemd.services.daily-midnight-poweroff = {
+            description = "Power off nemesis daily at midnight";
+            serviceConfig = {
+              Type = "oneshot";
+              ExecStart = pkgs.writeShellScript "daily-midnight-poweroff" ''
+                set -euo pipefail
+
+                log() {
+                  printf '%s %s\n' "$(date '+%F %T %Z')" "$1"
+                }
+                read_state() {
+                  if [ -r "$state_file" ]; then
+                    ${pkgs.coreutils}/bin/cat "$state_file" || true
+                    return
+                  fi
+                  printf 'unknown'
+                }
+                state_file="${idleStateFile}"
+                runtime_dir="${runtimeDir}"
+
+                state="$(read_state)"
+                log "midnight check state=$state file=$state_file"
+                if [ "$state" != "idle" ]; then
+                  log "not idle at 00:00, exiting"
+                  exit 0
+                fi
+
+                ${pkgs.util-linux}/bin/runuser -u rafiq -- env \
+                  XDG_RUNTIME_DIR="$runtime_dir" \
+                  DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus" \
+                  ${pkgs.libnotify}/bin/notify-send \
+                  "Midnight auto-shutdown" \
+                  "Idle detected. Shutting down in 1 minute unless activity resumes." \
+                  || true
+                log "idle at 00:00, notification sent, waiting 60s"
+                ${pkgs.coreutils}/bin/sleep 60
+
+                state_after="$(read_state)"
+                log "post-wait check state=$state_after file=$state_file"
+                if [ "$state_after" = "idle" ]; then
+                  log "still idle at 00:01, powering off now"
+                  ${pkgs.systemd}/bin/systemctl poweroff
+                fi
+                log "activity resumed before 00:01, skipping shutdown"
+              '';
+            };
+            startAt = "*-*-* 00:00:00";
           };
           sops.secrets."tailscale/authkey" = {
             sopsFile = cfg.paths.root + "/sops/tailscale.yaml";
