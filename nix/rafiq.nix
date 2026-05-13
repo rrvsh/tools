@@ -216,11 +216,31 @@ let
         };
       };
       services.dunst.enable = pkgs.stdenv.isLinux;
+      services.hypridle = lib.mkIf (pkgs.stdenv.isLinux && (osConfig.programs.hyprland.enable or false)) (
+        let
+          uid = toString osConfig.users.users.rafiq.uid;
+          runtimeDir = "/run/user/${uid}";
+          idleStateFile = "${runtimeDir}/hypridle-state";
+        in
+        {
+          enable = true;
+          settings = {
+            listener = [
+              {
+                timeout = 60;
+                on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
+                on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
+              }
+            ];
+          };
+        }
+      );
       home.packages =
         (lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin)
         ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.alt-tab-macos)
         ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.monitorcontrol)
         ++ (lib.lists.optional pkgs.stdenv.isLinux pkgs.mixxx)
+        ++ (lib.lists.optional pkgs.stdenv.isLinux pkgs.libnotify)
         ++ [
           pkgs.gh
           pkgs.ddgr
