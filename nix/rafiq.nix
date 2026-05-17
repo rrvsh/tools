@@ -236,14 +236,16 @@ let
         }
       );
       home.packages =
-        (lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin)
-        ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.alt-tab-macos)
-        ++ (lib.lists.optional pkgs.stdenv.isDarwin pkgs.monitorcontrol)
-        ++ (lib.lists.optional pkgs.stdenv.isLinux pkgs.mixxx)
-        ++ (lib.lists.optional pkgs.stdenv.isLinux pkgs.libnotify)
+        with pkgs;
+        (lib.lists.optional stdenv.isDarwin firefox-bin)
+        ++ (lib.lists.optional stdenv.isDarwin alt-tab-macos)
+        ++ (lib.lists.optional stdenv.isDarwin monitorcontrol)
+        ++ (lib.lists.optional stdenv.isLinux mixxx)
+        ++ (lib.lists.optional stdenv.isLinux libnotify)
         ++ [
-          pkgs.gh
-          pkgs.ddgr
+          gh
+          ddgr
+          pi-coding-agent
         ];
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
       assertions = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
