@@ -144,7 +144,6 @@ let
             }
           ];
         };
-        opencode.enable = true;
         ghostty = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty;
@@ -283,7 +282,6 @@ let
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         lib = "fooc \"$HOME/0_library\"";
         t = config.programs.yazi.shellWrapperName;
-        oc = "opencode";
         search = "ddgr -n 5 -C -x --np";
       };
     };
