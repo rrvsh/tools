@@ -32,6 +32,21 @@ a:visited, a:hover {
   border-radius: 15px;
 }
 
+.content img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.content pre {
+  overflow-x: auto;
+}
+
+.content code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .button {
   cursor: pointer;
   background-color: black;
