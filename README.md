@@ -7,6 +7,7 @@ these are the tools i currently use :3
 
 - `__curPos.file` will give the full evaluated path of the nix file it is called in. See [this issue](https://github.com/NixOS/nix/issues/5897#issuecomment-1012165198) for more information.
 - to get home-manager logs on darwin, use `darwin-rebuild` instead of `nh`
+- on `alpha`, run rebuilds via `nix develop -c just rb` from the repo root. if rosetta-builder flakes out with platform mismatch / remote builder issues, run `just rb` a second time — it often succeeds on retry.
 
 ## nemesis midnight shutdown
 
