@@ -14,6 +14,7 @@ let
       imports = [ inputs.nix-index-database.homeModules.nix-index ];
       xdg.configFile."nvim/lua".source = root + /nvim;
       programs = {
+        wofi.enable = pkgs.stdenv.isLinux;
         fish = {
           enable = true;
           interactiveShellInit = ''
@@ -173,6 +174,7 @@ let
             ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
             ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
             ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
+            "ALT, SPACE, exec, wofi --show drun"
             "ALT_CTRL, 1, exec, ghostty"
             "ALT_CTRL, 2, exec, firefox"
             "ALT_CTRL, w, killactive"
