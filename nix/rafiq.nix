@@ -90,7 +90,7 @@ let
           vimAlias = true;
           initLua = ''require("rafiq")'';
           plugins = with pkgs.vimPlugins; [
-            inputs.fff-nvim.packages.${pkgs.stdenv.hostPlatform.system}.fff-nvim
+            fff-nvim
             fidget-nvim
             gitsigns-nvim
             mini-nvim

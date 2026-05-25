@@ -36,6 +36,7 @@ in
             config.allowUnfreePredicate =
               pkg:
               builtins.elem (lib.strings.getName pkg) [
+                "nvidia-kernel-modules"
                 "nvidia-persistenced"
                 "nvidia-settings"
                 "nvidia-x11"
