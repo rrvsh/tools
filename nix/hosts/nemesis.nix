@@ -173,17 +173,33 @@ in
             loader.efi.canTouchEfiVariables = true;
             kernelPackages = pkgs.linuxPackages_latest;
           };
-          fileSystems."/" = {
-            device = "/dev/disk/by-uuid/13ad8c18-69ff-4288-8dec-bc50f0f5374c";
-            fsType = "ext4";
-          };
-          fileSystems."/boot" = {
-            device = "/dev/disk/by-uuid/BC86-01BB";
-            fsType = "vfat";
-            options = [
-              "fmask=0077"
-              "dmask=0077"
-            ];
+          fileSystems = {
+            "/" = {
+              device = "/dev/disk/by-uuid/13ad8c18-69ff-4288-8dec-bc50f0f5374c";
+              fsType = "ext4";
+            };
+            "/boot" = {
+              device = "/dev/disk/by-uuid/BC86-01BB";
+              fsType = "vfat";
+              options = [
+                "fmask=0077"
+                "dmask=0077"
+              ];
+            };
+            "/mnt/windows" = {
+              device = "/dev/disk/by-uuid/0EA45F71A45F59F3";
+              fsType = "ntfs3";
+              options = [
+                "rw"
+                "uid=${uid}"
+                "umask=022"
+                "iocharset=utf8"
+                "windows_names"
+                "nofail"
+                "x-systemd.automount"
+                "x-systemd.idle-timeout=10min"
+              ];
+            };
           };
           swapDevices = [ ];
           hardware = {
