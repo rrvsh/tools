@@ -245,6 +245,7 @@ let
           gh
           ddgr
           pi-coding-agent
+          (prismlauncher.override { jdks = [ jdk25 ]; })
         ];
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
       assertions = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
