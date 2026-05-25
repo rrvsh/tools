@@ -152,18 +152,6 @@ let
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
         };
-        obs-studio = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-          enable = true;
-          package = pkgs.symlinkJoin {
-            name = "obs-studio-wrapped";
-            paths = [ pkgs.obs-studio ];
-            buildInputs = [ pkgs.makeWrapper ];
-            postBuild = ''
-              wrapProgram $out/bin/obs \
-                --set QT_QPA_PLATFORM xcb
-            '';
-          };
-        };
       };
       wayland.windowManager.hyprland = {
         enable = osConfig.programs.hyprland.enable or false;
@@ -185,14 +173,9 @@ let
             ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
             ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
             ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-            ", F7, exec, ${lib.getExe pkgs.ddcutil} setvcp 10 - 5"
-            ", F8, exec, ${lib.getExe pkgs.ddcutil} setvcp 10 + 5"
             "ALT_CTRL, 1, exec, ghostty"
             "ALT_CTRL, 2, exec, firefox"
-            "ALT_CTRL, 3, exec, steam"
-            "ALT_CTRL, 4, exec, obs"
             "ALT_CTRL, w, killactive"
-            "ALT, TAB, cyclenext"
             "ALT, H, movefocus, l"
             "ALT, J, movefocus, d"
             "ALT, K, movefocus, u"
