@@ -47,7 +47,7 @@ pub fn load_documents_from_dir<P: AsRef<Path>>(path: P) -> Vec<Document> {
         .filter_map(std::result::Result::ok)
         .filter_map(|entry| Document::from_path(entry.path()))
         .collect::<Vec<Document>>();
-    documents.sort_by(|left, right| right.date.cmp(&left.date));
+    documents.sort_by_key(|document| std::cmp::Reverse(document.date));
     documents
 }
 
