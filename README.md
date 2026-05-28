@@ -23,6 +23,32 @@ these are the tools i currently use :3
 
 pkill .Hyprland-wrapp
 
+## systemd-boot EFI default entry override
+
+If `bootctl status` shows a stale `Default Entry` while `/boot/loader/loader.conf` has a newer `default`, the EFI variable `LoaderEntryDefault` is overriding `loader.conf`.
+
+Inspect current default:
+
+```bash
+sudo bootctl status | rg "Current Entry|Default Entry"
+sudo grep '^default ' /boot/loader/loader.conf
+```
+
+Set EFI default explicitly:
+
+```bash
+sudo bootctl set-default nixos-generation-<N>.conf
+```
+
+Unset EFI override (use `loader.conf` as source of truth):
+
+```bash
+# remove LoaderEntryDefault EFI variable
+sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-*; do [ -e "$v" ] || continue; chattr -i "$v" 2>/dev/null || true; rm -f "$v" || true; done'
+```
+
+Note: on this machine, unsetting from `boot.loader.systemd-boot.extraInstallCommands` did not persist (the variable reappeared by end of switch). The reliable approach here is to unset it after `nh os switch` completes (wired into `Justfile` `rb`).
+
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
