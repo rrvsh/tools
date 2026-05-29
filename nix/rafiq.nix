@@ -178,6 +178,7 @@ let
             "ALT_CTRL, 1, exec, ghostty"
             "ALT_CTRL, 2, exec, firefox"
             "ALT_CTRL, w, killactive"
+            "ALT_CTRL, p, togglefloating"
             "ALT, H, movefocus, l"
             "ALT, J, movefocus, d"
             "ALT, K, movefocus, u"
@@ -191,11 +192,9 @@ let
             "ALT_SHIFT_SUPER, H, movetoworkspace, -1"
             "ALT_SHIFT_SUPER, L, movetoworkspace, +1"
           ];
-          bindc = [ "ALT_SHIFT, mouse:272, togglefloating" ];
           bindm = [
-            "ALT, mouse:272, movewindow"
-            "ALT, mouse:273, resizewindow 2"
-            "ALT_SHIFT, mouse:273, resizewindow 1"
+            "ALT_SHIFT, mouse:272, movewindow"
+            "ALT_SHIFT, mouse:273, resizewindow"
           ];
         };
       };
