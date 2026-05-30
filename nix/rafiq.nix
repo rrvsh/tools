@@ -151,6 +151,13 @@ let
         firefox = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
+          # Keep explicit until home.stateVersion migration cleanup is complete.
+          # Linux is on XDG path; old ~/.mozilla/firefox can be removed later.
+          configPath =
+            if pkgs.stdenv.isDarwin then
+              "Library/Application Support/Firefox"
+            else
+              "${config.xdg.configHome}/mozilla/firefox";
         };
       };
       wayland.windowManager.hyprland = {
