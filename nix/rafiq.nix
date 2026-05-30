@@ -167,41 +167,172 @@ let
         portalPackage = null;
         settings = {
           monitor = [
-            "HDMI-A-1, 3840x2160@160, auto, 2"
-            ", preferred, auto, 1"
+            {
+              output = "HDMI-A-1";
+              mode = "3840x2160@160";
+              position = "auto";
+              scale = 2;
+            }
+            {
+              output = "";
+              mode = "preferred";
+              position = "auto";
+              scale = 2;
+            }
           ];
-          input.sensitivity = 1.0;
-          general = {
-            gaps_in = 0;
-            gaps_out = 0;
-            border_size = 0;
+          config = {
+            input = {
+              sensitivity = 1.0;
+            };
+            general = {
+              gaps_in = 0;
+              gaps_out = 0;
+              border_size = 0;
+            };
           };
           bind = [
-            ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
-            ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
-            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-            ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-            "ALT, SPACE, exec, wofi --show drun"
-            "ALT_CTRL, 1, exec, ghostty"
-            "ALT_CTRL, 2, exec, firefox"
-            "ALT_CTRL, w, killactive"
-            "ALT_CTRL, p, togglefloating"
-            "ALT, H, movefocus, l"
-            "ALT, J, movefocus, d"
-            "ALT, K, movefocus, u"
-            "ALT, L, movefocus, r"
-            "ALT_SUPER, H, workspace, -1"
-            "ALT_SUPER, L, workspace, +1"
-            "ALT_SHIFT, H, movewindow, l"
-            "ALT_SHIFT, J, movewindow, d"
-            "ALT_SHIFT, K, movewindow, u"
-            "ALT_SHIFT, L, movewindow, r"
-            "ALT_SHIFT_SUPER, H, movetoworkspace, -1"
-            "ALT_SHIFT_SUPER, L, movetoworkspace, +1"
-          ];
-          bindm = [
-            "ALT_SHIFT, mouse:272, movewindow"
-            "ALT_SHIFT, mouse:273, resizewindow"
+            {
+              _args = [
+                "XF86AudioRaiseVolume"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
+                { repeating = true; }
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioLowerVolume"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
+                { repeating = true; }
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioMute"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioMicMute"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SPACE"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wofi --show drun\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + 1"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + 2"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"firefox\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + W"
+                (lib.generators.mkLuaInline "hl.dsp.window.close()")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + P"
+                (lib.generators.mkLuaInline "hl.dsp.window.float({ action = \"toggle\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + H"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"left\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + J"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"down\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + K"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"up\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + L"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"right\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SUPER + H"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"e-1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SUPER + L"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"e+1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + H"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow l\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + J"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow d\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + K"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow u\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + L"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow r\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + SUPER + H"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movetoworkspace -1\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + SUPER + L"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movetoworkspace +1\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + mouse:272"
+                (lib.generators.mkLuaInline "hl.dsp.window.drag()")
+                { mouse = true; }
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + mouse:273"
+                (lib.generators.mkLuaInline "hl.dsp.window.resize()")
+                { mouse = true; }
+              ];
+            }
           ];
         };
       };
