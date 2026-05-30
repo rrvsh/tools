@@ -162,6 +162,7 @@ let
       };
       wayland.windowManager.hyprland = {
         enable = osConfig.programs.hyprland.enable or false;
+        configType = "lua";
         package = null;
         portalPackage = null;
         settings = {
