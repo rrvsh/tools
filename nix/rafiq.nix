@@ -65,7 +65,6 @@ let
           enable = true;
           defaultCommand = "${lib.getExe pkgs.ripgrep} --files --hidden --glob '!.git'";
         };
-        ripgrep-all.enable = true;
         nix-index.enable = true;
         nix-index-database.comma.enable = true;
         git = {
@@ -226,9 +225,10 @@ let
         ++ (lib.lists.optional stdenv.isLinux mixxx)
         ++ (lib.lists.optional stdenv.isLinux libnotify)
         ++ [
-          gh
           ddgr
+          gh
           pi-coding-agent
+          ripgrep
           (prismlauncher.override { jdks = [ jdk25 ]; })
         ];
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
@@ -246,7 +246,6 @@ let
       ];
       home.shellAliases = {
         cd = "echo \"Please use z\"";
-        rg = "rga";
         gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
         gc = "git commit";
         gcam = "git commit -am";
