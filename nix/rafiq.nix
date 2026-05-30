@@ -265,7 +265,6 @@ let
         gy = "git pull";
         v = "$EDITOR";
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-        lib = "fooc \"$HOME/0_library\"";
         t = config.programs.yazi.shellWrapperName;
         search = "ddgr -n 5 -C -x --np";
       };

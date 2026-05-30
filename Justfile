@@ -1,8 +1,5 @@
 # common tools
 
-diff *ARGS:
-  nix run .#nix-build-diff {{ ARGS }}
-
 watch-site:
   bacon run -- --manifest-path rs/Cargo.toml --package site
 
