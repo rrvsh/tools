@@ -274,49 +274,49 @@ let
             {
               _args = [
                 "ALT + SUPER + H"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"e-1\" })")
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r-1\" })")
               ];
             }
             {
               _args = [
                 "ALT + SUPER + L"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"e+1\" })")
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r+1\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + H"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow l\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"left\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + J"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow d\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"down\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + K"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow u\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"up\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + L"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movewindow r\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"right\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + SUPER + H"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movetoworkspace -1\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r-1\" })")
               ];
             }
             {
               _args = [
                 "ALT + SHIFT + SUPER + L"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"hyprctl dispatch movetoworkspace +1\")")
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r+1\" })")
               ];
             }
             {
