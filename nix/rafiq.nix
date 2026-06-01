@@ -15,6 +15,10 @@ let
       xdg.configFile."nvim/lua".source = root + /nvim;
       programs = {
         wofi.enable = pkgs.stdenv.isLinux;
+        waybar = {
+          enable = true;
+          systemd.enable = true;
+        };
         fish = {
           enable = true;
           interactiveShellInit = ''
