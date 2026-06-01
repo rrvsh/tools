@@ -60,10 +60,21 @@ let
               background: #000000;
               color: #ffffff;
               border: 1px solid #ffffff;
+              font-family: "Monocraft";
+              font-size: 12px;
+              font-weight: 400;
+              padding: 4px;
+              margin-top: 6px;
+              margin-left: 6px;
             }
 
             menuitem {
               border-radius: 8px;
+              font-family: "Monocraft";
+              font-size: 12px;
+              font-weight: 400;
+              margin: 2px;
+              padding: 4px 8px;
             }
           '';
           settings = [
