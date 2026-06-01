@@ -98,7 +98,7 @@ let
                 menu = "on-click";
                 menu-file = "~/.config/waybar/power_menu.xml";
                 menu-actions = {
-                  "win11-reboot" = "notify-send 'Waybar' 'Placeholder: reboot to Windows 11'";
+                  "win11-reboot" = "sudo systemctl reboot --boot-loader-entry windows_11-pro.conf";
                 };
               };
             }
