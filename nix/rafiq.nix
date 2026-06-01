@@ -18,6 +18,18 @@ let
         waybar = {
           enable = true;
           systemd.enable = true;
+          style = "";
+          settings = [
+            {
+              modules-left = [ ];
+              modules-center = [ ];
+              modules-right = [ "clock" ];
+              clock = {
+                format = "{:%H:%M}";
+                tooltip = false;
+              };
+            }
+          ];
         };
         fish = {
           enable = true;
