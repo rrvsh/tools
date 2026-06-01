@@ -21,6 +21,8 @@ let
           style = "";
           settings = [
             {
+              layer = "overlay";
+              exclusive = false;
               modules-left = [ ];
               modules-center = [ ];
               modules-right = [ "clock" ];
