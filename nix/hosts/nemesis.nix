@@ -223,6 +223,10 @@ in
             LIBVA_DRIVER_NAME = "nvidia";
             NIXOS_OZONE_WL = "1";
           };
+          fonts.packages = with pkgs; [
+            nerd-fonts.jetbrains-mono
+            monocraft
+          ];
           programs = {
             hyprland = {
               enable = true;
