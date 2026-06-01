@@ -18,14 +18,28 @@ let
         waybar = {
           enable = true;
           systemd.enable = true;
-          style = "";
+          style = ''
+            window#waybar {
+              background: transparent;
+            }
+
+            #clock {
+              font-family: "JetBrainsMono Nerd Font", "JetBrains Mono";
+              background: #000000;
+              color: #ffffff;
+              border: 1px solid #ffffff;
+              border-radius: 9999px;
+              padding: 3px 8px;
+              margin: 4px 0;
+            }
+          '';
           settings = [
             {
               layer = "overlay";
               exclusive = false;
               modules-left = [ ];
-              modules-center = [ ];
-              modules-right = [ "clock" ];
+              modules-center = [ "clock" ];
+              modules-right = [ ];
               clock = {
                 format = "{:%H:%M}";
                 tooltip = false;
