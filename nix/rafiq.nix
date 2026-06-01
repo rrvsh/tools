@@ -65,7 +65,6 @@ let
           enable = true;
           defaultCommand = "${lib.getExe pkgs.ripgrep} --files --hidden --glob '!.git'";
         };
-        ripgrep-all.enable = true;
         nix-index.enable = true;
         nix-index-database.comma.enable = true;
         git = {
@@ -152,49 +151,188 @@ let
         firefox = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
+          # Keep explicit until home.stateVersion migration cleanup is complete.
+          # Linux is on XDG path; old ~/.mozilla/firefox can be removed later.
+          configPath =
+            if pkgs.stdenv.isDarwin then
+              "Library/Application Support/Firefox"
+            else
+              "${config.xdg.configHome}/mozilla/firefox";
         };
       };
       wayland.windowManager.hyprland = {
         enable = osConfig.programs.hyprland.enable or false;
+        configType = "lua";
         package = null;
         portalPackage = null;
         settings = {
           monitor = [
-            "HDMI-A-1, 3840x2160@160, auto, 2"
-            ", preferred, auto, 1"
+            {
+              output = "HDMI-A-1";
+              mode = "3840x2160@160";
+              position = "auto";
+              scale = 2;
+            }
+            {
+              output = "";
+              mode = "preferred";
+              position = "auto";
+              scale = 2;
+            }
           ];
-          input.sensitivity = 1.0;
-          general = {
-            gaps_in = 0;
-            gaps_out = 0;
-            border_size = 0;
+          config = {
+            input = {
+              sensitivity = 1.0;
+            };
+            general = {
+              gaps_in = 0;
+              gaps_out = 0;
+              border_size = 0;
+            };
           };
           bind = [
-            ", XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+"
-            ", XF86AudioLowerVolume, exec, wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-"
-            ", XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
-            ", XF86AudioMicMute, exec, wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"
-            "ALT, SPACE, exec, wofi --show drun"
-            "ALT_CTRL, 1, exec, ghostty"
-            "ALT_CTRL, 2, exec, firefox"
-            "ALT_CTRL, w, killactive"
-            "ALT_CTRL, p, togglefloating"
-            "ALT, H, movefocus, l"
-            "ALT, J, movefocus, d"
-            "ALT, K, movefocus, u"
-            "ALT, L, movefocus, r"
-            "ALT_SUPER, H, workspace, -1"
-            "ALT_SUPER, L, workspace, +1"
-            "ALT_SHIFT, H, movewindow, l"
-            "ALT_SHIFT, J, movewindow, d"
-            "ALT_SHIFT, K, movewindow, u"
-            "ALT_SHIFT, L, movewindow, r"
-            "ALT_SHIFT_SUPER, H, movetoworkspace, -1"
-            "ALT_SHIFT_SUPER, L, movetoworkspace, +1"
-          ];
-          bindm = [
-            "ALT_SHIFT, mouse:272, movewindow"
-            "ALT_SHIFT, mouse:273, resizewindow"
+            {
+              _args = [
+                "XF86AudioRaiseVolume"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
+                { repeating = true; }
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioLowerVolume"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
+                { repeating = true; }
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioMute"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
+              ];
+            }
+            {
+              _args = [
+                "XF86AudioMicMute"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SPACE"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wofi --show drun\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + 1"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + 2"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"firefox\")")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + W"
+                (lib.generators.mkLuaInline "hl.dsp.window.close()")
+              ];
+            }
+            {
+              _args = [
+                "ALT + CTRL + P"
+                (lib.generators.mkLuaInline "hl.dsp.window.float({ action = \"toggle\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + H"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"left\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + J"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"down\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + K"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"up\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + L"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"right\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SUPER + H"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r-1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SUPER + L"
+                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r+1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + H"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"left\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + J"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"down\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + K"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"up\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + L"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"right\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + SUPER + H"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r-1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + SUPER + L"
+                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r+1\" })")
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + mouse:272"
+                (lib.generators.mkLuaInline "hl.dsp.window.drag()")
+                { mouse = true; }
+              ];
+            }
+            {
+              _args = [
+                "ALT + SHIFT + mouse:273"
+                (lib.generators.mkLuaInline "hl.dsp.window.resize()")
+                { mouse = true; }
+              ];
+            }
           ];
         };
       };
@@ -226,9 +364,10 @@ let
         ++ (lib.lists.optional stdenv.isLinux mixxx)
         ++ (lib.lists.optional stdenv.isLinux libnotify)
         ++ [
-          gh
           ddgr
+          gh
           pi-coding-agent
+          ripgrep
           (prismlauncher.override { jdks = [ jdk25 ]; })
         ];
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
@@ -246,7 +385,6 @@ let
       ];
       home.shellAliases = {
         cd = "echo \"Please use z\"";
-        rg = "rga";
         gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
         gc = "git commit";
         gcam = "git commit -am";
@@ -265,7 +403,6 @@ let
         gy = "git pull";
         v = "$EDITOR";
         e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-        lib = "fooc \"$HOME/0_library\"";
         t = config.programs.yazi.shellWrapperName;
         search = "ddgr -n 5 -C -x --np";
       };

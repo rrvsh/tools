@@ -23,6 +23,16 @@ these are the tools i currently use :3
 
 pkill .Hyprland-wrapp
 
+### verify Hyprland lua config (without switching)
+
+```bash
+# verify the active config file
+Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
+
+# check runtime-reported config errors
+hyprctl configerrors
+```
+
 ## systemd-boot EFI default entry override
 
 If `bootctl status` shows a stale `Default Entry` while `/boot/loader/loader.conf` has a newer `default`, the EFI variable `LoaderEntryDefault` is overriding `loader.conf`.
