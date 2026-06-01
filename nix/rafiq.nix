@@ -33,7 +33,7 @@ let
       };
       programs = {
         wofi.enable = pkgs.stdenv.isLinux;
-        waybar = {
+        waybar = lib.mkIf pkgs.stdenv.isLinux {
           enable = true;
           systemd.enable = true;
           style = ''
