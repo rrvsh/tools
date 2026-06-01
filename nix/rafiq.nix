@@ -240,6 +240,22 @@ let
               ];
             }
             {
+              # Toggle Waybar by sending SIGUSR1 to the systemd user service.
+              # Waybar defaults SIGUSR1 to visibility toggle (on-sigusr1 = "toggle").
+              _args = [
+                "SUPER + SUPER_L"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"systemctl --user kill -s SIGUSR1 waybar.service\")")
+                { release = true; }
+              ];
+            }
+            {
+              _args = [
+                "SUPER + SUPER_R"
+                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"systemctl --user kill -s SIGUSR1 waybar.service\")")
+                { release = true; }
+              ];
+            }
+            {
               _args = [
                 "ALT + CTRL + 1"
                 (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
