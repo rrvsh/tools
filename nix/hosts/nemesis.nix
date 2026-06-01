@@ -225,6 +225,8 @@ in
           };
           fonts.packages = with pkgs; [
             nerd-fonts.jetbrains-mono
+            nerd-fonts.gohufont
+            monocraft
           ];
           programs = {
             hyprland = {

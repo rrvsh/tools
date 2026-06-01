@@ -24,13 +24,16 @@ let
             }
 
             #clock {
-              font-family: "JetBrainsMono Nerd Font", "JetBrains Mono";
               background: #000000;
               color: #ffffff;
               border: 1px solid #ffffff;
               border-radius: 9999px;
               padding: 3px 8px;
               margin: 4px 0;
+              font-family: "Monocraft";
+              font-size: 12px;
+              font-weight: 400;
+              font-style: normal;
             }
           '';
           settings = [
