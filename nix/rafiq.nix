@@ -12,10 +12,24 @@ let
     }:
     {
       imports = [ inputs.nix-index-database.homeModules.nix-index ];
-      xdg.configFile."nvim/lua".source = root + /nvim;
-      xdg.configFile."hypr/scripts/waybar_peek.py" = {
-        source = root + /scripts/waybar_peek.py;
-        executable = true;
+      xdg.configFile = {
+        "nvim/lua".source = root + /nvim;
+        "hypr/scripts/waybar_peek.py" = {
+          source = root + /scripts/waybar_peek.py;
+          executable = true;
+        };
+        "waybar/power_menu.xml".text = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <interface>
+            <object class="GtkMenu" id="menu">
+              <child>
+                <object class="GtkMenuItem" id="win11-reboot">
+                  <property name="label">Reboot to Windows 11</property>
+                </object>
+              </child>
+            </object>
+          </interface>
+        '';
       };
       programs = {
         wofi.enable = pkgs.stdenv.isLinux;
@@ -27,7 +41,8 @@ let
               background: transparent;
             }
 
-            #clock {
+            #clock,
+            #custom-power {
               background: #000000;
               color: #ffffff;
               border: 1px solid #ffffff;
@@ -38,6 +53,17 @@ let
               font-size: 12px;
               font-weight: 400;
               font-style: normal;
+            }
+
+            menu {
+              border-radius: 12px;
+              background: #000000;
+              color: #ffffff;
+              border: 1px solid #ffffff;
+            }
+
+            menuitem {
+              border-radius: 8px;
             }
           '';
           settings = [
@@ -50,10 +76,19 @@ let
               on-sigusr2 = "show";
               modules-left = [ ];
               modules-center = [ "clock" ];
-              modules-right = [ ];
+              modules-right = [ "custom/power" ];
               clock = {
                 format = "{:%H:%M}";
                 tooltip = false;
+              };
+              "custom/power" = {
+                format = "⏻";
+                tooltip = false;
+                menu = "on-click";
+                menu-file = "~/.config/waybar/power_menu.xml";
+                menu-actions = {
+                  "win11-reboot" = "notify-send 'Waybar' 'Placeholder: reboot to Windows 11'";
+                };
               };
             }
           ];
@@ -399,7 +434,7 @@ let
               RestartSec = 1;
               Environment = [
                 "WAYBAR_PEEK_SHOW_PX=5"
-                "WAYBAR_PEEK_HIDE_PX=50"
+                "WAYBAR_PEEK_HIDE_PX=120"
                 "WAYBAR_PEEK_POLL=0.1"
               ];
             };
