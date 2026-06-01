@@ -254,6 +254,11 @@ let
         configType = "lua";
         package = null;
         portalPackage = null;
+        extraConfig = ''
+          hl.on("hyprland.start", function()
+            hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_RUNTIME_DIR DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE && ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_RUNTIME_DIR DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE && systemctl --user restart waybar.service waybar-peek.service")
+          end)
+        '';
         settings = {
           monitor = [
             {
@@ -424,6 +429,9 @@ let
             }
           ];
         };
+      };
+      systemd.user.services.waybar = lib.mkIf pkgs.stdenv.isLinux {
+        Unit.ConditionEnvironment = lib.mkForce [ ];
       };
       systemd.user.services.waybar-peek =
         lib.mkIf (pkgs.stdenv.isLinux && (osConfig.programs.hyprland.enable or false))

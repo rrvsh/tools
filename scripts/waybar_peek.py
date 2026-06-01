@@ -37,7 +37,7 @@ class WaybarPeek:
     def __init__(self):
         self.xdg_runtime = os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}")
         self.hypr_sig = os.environ.get("HYPRLAND_INSTANCE_SIGNATURE", "")
-        self.socket_path = f"{self.xdg_runtime}/hypr/{self.hypr_sig}/.socket.sock"
+        self.socket_path = self._resolve_socket_path()
 
         self.cursor_at_top = False
         self.last_visibility = None
@@ -61,22 +61,44 @@ class WaybarPeek:
             # When re-enabled, force state recalculation
             self.last_visibility = None
 
+    def _resolve_socket_path(self) -> str:
+        """Resolve Hyprland command socket path from env or runtime dir."""
+        if self.hypr_sig:
+            p = Path(f"{self.xdg_runtime}/hypr/{self.hypr_sig}/.socket.sock")
+            if p.exists():
+                return str(p)
+
+        hypr_dir = Path(self.xdg_runtime) / "hypr"
+        try:
+            candidates = [d / ".socket.sock" for d in hypr_dir.iterdir() if d.is_dir() and (d / ".socket.sock").exists()]
+            if candidates:
+                # Prefer most recently modified socket (active session)
+                candidates.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+                return str(candidates[0])
+        except Exception:
+            pass
+
+        return f"{self.xdg_runtime}/hypr/{self.hypr_sig}/.socket.sock"
+
     def hypr_query(self, cmd: str) -> str:
         """Query Hyprland via socket"""
-        try:
-            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-            sock.connect(self.socket_path)
-            sock.send(cmd.encode())
-            response = b""
-            while True:
-                chunk = sock.recv(4096)
-                if not chunk:
-                    break
-                response += chunk
-            sock.close()
-            return response.decode()
-        except Exception:
-            return ""
+        for _ in range(2):
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.connect(self.socket_path)
+                sock.send(cmd.encode())
+                response = b""
+                while True:
+                    chunk = sock.recv(4096)
+                    if not chunk:
+                        break
+                    response += chunk
+                sock.close()
+                return response.decode()
+            except Exception:
+                # Try to recover when service starts before env is imported
+                self.socket_path = self._resolve_socket_path()
+        return ""
 
     def get_cursor_pos(self) -> tuple:
         """Get cursor position as (x, y)"""
