@@ -13,6 +13,10 @@ let
     {
       imports = [ inputs.nix-index-database.homeModules.nix-index ];
       xdg.configFile."nvim/lua".source = root + /nvim;
+      xdg.configFile."hypr/scripts/waybar_peek.py" = {
+        source = root + /scripts/waybar_peek.py;
+        executable = true;
+      };
       programs = {
         wofi.enable = pkgs.stdenv.isLinux;
         waybar = {
@@ -40,6 +44,10 @@ let
             {
               layer = "overlay";
               exclusive = false;
+              start_hidden = true;
+              ipc = true;
+              on-sigusr1 = "hide";
+              on-sigusr2 = "show";
               modules-left = [ ];
               modules-center = [ "clock" ];
               modules-right = [ ];
@@ -259,22 +267,6 @@ let
               ];
             }
             {
-              # Toggle Waybar by sending SIGUSR1 to the systemd user service.
-              # Waybar defaults SIGUSR1 to visibility toggle (on-sigusr1 = "toggle").
-              _args = [
-                "SUPER + SUPER_L"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"systemctl --user kill -s SIGUSR1 waybar.service\")")
-                { release = true; }
-              ];
-            }
-            {
-              _args = [
-                "SUPER + SUPER_R"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"systemctl --user kill -s SIGUSR1 waybar.service\")")
-                { release = true; }
-              ];
-            }
-            {
               _args = [
                 "ALT + CTRL + 1"
                 (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
@@ -387,6 +379,32 @@ let
           ];
         };
       };
+      systemd.user.services.waybar-peek =
+        lib.mkIf (pkgs.stdenv.isLinux && (osConfig.programs.hyprland.enable or false))
+          {
+            Unit = {
+              Description = "waybar_peek auto-hide helper for Hyprland";
+              After = [
+                "graphical-session.target"
+                "waybar.service"
+              ];
+              Wants = [
+                "graphical-session.target"
+                "waybar.service"
+              ];
+            };
+            Service = {
+              ExecStart = "${pkgs.python3}/bin/python3 ${config.xdg.configHome}/hypr/scripts/waybar_peek.py";
+              Restart = "always";
+              RestartSec = 1;
+              Environment = [
+                "WAYBAR_PEEK_SHOW_PX=5"
+                "WAYBAR_PEEK_HIDE_PX=50"
+                "WAYBAR_PEEK_POLL=0.1"
+              ];
+            };
+            Install.WantedBy = [ "default.target" ];
+          };
       services.dunst.enable = pkgs.stdenv.isLinux;
       services.hypridle = lib.mkIf (pkgs.stdenv.isLinux && (osConfig.programs.hyprland.enable or false)) (
         let
