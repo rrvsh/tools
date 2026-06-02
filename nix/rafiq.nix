@@ -31,6 +31,104 @@ let
           </interface>
         '';
       };
+      home = {
+        file = {
+          ".pi/agent/AGENTS.md".text = ''
+            # Global pi instructions
+
+            - If a command is missing, use comma: `, <command> [args...]`
+            - For Python, run via comma: `, python3 ...`
+            - Load and follow the global skill: `comma` (`~/.pi/agent/skills/comma/SKILL.md`)
+          '';
+          ".pi/agent/skills/comma/SKILL.md".text = ''
+            ---
+            name: comma
+            description: Use comma (`,`) to run missing dependencies from nixpkgs without preinstalling. Prefer this whenever a command is missing; use `, python3` for Python tasks.
+            ---
+
+            # Comma (system skill)
+
+            Always prefer comma for missing tools.
+
+            ## First check
+
+            ```bash
+            , --help
+            ```
+
+            ## Core usage
+
+            ```bash
+            , <command> [args...]
+            , jq --version
+            , rg --version
+            , python3 --version
+            ```
+
+            ## Python requirement
+
+            If Python is needed, run through comma:
+
+            ```bash
+            , python3 script.py
+            ```
+
+            ## nix-index-database (GitHub)
+
+            Repo: https://github.com/nix-community/nix-index-database
+
+            Use this for a prebuilt, frequently updated nix-index DB and optional comma wrapping in NixOS/Home Manager/nix-darwin.
+
+            Useful notes:
+            - Weekly updated nix-index DB for nixos-unstable
+            - Provides modules that can enable wrapped `nix-index` and optional wrapped `comma`
+            - Requires Nix >= 2.18
+
+            Home Manager / NixOS module option to enable comma wrapper:
+
+            ```nix
+            { programs.nix-index-database.comma.enable = true; }
+            ```
+          '';
+        };
+        packages =
+          with pkgs;
+          (lib.lists.optional stdenv.isDarwin firefox-bin)
+          ++ (lib.lists.optional stdenv.isDarwin alt-tab-macos)
+          ++ (lib.lists.optional stdenv.isDarwin monitorcontrol)
+          ++ (lib.lists.optional stdenv.isLinux mixxx)
+          ++ (lib.lists.optional stdenv.isLinux libnotify)
+          ++ [
+            ddgr
+            gh
+            pi-coding-agent
+            ripgrep
+            (prismlauncher.override { jdks = [ jdk25 ]; })
+          ];
+        shellAliases = {
+          cd = "echo \"Please use z\"";
+          gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
+          gc = "git commit";
+          gcam = "git commit -am";
+          quick-commit = "git add . && git commit -m \"$(date +'%Y-%m-%d %H:%M:%S')\" && git push";
+          gcamend = "git commit -a --amend --no-edit";
+          gcend = "git commit --amend --no-edit";
+          gco = "git checkout";
+          gcob = "git checkout -b";
+          gd = "git diff";
+          gdh = "git diff HEAD";
+          gdm = "git diff $(gparentbranch)";
+          gds = "git diff --staged";
+          grc = "git rebase --continue";
+          gs = "git status";
+          gu = "git push";
+          gy = "git pull";
+          v = "$EDITOR";
+          e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
+          t = config.programs.yazi.shellWrapperName;
+          search = "ddgr -n 5 -C -x --np";
+        };
+      };
       programs = {
         wofi.enable = pkgs.stdenv.isLinux;
         waybar = lib.mkIf pkgs.stdenv.isLinux {
@@ -479,20 +577,6 @@ let
           };
         }
       );
-      home.packages =
-        with pkgs;
-        (lib.lists.optional stdenv.isDarwin firefox-bin)
-        ++ (lib.lists.optional stdenv.isDarwin alt-tab-macos)
-        ++ (lib.lists.optional stdenv.isDarwin monitorcontrol)
-        ++ (lib.lists.optional stdenv.isLinux mixxx)
-        ++ (lib.lists.optional stdenv.isLinux libnotify)
-        ++ [
-          ddgr
-          gh
-          pi-coding-agent
-          ripgrep
-          (prismlauncher.override { jdks = [ jdk25 ]; })
-        ];
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
       assertions = lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         {
@@ -506,29 +590,6 @@ let
           message = "You must enable pipewire and wireplumber for screencapturing to work.";
         }
       ];
-      home.shellAliases = {
-        cd = "echo \"Please use z\"";
-        gparentbranch = "git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-";
-        gc = "git commit";
-        gcam = "git commit -am";
-        quick-commit = "git add . && git commit -m \"$(date +'%Y-%m-%d %H:%M:%S')\" && git push";
-        gcamend = "git commit -a --amend --no-edit";
-        gcend = "git commit --amend --no-edit";
-        gco = "git checkout";
-        gcob = "git checkout -b";
-        gd = "git diff";
-        gdh = "git diff HEAD";
-        gdm = "git diff $(gparentbranch)";
-        gds = "git diff --staged";
-        grc = "git rebase --continue";
-        gs = "git status";
-        gu = "git push";
-        gy = "git pull";
-        v = "$EDITOR";
-        e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
-        t = config.programs.yazi.shellWrapperName;
-        search = "ddgr -n 5 -C -x --np";
-      };
     };
   sharedOsConfig =
     { config, pkgs, ... }:
