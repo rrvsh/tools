@@ -14,6 +14,7 @@ in
       cfg.modules.darwin.passwordless-sudo
       cfg.modules.darwin.nix-settings
       cfg.modules.darwin.ssh-config
+      cfg.modules.darwin.tailscale-config
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
@@ -45,7 +46,6 @@ in
             "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
           ];
         };
-        services.tailscale.enable = true;
         nix-rosetta-builder.onDemand = true;
         homebrew = {
           enable = true;

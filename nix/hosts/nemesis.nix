@@ -31,6 +31,7 @@ in
             cfg.modules.nixos.passwordless-sudo
             cfg.modules.nixos.nix-settings
             cfg.modules.nixos.ssh-config
+            cfg.modules.nixos.tailscale-config
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -65,10 +66,6 @@ in
             rtkit.enable = true;
           };
           services = {
-            tailscale = {
-              enable = true;
-              authKeyFile = config.sops.secrets."tailscale/authkey".path;
-            };
             xserver.videoDrivers = [ "nvidia" ];
             pipewire = {
               enable = true;
@@ -126,9 +123,6 @@ in
               '';
             };
             startAt = "*-*-* 00:00:00";
-          };
-          sops.secrets."tailscale/authkey" = {
-            sopsFile = cfg.paths.root + "/sops/tailscale.yaml";
           };
           boot = {
             initrd.availableKernelModules = [
