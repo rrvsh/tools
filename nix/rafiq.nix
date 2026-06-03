@@ -120,7 +120,6 @@ let
   sharedOsConfig =
     { config, pkgs, ... }:
     {
-      sops.age.sshKeyPaths = [ "${config.users.users.rafiq.home}/.ssh/id_ed25519" ];
       nix.settings.trusted-users = [ "rafiq" ];
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {

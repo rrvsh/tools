@@ -25,13 +25,13 @@ in
         in
         {
           imports = [
-            inputs.sops-nix.nixosModules.sops
             (modulesPath + "/installer/scan/not-detected.nix")
             cfg.modules.nixos.passwordless-sudo
             cfg.modules.nixos.nix-settings
             cfg.modules.nixos.ssh-config
             cfg.modules.nixos.tailscale-config
             cfg.modules.nixos.audio-config
+            cfg.modules.nixos.sops-config
             cfg.modules.nixos.steam
             cfg.modules.nixos.nvidia-graphics
             cfg.modules.nixos.waybar

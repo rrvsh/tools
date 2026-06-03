@@ -308,7 +308,7 @@
   - `services.hypridle.settings`
 - Hyprland/portal/PipeWire assertions
 
-## `sops-config`
+## `sops-config` ✅
 
 ### File
 

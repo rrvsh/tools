@@ -13,6 +13,7 @@ in
       cfg.modules.darwin.passwordless-sudo
       cfg.modules.darwin.nix-settings
       cfg.modules.darwin.ssh-config
+      cfg.modules.darwin.sops-config
       cfg.modules.darwin.tailscale-config
       cfg.modules.darwin.firefox
       cfg.modules.darwin.homebrew
@@ -20,10 +21,7 @@ in
       cfg.modules.darwin.rosetta-builder
       cfg.modules.darwin.darwin-system-defaults
       {
-        imports = [
-          inputs.sops-nix.darwinModules.sops
-          inputs.mac-app-util.darwinModules.default
-        ];
+        imports = [ inputs.mac-app-util.darwinModules.default ];
       }
       {
         networking.hostName = "alpha";
