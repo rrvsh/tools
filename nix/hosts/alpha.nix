@@ -15,6 +15,7 @@ in
       cfg.modules.darwin.nix-settings
       cfg.modules.darwin.ssh-config
       cfg.modules.darwin.tailscale-config
+      cfg.modules.darwin.firefox
       cfg.modules.darwin.homebrew
       cfg.modules.darwin.yazi
       {
@@ -28,8 +29,6 @@ in
         networking.hostName = "alpha";
         nixpkgs = {
           hostPlatform = "aarch64-darwin";
-          config.allowUnfreePredicate = pkg: builtins.elem (lib.strings.getName pkg) [ "firefox-bin" ];
-          overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
         };
         system = {
           configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;

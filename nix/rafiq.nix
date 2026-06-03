@@ -102,8 +102,7 @@ let
         };
         packages =
           with pkgs;
-          (lib.lists.optional stdenv.isDarwin firefox-bin)
-          ++ (lib.lists.optional stdenv.isDarwin alt-tab-macos)
+          (lib.lists.optional stdenv.isDarwin alt-tab-macos)
           ++ (lib.lists.optional stdenv.isDarwin monitorcontrol)
           ++ (lib.lists.optional stdenv.isLinux mixxx)
           ++ (lib.lists.optional stdenv.isLinux libnotify)
@@ -275,17 +274,6 @@ let
             init.defaultBranch = "prime";
             push.autoSetupRemote = true;
           };
-        };
-        firefox = {
-          enable = true;
-          package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
-          # Keep explicit until home.stateVersion migration cleanup is complete.
-          # Linux is on XDG path; old ~/.mozilla/firefox can be removed later.
-          configPath =
-            if pkgs.stdenv.isDarwin then
-              "Library/Application Support/Firefox"
-            else
-              "${config.xdg.configHome}/mozilla/firefox";
         };
       };
       wayland.windowManager.hyprland = {
@@ -540,6 +528,7 @@ let
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {
         imports = [
+          cfg.modules.homeManager.firefox
           cfg.modules.homeManager.ghostty
           cfg.modules.homeManager.neovim
           cfg.modules.homeManager.nix-index-comma
@@ -598,6 +587,5 @@ in
       "ghostty"
       "mixxx"
     ];
-    nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
   };
 }

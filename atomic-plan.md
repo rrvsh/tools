@@ -99,7 +99,7 @@
 - Darwin package override:
   - `programs.ghostty.package = null`
 
-## `firefox`
+## `firefox` ✅
 
 ### File
 
