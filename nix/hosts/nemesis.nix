@@ -32,6 +32,7 @@ in
             cfg.modules.nixos.nix-settings
             cfg.modules.nixos.ssh-config
             cfg.modules.nixos.tailscale-config
+            cfg.modules.nixos.audio-config
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -61,21 +62,8 @@ in
             ];
           };
           system.stateVersion = "26.05";
-          security = {
-            polkit.enable = true;
-            rtkit.enable = true;
-          };
-          services = {
-            xserver.videoDrivers = [ "nvidia" ];
-            pipewire = {
-              enable = true;
-              alsa.enable = true;
-              alsa.support32Bit = true;
-              pulse.enable = true;
-              jack.enable = true;
-              wireplumber.enable = true;
-            };
-          };
+          security.polkit.enable = true;
+          services.xserver.videoDrivers = [ "nvidia" ];
           systemd.services.daily-midnight-poweroff = {
             description = "Power off nemesis daily at midnight";
             serviceConfig = {
