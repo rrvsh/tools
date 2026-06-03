@@ -81,7 +81,7 @@
 - Neovim plugins
 - Neovim extra packages / language tooling
 
-## `ghostty`
+## `ghostty` ✅
 
 ### File
 

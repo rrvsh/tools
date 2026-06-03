@@ -276,10 +276,6 @@ let
             push.autoSetupRemote = true;
           };
         };
-        ghostty = {
-          enable = true;
-          package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty;
-        };
         firefox = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
@@ -544,6 +540,7 @@ let
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {
         imports = [
+          cfg.modules.homeManager.ghostty
           cfg.modules.homeManager.neovim
           cfg.modules.homeManager.nix-index-comma
           cfg.modules.homeManager.yazi
