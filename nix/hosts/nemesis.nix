@@ -28,6 +28,7 @@ in
             inputs.sops-nix.nixosModules.sops
             inputs.hyprland.nixosModules.default
             (modulesPath + "/installer/scan/not-detected.nix")
+            cfg.modules.nixos.passwordless-sudo
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -72,7 +73,6 @@ in
           };
           system.stateVersion = "26.05";
           security = {
-            sudo.wheelNeedsPassword = false;
             polkit.enable = true;
             rtkit.enable = true;
           };

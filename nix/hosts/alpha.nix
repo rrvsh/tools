@@ -11,6 +11,7 @@ in
   config.flake.darwinConfigurations.alpha = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       cfg.modules.darwin.rafiq
+      cfg.modules.darwin.passwordless-sudo
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
@@ -56,7 +57,6 @@ in
             "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
           ];
         };
-        security.sudo.extraConfig = "%admin          ALL = (ALL) NOPASSWD: ALL";
         services.openssh = {
           enable = true;
           extraConfig = ''
