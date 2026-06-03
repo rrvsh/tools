@@ -18,6 +18,7 @@ in
       cfg.modules.darwin.homebrew
       cfg.modules.darwin.yazi
       cfg.modules.darwin.rosetta-builder
+      cfg.modules.darwin.darwin-system-defaults
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
@@ -44,22 +45,7 @@ in
           ];
         };
         home-manager.sharedModules = [ inputs.mac-app-util.homeManagerModules.default ];
-        system = {
-          primaryUser = "rafiq";
-          activationScripts.extraActivation.text = ''
-            echo >&2 "disabling sleep..."
-            sudo pmset -a disablesleep 1
-            echo >&2 "disabling display sleep..."
-            sudo pmset -a displaysleep 0
-          '';
-          defaults.NSGlobalDomain = {
-            "com.apple.swipescrolldirection" = false;
-          };
-          keyboard = {
-            enableKeyMapping = true;
-            remapCapsLockToEscape = true;
-          };
-        };
+        system.primaryUser = "rafiq";
       }
     ];
   };

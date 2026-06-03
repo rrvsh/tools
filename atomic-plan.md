@@ -223,7 +223,7 @@
 - Rosetta install activation script:
   - `softwareupdate --install-rosetta --agree-to-license`
 
-## `darwin-system-defaults`
+## `darwin-system-defaults` ✅
 
 ### File
 
