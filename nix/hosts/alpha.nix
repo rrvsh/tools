@@ -12,6 +12,7 @@ in
     modules = [
       cfg.modules.darwin.rafiq
       cfg.modules.darwin.passwordless-sudo
+      cfg.modules.darwin.nix-settings
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
@@ -32,20 +33,6 @@ in
           stateVersion = 6;
         };
         nix.settings = {
-          experimental-features = "nix-command flakes";
-          eval-cache = true;
-          fallback = false;
-          use-registries = false;
-          flake-registry = "";
-          tarball-ttl = 86400;
-          connect-timeout = 10;
-          http-connections = 50;
-          max-substitution-jobs = 32;
-          narinfo-cache-negative-ttl = 60;
-          max-jobs = "auto";
-          cores = 0;
-          builders-use-substitutes = true;
-          allow-import-from-derivation = false;
           extra-substituters = [
             "https://nix-community.cachix.org"
             "https://hyprland.cachix.org"

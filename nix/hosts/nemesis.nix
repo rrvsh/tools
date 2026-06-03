@@ -29,6 +29,7 @@ in
             inputs.hyprland.nixosModules.default
             (modulesPath + "/installer/scan/not-detected.nix")
             cfg.modules.nixos.passwordless-sudo
+            cfg.modules.nixos.nix-settings
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -48,20 +49,6 @@ in
               ];
           };
           nix.settings = {
-            experimental-features = "nix-command flakes";
-            eval-cache = true;
-            fallback = false;
-            use-registries = false;
-            flake-registry = "";
-            tarball-ttl = 86400;
-            connect-timeout = 10;
-            http-connections = 50;
-            max-substitution-jobs = 32;
-            narinfo-cache-negative-ttl = 60;
-            max-jobs = "auto";
-            cores = 0;
-            builders-use-substitutes = true;
-            allow-import-from-derivation = false;
             extra-substituters = [
               "https://nix-community.cachix.org"
               "https://hyprland.cachix.org"
