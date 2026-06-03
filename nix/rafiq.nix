@@ -282,7 +282,6 @@ let
         };
         neovim = {
           enable = true;
-          package = inputs.neovim-nightly-overlay.packages.${pkgs.stdenv.hostPlatform.system}.default;
           defaultEditor = true;
           viAlias = true;
           vimAlias = true;
@@ -296,11 +295,6 @@ let
             plenary-nvim
             which-key-nvim
             yazi-nvim
-            (pkgs.vimUtils.buildVimPlugin {
-              pname = "epub.nvim";
-              version = "main";
-              src = inputs.epub-nvim;
-            })
           ];
           extraPackages = with pkgs; [
             cargo
