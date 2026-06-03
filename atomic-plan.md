@@ -139,7 +139,7 @@
   - `pi-coding-agent`
 - `home.file.".pi/agent/AGENTS.md".text`
 
-## `steam`
+## `steam` ✅
 
 ### File
 

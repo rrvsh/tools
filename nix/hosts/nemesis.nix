@@ -33,24 +33,11 @@ in
             cfg.modules.nixos.ssh-config
             cfg.modules.nixos.tailscale-config
             cfg.modules.nixos.audio-config
+            cfg.modules.nixos.steam
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
-          nixpkgs = {
-            hostPlatform = lib.mkDefault "x86_64-linux";
-            config.allowUnfreePredicate =
-              pkg:
-              builtins.elem (lib.strings.getName pkg) [
-                "nvidia-kernel-modules"
-                "nvidia-persistenced"
-                "nvidia-settings"
-                "nvidia-x11"
-                "steam"
-                "steam-original"
-                "steam-run"
-                "steam-unwrapped"
-              ];
-          };
+          nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
           nix.settings = {
             extra-substituters = [
               "https://nix-community.cachix.org"
@@ -198,14 +185,6 @@ in
                 inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
             };
             dconf.enable = true;
-            steam = {
-              enable = true;
-              remotePlay.openFirewall = true;
-              dedicatedServer.openFirewall = true;
-              localNetworkGameTransfers.openFirewall = true;
-            };
-            gamemode.enable = true;
-            gamescope.enable = true;
           };
           assertions = [
             {
