@@ -5,10 +5,6 @@
 require("mini.pick").setup()
 require("fidget").setup()
 require("fff").setup()
-local epub = require("epub")
-epub.setup({
-	auto_open = true,
-})
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
 vim.api.nvim_create_autocmd("UIEnter", {
@@ -114,12 +110,6 @@ vim.keymap.set("n", "<leader>gj", ":Gitsigns nav_hunk next<CR>", { desc = "Go to
 vim.keymap.set("n", "<leader>gk", ":Gitsigns nav_hunk prev<CR>", { desc = "Go to previous hunk" })
 vim.keymap.set("n", "<leader>gr", ":Gitsigns reset_hunk<CR>", { desc = "Restore hunk" })
 vim.keymap.set("n", "<leader>gs", ":Gitsigns stage_hunk<CR>", { desc = "Stage hunk" })
-vim.keymap.set("n", "<leader>ee", function()
-	local path = vim.fn.input("EPUB path: ", "", "file")
-	if path ~= "" then
-		epub.open_epub(path)
-	end
-end, { desc = "Epub: Open file" })
 vim.keymap.set("n", "<leader>ei", "gi", { desc = "Epub: Open image" })
 vim.keymap.set("n", "<leader>en", "]c", { desc = "Epub: Next chapter" })
 vim.keymap.set("n", "<leader>ep", "[c", { desc = "Epub: Prev chapter" })
