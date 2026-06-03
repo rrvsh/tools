@@ -2,6 +2,8 @@
 
 Use the dev shell for repo commands. Tools such as `just` come from the dev shell, not the host.
 
+Run rebuilds on the host whose configuration is affected. If editing from a different host, SSH to the affected host and run commands from that host's checkout.
+
 If a command is missing, especially over SSH or in a fresh shell, run it through:
 
 ```sh
@@ -9,6 +11,8 @@ nix develop -c <command>
 ```
 
 Do not run rebuilds by default. Only run `just rb` if the user asks for it or explicitly allows rebuilds for the conversation.
+
+For behavior-preserving refactors, compare the affected system derivation before and after the change when practical, then run `just rb` after approval.
 
 `just rb` runs formatting/checks before rebuilding. If formatting changes files and the command fails, inspect/accept the formatting and rerun.
 
@@ -31,7 +35,7 @@ nix develop -c just rb
 
 Do not pull a different branch into the other host's current branch. For example, if the other host is on `prime`, do not pull `atomic` into it unless explicitly intended.
 
-If history was rewritten and a hard sync is needed:
+Applying a staged patch remotely before commit is okay for affected-host verification. After commit, prefer `git pull <current-host> <branch>` for host-to-host syncing; only hard reset when history was rewritten or a hard sync is explicitly needed:
 
 ```sh
 git fetch <current-host> <branch>
