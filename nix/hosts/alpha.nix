@@ -15,10 +15,10 @@ in
       cfg.modules.darwin.nix-settings
       cfg.modules.darwin.ssh-config
       cfg.modules.darwin.tailscale-config
+      cfg.modules.darwin.homebrew
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
-          inputs.nix-homebrew.darwinModules.nix-homebrew
           inputs.nix-rosetta-builder.darwinModules.default
           inputs.mac-app-util.darwinModules.default
         ];
@@ -47,24 +47,6 @@ in
           ];
         };
         nix-rosetta-builder.onDemand = true;
-        homebrew = {
-          enable = true;
-          taps = builtins.attrNames {
-            "homebrew/homebrew-core" = inputs.homebrew-core;
-            "homebrew/homebrew-cask" = inputs.homebrew-cask;
-          };
-          brews = [ "docker" ];
-        };
-        nix-homebrew = {
-          taps = {
-            "homebrew/homebrew-core" = inputs.homebrew-core;
-            "homebrew/homebrew-cask" = inputs.homebrew-cask;
-          };
-          enable = true;
-          enableRosetta = true;
-          mutableTaps = false;
-          user = "rafiq";
-        };
         home-manager.sharedModules = [ inputs.mac-app-util.homeManagerModules.default ];
         system = {
           primaryUser = "rafiq";
