@@ -37,7 +37,7 @@
 - `programs.nix-index-database.comma.enable`
 - `home.file.".pi/agent/skills/comma/SKILL.md".text`
 
-## `yazi`
+## `yazi` ✅
 
 ### File
 
