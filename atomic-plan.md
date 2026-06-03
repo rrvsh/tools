@@ -123,7 +123,7 @@
   - `programs.firefox.package = null`
 - Platform-specific `programs.firefox.configPath`
 
-## `pi-agent`
+## `pi-agent` ✅
 
 ### File
 
