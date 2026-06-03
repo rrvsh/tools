@@ -1,7 +1,6 @@
 {
   inputs,
   config,
-  lib,
   ...
 }:
 let
@@ -18,10 +17,10 @@ in
       cfg.modules.darwin.firefox
       cfg.modules.darwin.homebrew
       cfg.modules.darwin.yazi
+      cfg.modules.darwin.rosetta-builder
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
-          inputs.nix-rosetta-builder.darwinModules.default
           inputs.mac-app-util.darwinModules.default
         ];
       }
@@ -44,22 +43,15 @@ in
             "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
           ];
         };
-        nix-rosetta-builder.onDemand = true;
         home-manager.sharedModules = [ inputs.mac-app-util.homeManagerModules.default ];
         system = {
           primaryUser = "rafiq";
-          activationScripts.extraActivation.text = lib.mkMerge [
-            (lib.mkBefore ''
-              echo >&2 "ensuring rosetta is installed..."
-              softwareupdate --install-rosetta --agree-to-license
-            '')
-            ''
-              echo >&2 "disabling sleep..."
-              sudo pmset -a disablesleep 1
-              echo >&2 "disabling display sleep..."
-              sudo pmset -a displaysleep 0
-            ''
-          ];
+          activationScripts.extraActivation.text = ''
+            echo >&2 "disabling sleep..."
+            sudo pmset -a disablesleep 1
+            echo >&2 "disabling display sleep..."
+            sudo pmset -a displaysleep 0
+          '';
           defaults.NSGlobalDomain = {
             "com.apple.swipescrolldirection" = false;
           };

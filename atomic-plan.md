@@ -206,7 +206,7 @@
   - `__GLX_VENDOR_LIBRARY_NAME`
   - `LIBVA_DRIVER_NAME`
 
-## `rosetta-builder`
+## `rosetta-builder` ✅
 
 ### File
 
