@@ -19,7 +19,7 @@
 - `home-manager.useUserPackages`
 - `home-manager.useGlobalPkgs`
 
-## `nix-index-comma`
+## `nix-index-comma` ✅
 
 ### File
 

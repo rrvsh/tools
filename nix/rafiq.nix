@@ -11,7 +11,6 @@ let
       ...
     }:
     {
-      imports = [ inputs.nix-index-database.homeModules.nix-index ];
       xdg.configFile = {
         "nvim/lua".source = root + /nvim;
         "hypr/scripts/waybar_peek.py" = {
@@ -263,8 +262,6 @@ let
           enable = true;
           defaultCommand = "${lib.getExe pkgs.ripgrep} --files --hidden --glob '!.git'";
         };
-        nix-index.enable = true;
-        nix-index-database.comma.enable = true;
         git = {
           enable = true;
           ignores = [ ".direnv/" ];
@@ -603,7 +600,10 @@ let
       nix.settings.trusted-users = [ "rafiq" ];
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {
-        imports = [ homeConfig ];
+        imports = [
+          cfg.modules.homeManager.nix-index-comma
+          homeConfig
+        ];
         home = {
           username = "rafiq";
           homeDirectory = config.users.users.rafiq.home;
