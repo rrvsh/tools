@@ -271,7 +271,7 @@
   - `systemd.user.services.waybar`
   - `systemd.user.services.waybar-peek`
 
-## `hyprland`
+## `hyprland` ✅
 
 ### File
 

@@ -26,7 +26,6 @@ in
         {
           imports = [
             inputs.sops-nix.nixosModules.sops
-            inputs.hyprland.nixosModules.default
             (modulesPath + "/installer/scan/not-detected.nix")
             cfg.modules.nixos.passwordless-sudo
             cfg.modules.nixos.nix-settings
@@ -36,6 +35,7 @@ in
             cfg.modules.nixos.steam
             cfg.modules.nixos.nvidia-graphics
             cfg.modules.nixos.waybar
+            cfg.modules.nixos.hyprland
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -43,11 +43,9 @@ in
           nix.settings = {
             extra-substituters = [
               "https://nix-community.cachix.org"
-              "https://hyprland.cachix.org"
             ];
             extra-trusted-public-keys = [
               "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-              "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
             ];
           };
           system.stateVersion = "26.05";
@@ -157,27 +155,7 @@ in
             i2c.enable = true;
           };
           networking.networkmanager.enable = true;
-          environment.sessionVariables = {
-            NIXOS_OZONE_WL = "1";
-          };
-          programs = {
-            hyprland = {
-              enable = true;
-              xwayland.enable = true;
-              package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
-              portalPackage =
-                inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
-            };
-            dconf.enable = true;
-          };
-          assertions = [
-            {
-              assertion = config.networking.hostName != "";
-              message = "Hyprland module expects a hostName.";
-            }
-          ];
-          xdg.portal.enable = true;
-          xdg.portal.extraPortals = [ config.programs.hyprland.portalPackage ];
+          programs.dconf.enable = true;
         }
       )
     ];
