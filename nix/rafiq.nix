@@ -612,7 +612,7 @@ let
           home = {
             username = "rafiq";
             homeDirectory = config.users.users.rafiq.home;
-            stateVersion = "25.11";
+            stateVersion = "26.05";
           };
         };
       };
