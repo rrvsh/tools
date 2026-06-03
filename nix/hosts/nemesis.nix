@@ -30,6 +30,7 @@ in
             (modulesPath + "/installer/scan/not-detected.nix")
             cfg.modules.nixos.passwordless-sudo
             cfg.modules.nixos.nix-settings
+            cfg.modules.nixos.ssh-config
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -64,14 +65,6 @@ in
             rtkit.enable = true;
           };
           services = {
-            openssh = {
-              enable = true;
-              settings = {
-                KbdInteractiveAuthentication = false;
-                PasswordAuthentication = false;
-                PermitRootLogin = "no";
-              };
-            };
             tailscale = {
               enable = true;
               authKeyFile = config.sops.secrets."tailscale/authkey".path;

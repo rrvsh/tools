@@ -13,6 +13,7 @@ in
       cfg.modules.darwin.rafiq
       cfg.modules.darwin.passwordless-sudo
       cfg.modules.darwin.nix-settings
+      cfg.modules.darwin.ssh-config
       {
         imports = [
           inputs.sops-nix.darwinModules.sops
@@ -43,14 +44,6 @@ in
             "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
             "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
           ];
-        };
-        services.openssh = {
-          enable = true;
-          extraConfig = ''
-            KbdInteractiveAuthentication no
-            PasswordAuthentication no
-            PermitRootLogin no
-          '';
         };
         services.tailscale.enable = true;
         nix-rosetta-builder.onDemand = true;
