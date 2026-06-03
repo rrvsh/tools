@@ -1,5 +1,11 @@
 {
-  config.flake.modules.nixos.steam = _: {
+  config.flake.allowedUnfreePackages = [
+    "steam"
+    "steam-original"
+    "steam-run"
+    "steam-unwrapped"
+  ];
+  config.flake.modules.nixos.steam = {
     programs = {
       steam = {
         enable = true;

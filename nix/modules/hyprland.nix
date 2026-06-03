@@ -18,12 +18,6 @@
           inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
       };
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
-      assertions = [
-        {
-          assertion = config.networking.hostName != "";
-          message = "Hyprland module expects a hostName.";
-        }
-      ];
       xdg.portal = {
         enable = true;
         extraPortals = [ config.programs.hyprland.portalPackage ];
@@ -233,17 +227,5 @@
           ];
         }
       );
-      assertions = [
-        {
-          assertion =
-            osConfig.programs.hyprland.portalPackage
-            == inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
-          message = "You must be using xdg-desktop-portal-hyprland for Pipewire screencapturing to work.";
-        }
-        {
-          assertion = osConfig.services.pipewire.enable && osConfig.services.pipewire.wireplumber.enable;
-          message = "You must enable pipewire and wireplumber for screencapturing to work.";
-        }
-      ];
     };
 }

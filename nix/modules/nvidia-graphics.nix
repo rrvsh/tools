@@ -1,20 +1,13 @@
 {
+  config.flake.allowedUnfreePackages = [
+    "nvidia-kernel-modules"
+    "nvidia-persistenced"
+    "nvidia-settings"
+    "nvidia-x11"
+  ];
   config.flake.modules.nixos.nvidia-graphics =
-    { config, lib, ... }:
+    { config, ... }:
     {
-      nixpkgs.config.allowUnfreePredicate = lib.mkForce (
-        pkg:
-        builtins.elem (lib.strings.getName pkg) [
-          "nvidia-kernel-modules"
-          "nvidia-persistenced"
-          "nvidia-settings"
-          "nvidia-x11"
-          "steam"
-          "steam-original"
-          "steam-run"
-          "steam-unwrapped"
-        ]
-      );
       services.xserver.videoDrivers = [ "nvidia" ];
       hardware = {
         graphics = {

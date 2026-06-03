@@ -7,8 +7,9 @@
     ];
   };
   config.flake.modules.homeManager.yazi =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     {
+      home.shellAliases.t = config.programs.yazi.shellWrapperName;
       programs.yazi = {
         enable = true;
         shellWrapperName = "yy";

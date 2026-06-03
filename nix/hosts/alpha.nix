@@ -9,6 +9,7 @@ in
 {
   config.flake.darwinConfigurations.alpha = inputs.nix-darwin.lib.darwinSystem {
     modules = [
+      cfg.modules.darwin.default
       cfg.modules.darwin.rafiq
       cfg.modules.darwin.passwordless-sudo
       cfg.modules.darwin.nix-settings
@@ -22,12 +23,8 @@ in
       cfg.modules.darwin.darwin-system-defaults
       {
         imports = [ inputs.mac-app-util.darwinModules.default ];
-      }
-      {
         networking.hostName = "alpha";
-        nixpkgs = {
-          hostPlatform = "aarch64-darwin";
-        };
+        nixpkgs.hostPlatform = "aarch64-darwin";
         system = {
           configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
           stateVersion = 6;
@@ -35,11 +32,9 @@ in
         nix.settings = {
           extra-substituters = [
             "https://nix-community.cachix.org"
-            "https://hyprland.cachix.org"
           ];
           extra-trusted-public-keys = [
             "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-            "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
           ];
         };
         home-manager.sharedModules = [ inputs.mac-app-util.homeManagerModules.default ];

@@ -2,6 +2,10 @@
 {
   config.flake.modules.homeManager.nix-index-comma = {
     imports = [ inputs.nix-index-database.homeModules.nix-index ];
+    programs = {
+      nix-index.enable = true;
+      nix-index-database.comma.enable = true;
+    };
     home.file.".pi/agent/skills/comma/SKILL.md".text = ''
       ---
       name: comma
@@ -52,9 +56,5 @@
       { programs.nix-index-database.comma.enable = true; }
       ```
     '';
-    programs = {
-      nix-index.enable = true;
-      nix-index-database.comma.enable = true;
-    };
   };
 }
