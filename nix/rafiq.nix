@@ -602,18 +602,12 @@ let
       sops.age.sshKeyPaths = [ "${config.users.users.rafiq.home}/.ssh/id_ed25519" ];
       nix.settings.trusted-users = [ "rafiq" ];
       users.users.rafiq.shell = pkgs.fish;
-      home-manager = {
-        backupFileExtension = "bak";
-        overwriteBackup = true;
-        useUserPackages = true;
-        useGlobalPkgs = true;
-        users.rafiq = {
-          imports = [ homeConfig ];
-          home = {
-            username = "rafiq";
-            homeDirectory = config.users.users.rafiq.home;
-            stateVersion = "26.05";
-          };
+      home-manager.users.rafiq = {
+        imports = [ homeConfig ];
+        home = {
+          username = "rafiq";
+          homeDirectory = config.users.users.rafiq.home;
+          stateVersion = "26.05";
         };
       };
     };
@@ -624,7 +618,7 @@ in
     {
       imports = [
         sharedOsConfig
-        inputs.home-manager.nixosModules.home-manager
+        cfg.modules.nixos.home-manager-config
       ];
       programs.fish.enable = true;
       users.mutableUsers = false;
@@ -646,7 +640,7 @@ in
   config.flake.modules.darwin.rafiq = {
     imports = [
       sharedOsConfig
-      inputs.home-manager.darwinModules.home-manager
+      cfg.modules.darwin.home-manager-config
     ];
     programs.fish.enable = true;
     system.primaryUser = "rafiq";
