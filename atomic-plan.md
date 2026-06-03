@@ -151,11 +151,6 @@
 
 ### Scope
 
-- Steam unfree allowlist:
-  - `steam`
-  - `steam-original`
-  - `steam-run`
-  - `steam-unwrapped`
 - `programs.steam.enable`
 - `programs.steam.remotePlay.openFirewall`
 - `programs.steam.dedicatedServer.openFirewall`
@@ -178,7 +173,7 @@
 - Home Manager package:
   - `prismlauncher.override { jdks = [ jdk25 ]; }`
 
-## `nvidia-graphics`
+## `nvidia-graphics` ✅
 
 ### File
 
@@ -190,11 +185,15 @@
 
 ### Scope
 
-- NVIDIA unfree allowlist:
+- NVIDIA/Steam unfree allowlist:
   - `nvidia-kernel-modules`
   - `nvidia-persistenced`
   - `nvidia-settings`
   - `nvidia-x11`
+  - `steam`
+  - `steam-original`
+  - `steam-run`
+  - `steam-unwrapped`
 - `services.xserver.videoDrivers = [ "nvidia" ]`
 - `hardware.graphics.enable`
 - `hardware.graphics.enable32Bit`

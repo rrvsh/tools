@@ -34,6 +34,7 @@ in
             cfg.modules.nixos.tailscale-config
             cfg.modules.nixos.audio-config
             cfg.modules.nixos.steam
+            cfg.modules.nixos.nvidia-graphics
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -50,7 +51,6 @@ in
           };
           system.stateVersion = "26.05";
           security.polkit.enable = true;
-          services.xserver.videoDrivers = [ "nvidia" ];
           systemd.services.daily-midnight-poweroff = {
             description = "Power off nemesis daily at midnight";
             serviceConfig = {
@@ -153,23 +153,10 @@ in
           swapDevices = [ ];
           hardware = {
             cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-            graphics = {
-              enable = true;
-              enable32Bit = true;
-            };
-            nvidia = {
-              modesetting.enable = true;
-              nvidiaSettings = true;
-              package = config.boot.kernelPackages.nvidiaPackages.stable;
-              open = false;
-            };
             i2c.enable = true;
           };
           networking.networkmanager.enable = true;
           environment.sessionVariables = {
-            GBM_BACKEND = "nvidia-drm";
-            __GLX_VENDOR_LIBRARY_NAME = "nvidia";
-            LIBVA_DRIVER_NAME = "nvidia";
             NIXOS_OZONE_WL = "1";
           };
           fonts.packages = with pkgs; [
