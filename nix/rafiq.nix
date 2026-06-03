@@ -114,6 +114,7 @@ let
           };
         };
       };
+      services.dunst.enable = pkgs.stdenv.isLinux;
       targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
     };
   sharedOsConfig =
