@@ -60,7 +60,7 @@
 - `path-from-root` plugin from `inputs.path-from-root-yazi`
 - Yazi keymap for `path-from-root`
 
-## `neovim`
+## `neovim` ✅
 
 ### File
 

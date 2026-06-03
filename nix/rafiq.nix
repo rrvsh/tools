@@ -12,7 +12,6 @@ let
     }:
     {
       xdg.configFile = {
-        "nvim/lua".source = root + /nvim;
         "hypr/scripts/waybar_peek.py" = {
           source = root + /scripts/waybar_peek.py;
           executable = true;
@@ -276,36 +275,6 @@ let
             init.defaultBranch = "prime";
             push.autoSetupRemote = true;
           };
-        };
-        neovim = {
-          enable = true;
-          defaultEditor = true;
-          viAlias = true;
-          vimAlias = true;
-          initLua = ''require("rafiq")'';
-          plugins = with pkgs.vimPlugins; [
-            fff-nvim
-            fidget-nvim
-            gitsigns-nvim
-            mini-nvim
-            nvim-lspconfig
-            plenary-nvim
-            which-key-nvim
-            yazi-nvim
-          ];
-          extraPackages = with pkgs; [
-            cargo
-            clippy
-            lua-language-server
-            nil
-            pyright
-            ruff
-            rust-analyzer
-            rustc
-            rustfmt
-            stylua
-            unzip
-          ];
         };
         ghostty = {
           enable = true;
@@ -575,6 +544,7 @@ let
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {
         imports = [
+          cfg.modules.homeManager.neovim
           cfg.modules.homeManager.nix-index-comma
           cfg.modules.homeManager.yazi
           homeConfig
