@@ -35,6 +35,7 @@ in
             cfg.modules.nixos.audio-config
             cfg.modules.nixos.steam
             cfg.modules.nixos.nvidia-graphics
+            cfg.modules.nixos.waybar
           ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
@@ -159,10 +160,6 @@ in
           environment.sessionVariables = {
             NIXOS_OZONE_WL = "1";
           };
-          fonts.packages = with pkgs; [
-            nerd-fonts.jetbrains-mono
-            monocraft
-          ];
           programs = {
             hyprland = {
               enable = true;

@@ -245,7 +245,7 @@
   - `system.keyboard.enableKeyMapping`
   - `system.keyboard.remapCapsLockToEscape`
 
-## `waybar`
+## `waybar` ✅
 
 ### File
 
