@@ -163,7 +163,7 @@
 - `programs.gamemode.enable`
 - `programs.gamescope.enable`
 
-## `prismlauncher`
+## `prismlauncher` ✅
 
 ### File
 
