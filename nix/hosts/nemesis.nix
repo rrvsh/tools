@@ -10,11 +10,9 @@ in
   config.flake.nixosConfigurations.nemesis = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       cfg.modules.nixos.profile-default
-      cfg.modules.nixos.audio-config
+      cfg.modules.nixos.profile-desktop
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
-      cfg.modules.nixos.waybar
-      cfg.modules.nixos.hyprland
       cfg.modules.nixos.rafiq
       (
         {
@@ -32,22 +30,18 @@ in
         {
           imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
           networking.hostName = "nemesis";
-          time.timeZone = "Asia/Singapore";
           nixpkgs.hostPlatform = "x86_64-linux";
           home-manager.sharedModules = [
             (
               { pkgs, ... }:
               {
-                services.hypridle = {
-                  enable = true;
-                  settings.listener = [
-                    {
-                      timeout = 60;
-                      on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
-                      on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
-                    }
-                  ];
-                };
+                services.hypridle.settings.listener = [
+                  {
+                    timeout = 60;
+                    on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
+                    on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
+                  }
+                ];
               }
             )
           ];
