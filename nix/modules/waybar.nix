@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   cfg = config.flake;
 in
@@ -16,6 +16,7 @@ in
     wayland.windowManager.hyprland.extraConfig = ''
       hl.on("hyprland.start", function()
         hl.exec_cmd("waybar")
+        hl.exec_cmd("${inputs.waybar-peek.packages.x86_64-linux.waybar-peek}/bin/waybar_peek")
       end)
     '';
     xdg.configFile = {
