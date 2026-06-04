@@ -1,25 +1,51 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   cfg = config.flake;
 in
 {
-  config.flake.modules.darwin.profile-graphical = {
-    imports = with cfg.modules.darwin; [
-      firefox
-      ghostty
-    ];
-  };
-  config.flake.modules.nixos.profile-graphical = {
-    imports = with cfg.modules.nixos; [
-      waybar
-      ghostty
-      firefox
-      hyprland
-      audio-config
-    ];
-    time.timeZone = "Asia/Singapore";
-    home-manager.sharedModules = [
-      { services.hypridle.enable = true; }
-    ];
-  };
+  config.flake.modules.darwin.profile-graphical =
+    { pkgs, ... }:
+    {
+      imports = with cfg.modules.darwin; [
+        firefox
+        ghostty
+      ];
+      home-manager.sharedModules = [
+        {
+          home.packages = with pkgs; [
+            alt-tab-macos
+            monitorcontrol
+          ];
+          homebrew.casks = [ "mixxx" ];
+          targets.darwin.copyApps.enable = lib.mkForce false;
+        }
+      ];
+    };
+  config.flake.modules.nixos.profile-graphical =
+    { pkgs, ... }:
+    {
+      imports = with cfg.modules.nixos; [
+        waybar
+        ghostty
+        firefox
+        hyprland
+        audio-config
+      ];
+      time.timeZone = "Asia/Singapore";
+      home-manager.sharedModules = [
+        {
+          home.packages = with pkgs; [
+            mixxx
+            libnotify
+          ];
+          programs = {
+            wofi.enable = true;
+          };
+          services = {
+            hypridle.enable = true;
+            dunst.enable = true;
+          };
+        }
+      ];
+    };
 }

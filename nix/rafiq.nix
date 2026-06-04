@@ -2,7 +2,6 @@
 let
   cfg = config.flake;
   inherit (cfg.paths) root;
-  inherit (lib.lists) optionals;
   sharedOsConfig =
     { config, pkgs, ... }:
     {
@@ -13,21 +12,11 @@ let
           (
             { pkgs, ... }:
             {
-              home.packages =
-                with pkgs;
-                [
-                  ddgr
-                  gh
-                  ripgrep
-                ]
-                ++ (optionals stdenv.isDarwin [
-                  alt-tab-macos
-                  monitorcontrol
-                ])
-                ++ (optionals stdenv.isLinux [
-                  mixxx
-                  libnotify
-                ]);
+              home.packages = with pkgs; [
+                ddgr
+                gh
+                ripgrep
+              ];
               home.shellAliases = {
                 cd = "echo \"Please use z\"";
                 gc = "git commit";
@@ -45,9 +34,7 @@ let
                 v = "$EDITOR";
                 e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
               };
-
               programs = {
-                wofi.enable = pkgs.stdenv.isLinux;
                 fish = {
                   enable = true;
                   interactiveShellInit = ''
@@ -107,8 +94,6 @@ let
                   };
                 };
               };
-              services.dunst.enable = pkgs.stdenv.isLinux;
-              targets.darwin.copyApps.enable = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin (lib.mkForce false);
             }
           )
         ];
@@ -160,6 +145,5 @@ in
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
       ];
     };
-    homebrew.casks = [ "mixxx" ];
   };
 }
