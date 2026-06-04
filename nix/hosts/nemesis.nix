@@ -9,6 +9,12 @@ in
 {
   config.flake.nixosConfigurations.nemesis = inputs.nixpkgs.lib.nixosSystem {
     modules = [
+      cfg.modules.nixos.profile-default
+      cfg.modules.nixos.audio-config
+      cfg.modules.nixos.nvidia-graphics
+      cfg.modules.nixos.steam
+      cfg.modules.nixos.waybar
+      cfg.modules.nixos.hyprland
       cfg.modules.nixos.rafiq
       (
         {
@@ -24,33 +30,10 @@ in
           idleStateFile = "${runtimeDir}/hypridle-state";
         in
         {
-          imports = [
-            (modulesPath + "/installer/scan/not-detected.nix")
-            cfg.modules.nixos.default
-            cfg.modules.nixos.passwordless-sudo
-            cfg.modules.nixos.nix-settings
-            cfg.modules.nixos.ssh-config
-            cfg.modules.nixos.tailscale-config
-            cfg.modules.nixos.audio-config
-            cfg.modules.nixos.sops-config
-            cfg.modules.nixos.nvidia-graphics
-            cfg.modules.nixos.steam
-            cfg.modules.nixos.waybar
-            cfg.modules.nixos.hyprland
-          ];
+          imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
-          nixpkgs.hostPlatform = lib.mkDefault "x86_64-linux";
-          nix.settings = {
-            extra-substituters = [
-              "https://nix-community.cachix.org"
-            ];
-            extra-trusted-public-keys = [
-              "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
-            ];
-          };
-          system.stateVersion = "26.05";
-          security.polkit.enable = true;
+          nixpkgs.hostPlatform = "x86_64-linux";
           systemd.services.daily-midnight-poweroff = {
             description = "Power off nemesis daily at midnight";
             serviceConfig = {
@@ -108,9 +91,7 @@ in
               "usb_storage"
               "sd_mod"
             ];
-            initrd.kernelModules = [ ];
             kernelModules = [ "kvm-amd" ];
-            extraModulePackages = [ ];
             loader.systemd-boot = {
               enable = true;
               edk2-uefi-shell.enable = true;
@@ -150,13 +131,10 @@ in
               ];
             };
           };
-          swapDevices = [ ];
           hardware = {
             cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
-            i2c.enable = true;
+            i2c.enable = true; # ddc
           };
-          networking.networkmanager.enable = true;
-          programs.dconf.enable = true;
         }
       )
     ];

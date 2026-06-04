@@ -7,10 +7,10 @@ in
     type = lib.types.listOf lib.types.str;
     default = [ ];
   };
-  config.flake.modules.nixos.default = {
+  config.flake.modules.nixos.allowedUnfreePackages = {
     nixpkgs.config.allowUnfreePredicate = common;
   };
-  config.flake.modules.darwin.default = {
+  config.flake.modules.darwin.allowedUnfreePackages = {
     nixpkgs.config.allowUnfreePredicate = common;
   };
 }
