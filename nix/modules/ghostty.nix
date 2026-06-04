@@ -6,6 +6,7 @@ in
   config.flake.modules = {
     darwin.ghostty = {
       home-manager.sharedModules = [ cfg.modules.homeManager.ghostty ];
+      homebrew.casks = [ "ghostty" ];
     };
     nixos.ghostty = {
       home-manager.sharedModules = [ cfg.modules.homeManager.ghostty ];
