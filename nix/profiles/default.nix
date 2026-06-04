@@ -11,7 +11,6 @@ in
       ssh-config
       sops-config
       tailscale-config
-      darwin-system-defaults
     ];
     system = {
       configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;

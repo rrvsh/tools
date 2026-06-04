@@ -16,6 +16,19 @@ in
         ghostty
         inputs.mac-app-util.darwinModules.default
       ];
+      system = {
+        activationScripts.extraActivation.text = ''
+          echo >&2 "disabling sleep..."
+          sudo pmset -a disablesleep 1
+          echo >&2 "disabling display sleep..."
+          sudo pmset -a displaysleep 0
+        '';
+        defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
+        keyboard = {
+          enableKeyMapping = true;
+          remapCapsLockToEscape = true;
+        };
+      };
       home-manager.sharedModules = [
         inputs.mac-app-util.homeManagerModules.default
         {
