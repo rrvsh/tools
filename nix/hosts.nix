@@ -3,6 +3,17 @@ let
   cfg = config.flake;
 in
 {
+  config.flake.hosts.darwin.alpha = {
+    hostPlatform = "aarch64-darwin";
+    profiles = [
+      "graphical"
+      "development"
+    ];
+    modules = [
+      cfg.modules.darwin.user-rafiq
+      cfg.modules.darwin.rosetta-builder
+    ];
+  };
   config.flake.hosts.nixos.nemesis = {
     hostPlatform = "x86_64-linux";
     profiles = [
@@ -10,7 +21,7 @@ in
       "development"
     ];
     modules = [
-      cfg.modules.nixos.rafiq
+      cfg.modules.nixos.user-rafiq
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
       cfg.modules.nixos.prismlauncher
@@ -25,6 +36,7 @@ in
         }:
         {
           imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+          hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
           boot = {
             initrd.availableKernelModules = [
               "nvme"
@@ -74,7 +86,6 @@ in
               ];
             };
           };
-          hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
         }
       )
     ];

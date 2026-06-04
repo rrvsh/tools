@@ -21,7 +21,7 @@ let
     };
 in
 {
-  config.flake.modules.nixos.rafiq =
+  config.flake.modules.nixos.user-rafiq =
     { config, ... }:
     {
       imports = [
@@ -44,7 +44,7 @@ in
         neededForUsers = true;
       };
     };
-  config.flake.modules.darwin.rafiq = {
+  config.flake.modules.darwin.user-rafiq = {
     imports = [
       sharedOsConfig
       cfg.modules.darwin.user-config
