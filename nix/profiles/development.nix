@@ -6,19 +6,19 @@ in
   config.flake.modules = {
     darwin.profile-development = {
       imports = with cfg.modules.darwin; [
-        cfg.modules.darwin.neovim
-        cfg.modules.darwin.nix-index-comma
-        cfg.modules.darwin.pi-agent
-        cfg.modules.darwin.yazi
+        neovim
+        nix-index-comma
+        pi-agent
+        yazi
       ];
       home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];
     };
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
-        cfg.modules.nixos.neovim
-        cfg.modules.nixos.nix-index-comma
-        cfg.modules.nixos.pi-agent
-        cfg.modules.nixos.yazi
+        neovim
+        nix-index-comma
+        pi-agent
+        yazi
       ];
       home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];
     };
