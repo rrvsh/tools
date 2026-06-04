@@ -1,22 +1,22 @@
 { config, ... }:
 let
   cfg = config.flake;
+  rrvshSshAuthorizedKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDAgeb4QgH9YPUfS9lG2GMC1/fnxaxCX2F+lbgfxN1d6"
+  ];
   rafiq = {
     name = "rafiq";
     fullName = "Mohammad Rafiq";
     email = "rafiq@rrv.sh";
     gitDefaultBranch = "prime";
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
-    ];
+    sshAuthorizedKeys = rrvshSshAuthorizedKeys;
   };
   binmohm = {
     name = "binmohm";
     fullName = "binmohm";
     email = "rafiq@rrv.sh";
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDAgeb4QgH9YPUfS9lG2GMC1/fnxaxCX2F+lbgfxN1d6"
-    ];
+    sshAuthorizedKeys = rrvshSshAuthorizedKeys;
   };
 in
 {
