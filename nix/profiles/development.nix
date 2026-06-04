@@ -94,6 +94,7 @@ in
           git = {
             enable = true;
             ignores = [ ".direnv/" ];
+            includes = [ { path = "~/.gitconfig-override"; } ];
             signing = {
               signByDefault = true;
               key = "~/.ssh/id_ed25519.pub";
