@@ -4,6 +4,7 @@ let
 in
 {
   config.flake.hosts.nixos.nemesis = {
+    hostPlatform = "x86_64-linux";
     profiles = [
       "graphical"
       "development"
@@ -24,7 +25,6 @@ in
         }:
         {
           imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
-          nixpkgs.hostPlatform = "x86_64-linux";
           boot = {
             initrd.availableKernelModules = [
               "nvme"

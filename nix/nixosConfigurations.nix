@@ -11,7 +11,10 @@ let
     name: value:
     inputs.nixpkgs.lib.nixosSystem {
       modules = [
-        { networking.hostName = name; }
+        {
+          networking.hostName = name;
+          nixpkgs = { inherit (value) hostPlatform; };
+        }
         cfg.modules.nixos.profile-default
       ]
       ++ map profileModule value.profiles
@@ -23,6 +26,9 @@ in
     type = lib.types.attrsOf (
       lib.types.submodule {
         options = {
+          hostPlatform = lib.mkOption {
+            type = lib.types.str;
+          };
           profiles = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
