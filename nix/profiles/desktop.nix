@@ -11,6 +11,7 @@ in
   config.flake.modules.nixos.profile-desktop = {
     imports = with cfg.modules.nixos; [
       waybar
+      firefox
       hyprland
       audio-config
     ];
