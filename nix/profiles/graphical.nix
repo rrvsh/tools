@@ -3,13 +3,13 @@ let
   cfg = config.flake;
 in
 {
-  config.flake.modules.darwin.profile-desktop = {
+  config.flake.modules.darwin.profile-graphical = {
     imports = with cfg.modules.darwin; [
       firefox
       ghostty
     ];
   };
-  config.flake.modules.nixos.profile-desktop = {
+  config.flake.modules.nixos.profile-graphical = {
     imports = with cfg.modules.nixos; [
       waybar
       ghostty

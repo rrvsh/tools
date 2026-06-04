@@ -10,7 +10,7 @@ in
   config.flake.nixosConfigurations.nemesis = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       cfg.modules.nixos.profile-default
-      cfg.modules.nixos.profile-desktop
+      cfg.modules.nixos.profile-graphical
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
       cfg.modules.nixos.prismlauncher

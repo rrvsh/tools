@@ -10,7 +10,7 @@ in
   config.flake.darwinConfigurations.alpha = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       cfg.modules.darwin.profile-default
-      cfg.modules.darwin.profile-desktop
+      cfg.modules.darwin.profile-graphical
       cfg.modules.darwin.rafiq
       cfg.modules.darwin.neovim
       cfg.modules.darwin.nix-index-comma
