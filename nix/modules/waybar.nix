@@ -7,6 +7,7 @@ in
   config.flake.modules.nixos.waybar =
     { pkgs, ... }:
     {
+      home-manager.sharedModules = [ cfg.modules.homeManager.waybar ];
       fonts.packages = with pkgs; [
         nerd-fonts.jetbrains-mono
         monocraft
@@ -16,11 +17,10 @@ in
     {
       config,
       lib,
-      osConfig,
       pkgs,
       ...
     }:
-    lib.mkIf pkgs.stdenv.isLinux {
+    {
       xdg.configFile = {
         "hypr/scripts/waybar_peek.py" = {
           source = root + /scripts/waybar_peek.py;
@@ -110,7 +110,7 @@ in
       };
       systemd.user.services = {
         waybar.Unit.ConditionEnvironment = lib.mkForce [ ];
-        waybar-peek = lib.mkIf (osConfig.programs.hyprland.enable or false) {
+        waybar-peek = {
           Unit = {
             Description = "waybar_peek auto-hide helper for Hyprland";
             After = [
