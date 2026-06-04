@@ -1,31 +1,30 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   cfg = config.flake;
-  inherit (cfg.paths) root;
 in
 {
   config.flake.modules.nixos.waybar =
     { pkgs, ... }:
     {
+      home-manager.sharedModules = [ cfg.modules.homeManager.waybar ];
       fonts.packages = with pkgs; [
         nerd-fonts.jetbrains-mono
         monocraft
       ];
     };
   config.flake.modules.homeManager.waybar =
+    { pkgs, ... }:
+    let
+      waybarPeek = inputs.waybar-peek.packages.${pkgs.stdenv.hostPlatform.system}.waybar-peek;
+    in
     {
-      config,
-      lib,
-      osConfig,
-      pkgs,
-      ...
-    }:
-    lib.mkIf pkgs.stdenv.isLinux {
+      wayland.windowManager.hyprland.extraConfig = ''
+        hl.on("hyprland.start", function()
+          hl.exec_cmd("waybar")
+          hl.exec_cmd("${waybarPeek}/bin/waybar_peek")
+        end)
+      '';
       xdg.configFile = {
-        "hypr/scripts/waybar_peek.py" = {
-          source = root + /scripts/waybar_peek.py;
-          executable = true;
-        };
         "waybar/power_menu.xml".text = ''
           <?xml version="1.0" encoding="UTF-8"?>
           <interface>
@@ -41,7 +40,6 @@ in
       };
       programs.waybar = {
         enable = true;
-        systemd.enable = true;
         style = ''
           window#waybar {
             background: transparent;
@@ -107,33 +105,6 @@ in
             };
           }
         ];
-      };
-      systemd.user.services = {
-        waybar.Unit.ConditionEnvironment = lib.mkForce [ ];
-        waybar-peek = lib.mkIf (osConfig.programs.hyprland.enable or false) {
-          Unit = {
-            Description = "waybar_peek auto-hide helper for Hyprland";
-            After = [
-              "graphical-session.target"
-              "waybar.service"
-            ];
-            Wants = [
-              "graphical-session.target"
-              "waybar.service"
-            ];
-          };
-          Service = {
-            ExecStart = "${pkgs.python3}/bin/python3 ${config.xdg.configHome}/hypr/scripts/waybar_peek.py";
-            Restart = "always";
-            RestartSec = 1;
-            Environment = [
-              "WAYBAR_PEEK_SHOW_PX=5"
-              "WAYBAR_PEEK_HIDE_PX=120"
-              "WAYBAR_PEEK_POLL=0.1"
-            ];
-          };
-          Install.WantedBy = [ "default.target" ];
-        };
       };
     };
 }

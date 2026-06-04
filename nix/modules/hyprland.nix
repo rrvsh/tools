@@ -1,9 +1,48 @@
-{ inputs, ... }:
+{
+  inputs,
+  lib,
+  config,
+  ...
+}:
+let
+  cfg = config.flake;
+  lua = lib.generators.mkLuaInline;
+  mkBind = key: command: {
+    _args = [
+      key
+      (lua command)
+    ];
+  };
+  hjklDirections = [
+    {
+      key = "H";
+      direction = "left";
+    }
+    {
+      key = "J";
+      direction = "down";
+    }
+    {
+      key = "K";
+      direction = "up";
+    }
+    {
+      key = "L";
+      direction = "right";
+    }
+  ];
+  mkHjklBinds =
+    modifier: action:
+    builtins.map (
+      { key, direction }: mkBind "${modifier} + ${key}" "${action}({ direction = \"${direction}\" })"
+    ) hjklDirections;
+in
 {
   config.flake.modules.nixos.hyprland =
     { config, pkgs, ... }:
     {
       imports = [ inputs.hyprland.nixosModules.default ];
+      home-manager.sharedModules = [ cfg.modules.homeManager.hyprland ];
       nix.settings = {
         extra-substituters = [ "https://hyprland.cachix.org" ];
         extra-trusted-public-keys = [
@@ -23,209 +62,138 @@
         extraPortals = [ config.programs.hyprland.portalPackage ];
       };
     };
-  config.flake.modules.homeManager.hyprland =
-    {
-      lib,
-      osConfig,
-      pkgs,
-      ...
-    }:
-    lib.mkIf pkgs.stdenv.isLinux {
-      wayland.windowManager.hyprland = {
-        enable = osConfig.programs.hyprland.enable or false;
-        configType = "lua";
-        package = null;
-        portalPackage = null;
-        extraConfig = ''
-          hl.on("hyprland.start", function()
-            hl.exec_cmd("systemctl --user import-environment WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_RUNTIME_DIR DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE && ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_RUNTIME_DIR DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE && systemctl --user restart waybar.service waybar-peek.service")
-          end)
-        '';
-        settings = {
-          monitor = [
-            {
-              output = "HDMI-A-1";
-              mode = "3840x2160@160";
-              position = "auto";
-              scale = 2;
-            }
-            {
-              output = "";
-              mode = "preferred";
-              position = "auto";
-              scale = 2;
-            }
-          ];
-          config = {
-            input.sensitivity = 1.0;
-            general = {
-              gaps_in = 0;
-              gaps_out = 0;
-              border_size = 0;
-            };
+  config.flake.modules.homeManager.hyprland = {
+    wayland.windowManager.hyprland = {
+      enable = true;
+      configType = "lua";
+      package = null;
+      portalPackage = null;
+      settings = {
+        monitor = [
+          {
+            output = "HDMI-A-1";
+            mode = "3840x2160@160";
+            position = "auto";
+            scale = 2;
+          }
+          {
+            output = "";
+            mode = "preferred";
+            position = "auto";
+            scale = 2;
+          }
+        ];
+        config = {
+          input.sensitivity = 1.0;
+          general = {
+            gaps_in = 0;
+            gaps_out = 0;
+            border_size = 0;
           };
-          bind = [
-            {
-              _args = [
-                "XF86AudioRaiseVolume"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
-                { repeating = true; }
-              ];
-            }
-            {
-              _args = [
-                "XF86AudioLowerVolume"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
-                { repeating = true; }
-              ];
-            }
-            {
-              _args = [
-                "XF86AudioMute"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
-              ];
-            }
-            {
-              _args = [
-                "XF86AudioMicMute"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SPACE"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wofi --show drun\")")
-              ];
-            }
-            {
-              _args = [
-                "ALT + CTRL + 1"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
-              ];
-            }
-            {
-              _args = [
-                "ALT + CTRL + 2"
-                (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"firefox\")")
-              ];
-            }
-            {
-              _args = [
-                "ALT + CTRL + W"
-                (lib.generators.mkLuaInline "hl.dsp.window.close()")
-              ];
-            }
-            {
-              _args = [
-                "ALT + CTRL + P"
-                (lib.generators.mkLuaInline "hl.dsp.window.float({ action = \"toggle\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + H"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"left\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + J"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"down\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + K"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"up\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + L"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"right\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SUPER + H"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r-1\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SUPER + L"
-                (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r+1\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + H"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"left\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + J"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"down\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + K"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"up\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + L"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"right\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + SUPER + H"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r-1\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + SUPER + L"
-                (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r+1\" })")
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + mouse:272"
-                (lib.generators.mkLuaInline "hl.dsp.window.drag()")
-                { mouse = true; }
-              ];
-            }
-            {
-              _args = [
-                "ALT + SHIFT + mouse:273"
-                (lib.generators.mkLuaInline "hl.dsp.window.resize()")
-                { mouse = true; }
-              ];
-            }
-          ];
         };
+        bind = [
+          {
+            _args = [
+              "XF86AudioRaiseVolume"
+              (lua "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
+              { repeating = true; }
+            ];
+          }
+          {
+            _args = [
+              "XF86AudioLowerVolume"
+              (lua "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
+              { repeating = true; }
+            ];
+          }
+          {
+            _args = [
+              "XF86AudioMute"
+              (lua "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
+            ];
+          }
+          {
+            _args = [
+              "XF86AudioMicMute"
+              (lua "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
+            ];
+          }
+          {
+            _args = [
+              "ALT + SPACE"
+              (lua "hl.dsp.exec_cmd(\"wofi --show drun\")")
+            ];
+          }
+          {
+            _args = [
+              "ALT + CTRL + 1"
+              (lua "hl.dsp.exec_cmd(\"ghostty\")")
+            ];
+          }
+          {
+            _args = [
+              "ALT + CTRL + 2"
+              (lua "hl.dsp.exec_cmd(\"firefox\")")
+            ];
+          }
+          {
+            _args = [
+              "ALT + CTRL + W"
+              (lua "hl.dsp.window.close()")
+            ];
+          }
+          {
+            _args = [
+              "ALT + CTRL + P"
+              (lua "hl.dsp.window.float({ action = \"toggle\" })")
+            ];
+          }
+        ]
+        ++ mkHjklBinds "ALT" "hl.dsp.focus"
+        ++ [
+          {
+            _args = [
+              "ALT + SUPER + H"
+              (lua "hl.dsp.focus({ workspace = \"r-1\" })")
+            ];
+          }
+          {
+            _args = [
+              "ALT + SUPER + L"
+              (lua "hl.dsp.focus({ workspace = \"r+1\" })")
+            ];
+          }
+        ]
+        ++ mkHjklBinds "ALT + SHIFT" "hl.dsp.window.move"
+        ++ [
+          {
+            _args = [
+              "ALT + SHIFT + SUPER + H"
+              (lua "hl.dsp.window.move( { workspace = \"r-1\" })")
+            ];
+          }
+          {
+            _args = [
+              "ALT + SHIFT + SUPER + L"
+              (lua "hl.dsp.window.move( { workspace = \"r+1\" })")
+            ];
+          }
+          {
+            _args = [
+              "ALT + SHIFT + mouse:272"
+              (lua "hl.dsp.window.drag()")
+              { mouse = true; }
+            ];
+          }
+          {
+            _args = [
+              "ALT + SHIFT + mouse:273"
+              (lua "hl.dsp.window.resize()")
+              { mouse = true; }
+            ];
+          }
+        ];
       };
-      services.hypridle = lib.mkIf (osConfig.programs.hyprland.enable or false) (
-        let
-          uid = toString osConfig.users.users.rafiq.uid;
-          runtimeDir = "/run/user/${uid}";
-          idleStateFile = "${runtimeDir}/hypridle-state";
-        in
-        {
-          enable = true;
-          settings.listener = [
-            {
-              timeout = 60;
-              on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
-              on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
-            }
-          ];
-        }
-      );
     };
+  };
 }

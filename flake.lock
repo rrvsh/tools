@@ -914,6 +914,7 @@
         "rust-overlay": "rust-overlay",
         "site-content": "site-content",
         "sops-nix": "sops-nix",
+        "waybar-peek": "waybar-peek",
         "yazi": "yazi"
       }
     },
@@ -1066,6 +1067,26 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "waybar-peek": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1780557123,
+        "narHash": "sha256-ef6WlwpBJxz+OVwOrOzk5REuxrSZEl5uuh7tDhFksCg=",
+        "owner": "rrvsh",
+        "repo": "waybar_peek",
+        "rev": "425e26ef679289251d100657a7c63063015dd093",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "repo": "waybar_peek",
         "type": "github"
       }
     },

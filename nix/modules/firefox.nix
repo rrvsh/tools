@@ -1,18 +1,26 @@
-{ inputs, ... }:
 {
-  config.flake = {
-    allowedUnfreePackages = [ "firefox-bin" ];
-    modules.darwin.firefox = {
+  inputs,
+  config,
+  lib,
+  ...
+}:
+let
+  cfg = config.flake;
+in
+{
+  config.flake.allowedUnfreePackages = [ "firefox-bin" ];
+  config.flake.modules = {
+    darwin.firefox = {
       nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
+      home-manager.sharedModules = [ cfg.modules.homeManager.firefox ];
     };
-    modules.homeManager.firefox =
+    nixos.firefox = {
+      home-manager.sharedModules = [ cfg.modules.homeManager.firefox ];
+    };
+    homeManager.firefox =
+      { pkgs, ... }:
       {
-        lib,
-        pkgs,
-        ...
-      }:
-      {
-        home.packages = with pkgs; lib.lists.optional stdenv.isDarwin firefox-bin;
+        home.packages = lib.lists.optional pkgs.stdenv.isDarwin pkgs.firefox-bin;
         programs.firefox = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.firefox;
