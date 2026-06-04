@@ -1,16 +1,13 @@
-{
-  inputs,
-  config,
-  ...
-}:
+{ config, ... }:
 let
   cfg = config.flake;
 in
 {
-  config.flake.nixosConfigurations.nemesis = inputs.nixpkgs.lib.nixosSystem {
+  config.flake.hosts.nixos.nemesis = {
     modules = [
       cfg.modules.nixos.profile-default
       cfg.modules.nixos.profile-graphical
+      cfg.modules.nixos.profile-development
       cfg.modules.nixos.rafiq
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
@@ -26,7 +23,6 @@ in
         }:
         {
           imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
-          networking.hostName = "nemesis";
           nixpkgs.hostPlatform = "x86_64-linux";
           boot = {
             initrd.availableKernelModules = [
