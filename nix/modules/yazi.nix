@@ -7,15 +7,14 @@ let
       "yazi.cachix.org-1:Dcdz63NZKfvUCbDGngQDAZq6kOroIrFoyO064uvLh8k="
     ];
   };
+  osModule = yaziCache // {
+    home-manager.sharedModules = [ cfg.modules.homeManager.yazi ];
+  };
 in
 {
   config.flake.modules = {
-    darwin.yazi = yaziCache // {
-      home-manager.sharedModules = [ cfg.modules.homeManager.yazi ];
-    };
-    nixos.yazi = yaziCache // {
-      home-manager.sharedModules = [ cfg.modules.homeManager.yazi ];
-    };
+    darwin.yazi = osModule;
+    nixos.yazi = osModule;
     homeManager.yazi =
       { pkgs, config, ... }:
       {

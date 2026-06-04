@@ -1,15 +1,14 @@
 { inputs, config, ... }:
 let
   cfg = config.flake;
+  osModule = {
+    home-manager.sharedModules = [ cfg.modules.homeManager.prismlauncher ];
+  };
 in
 {
   config.flake.modules = {
-    darwin.prismlauncher = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.prismlauncher ];
-    };
-    nixos.prismlauncher = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.prismlauncher ];
-    };
+    darwin.prismlauncher = osModule;
+    nixos.prismlauncher = osModule;
     homeManager.prismlauncher =
       { pkgs, ... }:
       {

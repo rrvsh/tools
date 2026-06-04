@@ -1,15 +1,14 @@
 { config, ... }:
 let
   cfg = config.flake;
+  osModule = {
+    home-manager.sharedModules = [ cfg.modules.homeManager.pi-agent ];
+  };
 in
 {
   config.flake.modules = {
-    darwin.pi-agent = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.pi-agent ];
-    };
-    nixos.pi-agent = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.pi-agent ];
-    };
+    darwin.pi-agent = osModule;
+    nixos.pi-agent = osModule;
     homeManager.pi-agent =
       { pkgs, ... }:
       {

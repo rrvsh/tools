@@ -2,15 +2,14 @@
 let
   cfg = config.flake;
   inherit (cfg.paths) root;
+  osModule = {
+    home-manager.sharedModules = [ cfg.modules.homeManager.neovim ];
+  };
 in
 {
   config.flake.modules = {
-    darwin.neovim = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.neovim ];
-    };
-    nixos.neovim = {
-      home-manager.sharedModules = [ cfg.modules.homeManager.neovim ];
-    };
+    darwin.neovim = osModule;
+    nixos.neovim = osModule;
     homeManager.neovim =
       { pkgs, ... }:
       {
