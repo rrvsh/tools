@@ -1,19 +1,20 @@
 { config, ... }:
 let
   cfg = config.flake;
+  rafiq = {
+    name = "rafiq";
+    fullName = "Mohammad Rafiq";
+    email = "rafiq@rrv.sh";
+    gitDefaultBranch = "prime";
+    sshAuthorizedKeys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+    ];
+  };
 in
 {
   config.flake.hosts.darwin.alpha = {
     hostPlatform = "aarch64-darwin";
-    primaryUser = {
-      name = "rafiq";
-      fullName = "Mohammad Rafiq";
-      email = "rafiq@rrv.sh";
-      gitDefaultBranch = "prime";
-      sshAuthorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
-      ];
-    };
+    primaryUser = rafiq;
     profiles = [
       "graphical"
       "development"
@@ -25,15 +26,7 @@ in
   };
   config.flake.hosts.nixos.nemesis = {
     hostPlatform = "x86_64-linux";
-    primaryUser = {
-      name = "rafiq";
-      fullName = "Mohammad Rafiq";
-      email = "rafiq@rrv.sh";
-      gitDefaultBranch = "prime";
-      sshAuthorizedKeys = [
-        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
-      ];
-    };
+    primaryUser = rafiq;
     profiles = [
       "graphical"
       "development"
