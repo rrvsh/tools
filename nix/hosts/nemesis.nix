@@ -4,10 +4,11 @@ let
 in
 {
   config.flake.hosts.nixos.nemesis = {
+    profiles = [
+      "graphical"
+      "development"
+    ];
     modules = [
-      cfg.modules.nixos.profile-default
-      cfg.modules.nixos.profile-graphical
-      cfg.modules.nixos.profile-development
       cfg.modules.nixos.rafiq
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
