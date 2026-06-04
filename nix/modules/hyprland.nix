@@ -6,6 +6,36 @@
 }:
 let
   cfg = config.flake;
+  lua = lib.generators.mkLuaInline;
+  mkBind = key: command: {
+    _args = [
+      key
+      (lua command)
+    ];
+  };
+  hjklDirections = [
+    {
+      key = "H";
+      direction = "left";
+    }
+    {
+      key = "J";
+      direction = "down";
+    }
+    {
+      key = "K";
+      direction = "up";
+    }
+    {
+      key = "L";
+      direction = "right";
+    }
+  ];
+  mkHjklBinds =
+    modifier: action:
+    builtins.map (
+      { key, direction }: mkBind "${modifier} + ${key}" "${action}({ direction = \"${direction}\" })"
+    ) hjklDirections;
 in
 {
   config.flake.modules.nixos.hyprland =
@@ -65,142 +95,100 @@ in
           {
             _args = [
               "XF86AudioRaiseVolume"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
+              (lua "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+\")")
               { repeating = true; }
             ];
           }
           {
             _args = [
               "XF86AudioLowerVolume"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
+              (lua "hl.dsp.exec_cmd(\"wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-\")")
               { repeating = true; }
             ];
           }
           {
             _args = [
               "XF86AudioMute"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
+              (lua "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle\")")
             ];
           }
           {
             _args = [
               "XF86AudioMicMute"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
+              (lua "hl.dsp.exec_cmd(\"wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle\")")
             ];
           }
           {
             _args = [
               "ALT + SPACE"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"wofi --show drun\")")
+              (lua "hl.dsp.exec_cmd(\"wofi --show drun\")")
             ];
           }
           {
             _args = [
               "ALT + CTRL + 1"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"ghostty\")")
+              (lua "hl.dsp.exec_cmd(\"ghostty\")")
             ];
           }
           {
             _args = [
               "ALT + CTRL + 2"
-              (lib.generators.mkLuaInline "hl.dsp.exec_cmd(\"firefox\")")
+              (lua "hl.dsp.exec_cmd(\"firefox\")")
             ];
           }
           {
             _args = [
               "ALT + CTRL + W"
-              (lib.generators.mkLuaInline "hl.dsp.window.close()")
+              (lua "hl.dsp.window.close()")
             ];
           }
           {
             _args = [
               "ALT + CTRL + P"
-              (lib.generators.mkLuaInline "hl.dsp.window.float({ action = \"toggle\" })")
+              (lua "hl.dsp.window.float({ action = \"toggle\" })")
             ];
           }
-          {
-            _args = [
-              "ALT + H"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"left\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + J"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"down\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + K"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"up\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + L"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ direction = \"right\" })")
-            ];
-          }
+        ]
+        ++ mkHjklBinds "ALT" "hl.dsp.focus"
+        ++ [
           {
             _args = [
               "ALT + SUPER + H"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r-1\" })")
+              (lua "hl.dsp.focus({ workspace = \"r-1\" })")
             ];
           }
           {
             _args = [
               "ALT + SUPER + L"
-              (lib.generators.mkLuaInline "hl.dsp.focus({ workspace = \"r+1\" })")
+              (lua "hl.dsp.focus({ workspace = \"r+1\" })")
             ];
           }
-          {
-            _args = [
-              "ALT + SHIFT + H"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"left\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + SHIFT + J"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"down\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + SHIFT + K"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"up\" })")
-            ];
-          }
-          {
-            _args = [
-              "ALT + SHIFT + L"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { direction = \"right\" })")
-            ];
-          }
+        ]
+        ++ mkHjklBinds "ALT + SHIFT" "hl.dsp.window.move"
+        ++ [
           {
             _args = [
               "ALT + SHIFT + SUPER + H"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r-1\" })")
+              (lua "hl.dsp.window.move( { workspace = \"r-1\" })")
             ];
           }
           {
             _args = [
               "ALT + SHIFT + SUPER + L"
-              (lib.generators.mkLuaInline "hl.dsp.window.move( { workspace = \"r+1\" })")
+              (lua "hl.dsp.window.move( { workspace = \"r+1\" })")
             ];
           }
           {
             _args = [
               "ALT + SHIFT + mouse:272"
-              (lib.generators.mkLuaInline "hl.dsp.window.drag()")
+              (lua "hl.dsp.window.drag()")
               { mouse = true; }
             ];
           }
           {
             _args = [
               "ALT + SHIFT + mouse:273"
-              (lib.generators.mkLuaInline "hl.dsp.window.resize()")
+              (lua "hl.dsp.window.resize()")
               { mouse = true; }
             ];
           }
