@@ -12,13 +12,11 @@ in
       sops-config
       tailscale-config
       darwin-system-defaults
-      inputs.mac-app-util.darwinModules.default
     ];
     system = {
       configurationRevision = inputs.self.rev or inputs.self.dirtyRev or null;
       stateVersion = 6;
     };
-    home-manager.sharedModules = [ inputs.mac-app-util.homeManagerModules.default ];
   };
   config.flake.modules.nixos.profile-default = {
     imports = with cfg.modules.nixos; [

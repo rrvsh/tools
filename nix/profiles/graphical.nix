@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  inputs,
+  ...
+}:
 let
   cfg = config.flake;
 in
@@ -9,8 +14,10 @@ in
       imports = with cfg.modules.darwin; [
         firefox
         ghostty
+        inputs.mac-app-util.darwinModules.default
       ];
       home-manager.sharedModules = [
+        inputs.mac-app-util.homeManagerModules.default
         {
           home.packages = with pkgs; [
             alt-tab-macos
