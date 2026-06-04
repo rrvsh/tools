@@ -1,5 +1,14 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
+let
+  cfg = config.flake;
+in
 {
+  config.flake.modules.darwin.prismlauncher = {
+    home-manager.sharedModules = [ cfg.modules.homeManager.prismlauncher ];
+  };
+  config.flake.modules.nixos.prismlauncher = {
+    home-manager.sharedModules = [ cfg.modules.homeManager.prismlauncher ];
+  };
   config.flake.modules.homeManager.prismlauncher =
     { pkgs, ... }:
     {

@@ -13,6 +13,7 @@ in
       cfg.modules.nixos.profile-desktop
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
+      cfg.modules.nixos.prismlauncher
       cfg.modules.nixos.rafiq
       (
         {

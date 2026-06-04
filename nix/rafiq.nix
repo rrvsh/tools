@@ -13,7 +13,6 @@ let
           cfg.modules.homeManager.neovim
           cfg.modules.homeManager.nix-index-comma
           cfg.modules.homeManager.pi-agent
-          cfg.modules.homeManager.prismlauncher
           cfg.modules.homeManager.yazi
           (
             { pkgs, ... }:
