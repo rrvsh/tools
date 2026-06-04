@@ -34,6 +34,20 @@ in
           networking.hostName = "nemesis";
           time.timeZone = "Asia/Singapore";
           nixpkgs.hostPlatform = "x86_64-linux";
+          home-manager.sharedModules = [
+            ({ pkgs, ... }: {
+              services.hypridle = {
+                enable = true;
+                settings.listener = [
+                  {
+                    timeout = 60;
+                    on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
+                    on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
+                  }
+                ];
+              };
+            })
+          ];
           systemd.services.daily-midnight-poweroff = {
             description = "Power off nemesis daily at midnight";
             serviceConfig = {

@@ -1,9 +1,13 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
+let
+  cfg = config.flake;
+in
 {
   config.flake.modules.nixos.hyprland =
     { config, pkgs, ... }:
     {
       imports = [ inputs.hyprland.nixosModules.default ];
+      home-manager.sharedModules = [ cfg.modules.homeManager.hyprland ];
       nix.settings = {
         extra-substituters = [ "https://hyprland.cachix.org" ];
         extra-trusted-public-keys = [
@@ -26,13 +30,12 @@
   config.flake.modules.homeManager.hyprland =
     {
       lib,
-      osConfig,
       pkgs,
       ...
     }:
     lib.mkIf pkgs.stdenv.isLinux {
       wayland.windowManager.hyprland = {
-        enable = osConfig.programs.hyprland.enable or false;
+        enable = true;
         configType = "lua";
         package = null;
         portalPackage = null;
@@ -210,22 +213,5 @@
           ];
         };
       };
-      services.hypridle = lib.mkIf (osConfig.programs.hyprland.enable or false) (
-        let
-          uid = toString osConfig.users.users.rafiq.uid;
-          runtimeDir = "/run/user/${uid}";
-          idleStateFile = "${runtimeDir}/hypridle-state";
-        in
-        {
-          enable = true;
-          settings.listener = [
-            {
-              timeout = 60;
-              on-timeout = "${pkgs.bash}/bin/bash -lc 'printf idle > \"${idleStateFile}\"'";
-              on-resume = "${pkgs.bash}/bin/bash -lc 'printf active > \"${idleStateFile}\"'";
-            }
-          ];
-        }
-      );
     };
 }
