@@ -12,94 +12,99 @@ in
         monocraft
       ];
     };
-  config.flake.modules.homeManager.waybar = {
-    wayland.windowManager.hyprland.extraConfig = ''
-      hl.on("hyprland.start", function()
-        hl.exec_cmd("waybar")
-        hl.exec_cmd("${inputs.waybar-peek.packages.x86_64-linux.waybar-peek}/bin/waybar_peek")
-      end)
-    '';
-    xdg.configFile = {
-      "waybar/power_menu.xml".text = ''
-        <?xml version="1.0" encoding="UTF-8"?>
-        <interface>
-          <object class="GtkMenu" id="menu">
-            <child>
-              <object class="GtkMenuItem" id="win11-reboot">
-                <property name="label">Reboot to Windows 11</property>
-              </object>
-            </child>
-          </object>
-        </interface>
+  config.flake.modules.homeManager.waybar =
+    { pkgs, ... }:
+    let
+      waybarPeek = inputs.waybar-peek.packages.${pkgs.stdenv.hostPlatform.system}.waybar-peek;
+    in
+    {
+      wayland.windowManager.hyprland.extraConfig = ''
+        hl.on("hyprland.start", function()
+          hl.exec_cmd("waybar")
+          hl.exec_cmd("${waybarPeek}/bin/waybar_peek")
+        end)
       '';
+      xdg.configFile = {
+        "waybar/power_menu.xml".text = ''
+          <?xml version="1.0" encoding="UTF-8"?>
+          <interface>
+            <object class="GtkMenu" id="menu">
+              <child>
+                <object class="GtkMenuItem" id="win11-reboot">
+                  <property name="label">Reboot to Windows 11</property>
+                </object>
+              </child>
+            </object>
+          </interface>
+        '';
+      };
+      programs.waybar = {
+        enable = true;
+        style = ''
+          window#waybar {
+            background: transparent;
+          }
+
+          #clock,
+          #custom-power {
+            background: #000000;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            border-radius: 9999px;
+            padding: 3px 8px;
+            margin: 4px 0;
+            font-family: "Monocraft";
+            font-size: 12px;
+            font-weight: 400;
+            font-style: normal;
+          }
+
+          menu {
+            border-radius: 12px;
+            background: #000000;
+            color: #ffffff;
+            border: 1px solid #ffffff;
+            font-family: "Monocraft";
+            font-size: 12px;
+            font-weight: 400;
+            padding: 4px;
+            margin-top: 6px;
+            margin-left: 6px;
+          }
+
+          menuitem {
+            border-radius: 8px;
+            font-family: "Monocraft";
+            font-size: 12px;
+            font-weight: 400;
+            margin: 2px;
+            padding: 4px 8px;
+          }
+        '';
+        settings = [
+          {
+            layer = "overlay";
+            exclusive = false;
+            start_hidden = true;
+            ipc = true;
+            on-sigusr1 = "hide";
+            on-sigusr2 = "show";
+            modules-left = [ ];
+            modules-center = [ "clock" ];
+            modules-right = [ "custom/power" ];
+            clock = {
+              format = "{:%H:%M}";
+              tooltip = false;
+            };
+            "custom/power" = {
+              format = "⏻";
+              tooltip = false;
+              menu = "on-click";
+              menu-file = "~/.config/waybar/power_menu.xml";
+              menu-actions."win11-reboot" = "sudo systemctl reboot --boot-loader-entry windows_11-pro.conf";
+            };
+          }
+        ];
+      };
     };
-    programs.waybar = {
-      enable = true;
-      style = ''
-        window#waybar {
-          background: transparent;
-        }
-
-        #clock,
-        #custom-power {
-          background: #000000;
-          color: #ffffff;
-          border: 1px solid #ffffff;
-          border-radius: 9999px;
-          padding: 3px 8px;
-          margin: 4px 0;
-          font-family: "Monocraft";
-          font-size: 12px;
-          font-weight: 400;
-          font-style: normal;
-        }
-
-        menu {
-          border-radius: 12px;
-          background: #000000;
-          color: #ffffff;
-          border: 1px solid #ffffff;
-          font-family: "Monocraft";
-          font-size: 12px;
-          font-weight: 400;
-          padding: 4px;
-          margin-top: 6px;
-          margin-left: 6px;
-        }
-
-        menuitem {
-          border-radius: 8px;
-          font-family: "Monocraft";
-          font-size: 12px;
-          font-weight: 400;
-          margin: 2px;
-          padding: 4px 8px;
-        }
-      '';
-      settings = [
-        {
-          layer = "overlay";
-          exclusive = false;
-          start_hidden = true;
-          ipc = true;
-          on-sigusr1 = "hide";
-          on-sigusr2 = "show";
-          modules-left = [ ];
-          modules-center = [ "clock" ];
-          modules-right = [ "custom/power" ];
-          clock = {
-            format = "{:%H:%M}";
-            tooltip = false;
-          };
-          "custom/power" = {
-            format = "⏻";
-            tooltip = false;
-            menu = "on-click";
-            menu-file = "~/.config/waybar/power_menu.xml";
-            menu-actions."win11-reboot" = "sudo systemctl reboot --boot-loader-entry windows_11-pro.conf";
-          };
-        }
-      ];
-    };
-  };
 }
