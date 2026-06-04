@@ -18,12 +18,11 @@ let
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
+  module = {
+    nix.settings = commonSettings;
+  };
 in
 {
-  config.flake.modules.darwin.nix-settings = {
-    nix.settings = commonSettings;
-  };
-  config.flake.modules.nixos.nix-settings = {
-    nix.settings = commonSettings;
-  };
+  config.flake.modules.darwin.nix-settings = module;
+  config.flake.modules.nixos.nix-settings = module;
 }
