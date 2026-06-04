@@ -15,6 +15,7 @@ in
       cfg.modules.nixos.steam
       cfg.modules.nixos.prismlauncher
       cfg.modules.nixos.rafiq
+      cfg.modules.nixos.neovim
       (
         {
           config,

@@ -10,7 +10,6 @@ let
       users.users.rafiq.shell = pkgs.fish;
       home-manager.users.rafiq = {
         imports = [
-          cfg.modules.homeManager.neovim
           cfg.modules.homeManager.nix-index-comma
           cfg.modules.homeManager.pi-agent
           cfg.modules.homeManager.yazi
