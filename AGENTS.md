@@ -10,6 +10,23 @@ If a command is missing, especially over SSH or in a fresh shell, run it through
 nix develop -c <command>
 ```
 
+### Just commands
+
+Prefer `just` recipes for repo tasks, run through the dev shell when needed:
+
+```sh
+nix develop -c just <recipe>
+```
+
+Use targeted recipes when possible:
+
+- Format: `format`, or `format-gha`, `format-lua`, `format-nix`, `format-rs`
+- Lint/fix: `lint`, or `lint-lua`, `lint-nix`, `lint-rs`
+- Check: `check`, or `check-gha`, `check-lua`, `check-nix`, `check-rs`
+- Test: `test`, or `test-nix`, `test-rs`
+
+`lint-*`, `format`, and `rb` may edit files; inspect changes afterward.
+
 ### Rebuilds
 
 Do not run rebuilds by default. Only run `just rb` if the user asks for it or explicitly allows rebuilds for the conversation.
