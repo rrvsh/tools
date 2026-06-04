@@ -1,8 +1,13 @@
 {
   config.flake.modules.nixos.daily-midnight-poweroff =
-    { config, pkgs, ... }:
+    {
+      config,
+      pkgs,
+      primaryUser,
+      ...
+    }:
     let
-      uid = toString config.users.users.rafiq.uid;
+      uid = toString config.users.users.${primaryUser.name}.uid;
       runtimeDir = "/run/user/${uid}";
       idleStateFile = "${runtimeDir}/hypridle-state";
     in
@@ -48,7 +53,7 @@
               exit 0
             fi
 
-            ${pkgs.util-linux}/bin/runuser -u rafiq -- env \
+            ${pkgs.util-linux}/bin/runuser -u ${primaryUser.name} -- env \
               XDG_RUNTIME_DIR="$runtime_dir" \
               DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime_dir/bus" \
               ${pkgs.libnotify}/bin/notify-send \

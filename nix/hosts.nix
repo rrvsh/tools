@@ -5,23 +5,41 @@ in
 {
   config.flake.hosts.darwin.alpha = {
     hostPlatform = "aarch64-darwin";
+    primaryUser = {
+      name = "rafiq";
+      fullName = "Mohammad Rafiq";
+      email = "rafiq@rrv.sh";
+      gitDefaultBranch = "prime";
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+      ];
+    };
     profiles = [
       "graphical"
       "development"
     ];
     modules = [
-      cfg.modules.darwin.user-rafiq
+      cfg.modules.darwin.user-primary
       cfg.modules.darwin.rosetta-builder
     ];
   };
   config.flake.hosts.nixos.nemesis = {
     hostPlatform = "x86_64-linux";
+    primaryUser = {
+      name = "rafiq";
+      fullName = "Mohammad Rafiq";
+      email = "rafiq@rrv.sh";
+      gitDefaultBranch = "prime";
+      sshAuthorizedKeys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+      ];
+    };
     profiles = [
       "graphical"
       "development"
     ];
     modules = [
-      cfg.modules.nixos.user-rafiq
+      cfg.modules.nixos.user-primary
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.steam
       cfg.modules.nixos.prismlauncher
