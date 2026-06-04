@@ -1,24 +1,18 @@
-{
-  inputs,
-  config,
-  ...
-}:
+{ config, ... }:
 let
   cfg = config.flake;
 in
 {
-  config.flake.darwinConfigurations.alpha = inputs.nix-darwin.lib.darwinSystem {
+  config.flake.hosts.darwin.alpha = {
+    hostPlatform = "aarch64-darwin";
+    profiles = [
+      "graphical"
+      "development"
+    ];
     modules = [
-      cfg.modules.darwin.profile-default
-      cfg.modules.darwin.profile-graphical
-      cfg.modules.darwin.profile-development
       cfg.modules.darwin.rafiq
       cfg.modules.darwin.rosetta-builder
-      {
-        networking.hostName = "alpha";
-        system.primaryUser = "rafiq";
-        nixpkgs.hostPlatform = "aarch64-darwin";
-      }
+      { system.primaryUser = "rafiq"; }
     ];
   };
 }

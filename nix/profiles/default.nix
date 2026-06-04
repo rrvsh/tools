@@ -6,6 +6,7 @@ in
   config.flake.modules.darwin.profile-default = {
     imports = with cfg.modules.darwin; [
       allowedUnfreePackages
+      homebrew
       passwordless-sudo
       nix-settings
       ssh-config

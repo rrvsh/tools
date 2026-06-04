@@ -9,7 +9,6 @@ in
         cfg.modules.darwin.neovim
         cfg.modules.darwin.nix-index-comma
         cfg.modules.darwin.pi-agent
-        cfg.modules.darwin.homebrew
         cfg.modules.darwin.yazi
       ];
       home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];

@@ -29,6 +29,7 @@ in
           remapCapsLockToEscape = true;
         };
       };
+      homebrew.casks = [ "mixxx" ];
       home-manager.sharedModules = [
         inputs.mac-app-util.homeManagerModules.default
         {
@@ -36,7 +37,6 @@ in
             alt-tab-macos
             monitorcontrol
           ];
-          homebrew.casks = [ "mixxx" ];
           targets.darwin.copyApps.enable = lib.mkForce false;
         }
       ];

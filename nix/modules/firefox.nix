@@ -12,6 +12,7 @@ in
   config.flake.modules = {
     darwin.firefox = {
       nixpkgs.overlays = [ inputs.nixpkgs-firefox-darwin.overlay ];
+      home-manager.sharedModules = [ cfg.modules.homeManager.firefox ];
     };
     nixos.firefox = {
       home-manager.sharedModules = [ cfg.modules.homeManager.firefox ];
