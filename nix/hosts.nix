@@ -41,7 +41,10 @@ in
         "development"
         "graphical"
       ];
-      modules = [ cfg.modules.darwin.user-primary ];
+      modules = [
+        cfg.modules.darwin.user-primary
+        cfg.modules.darwin.sudo-env-wrapper
+      ];
     };
   };
   config.flake.hosts.nixos.nemesis = {
