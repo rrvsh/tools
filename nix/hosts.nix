@@ -16,6 +16,7 @@ let
     name = "binmohm";
     fullName = "binmohm";
     email = "rafiq@rrv.sh";
+    uid = 502;
     sshAuthorizedKeys = rrvshSshAuthorizedKeys;
   };
 in

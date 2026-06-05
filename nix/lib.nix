@@ -23,6 +23,10 @@ let
                       type = lib.types.listOf lib.types.str;
                       default = [ ];
                     };
+                    uid = lib.mkOption {
+                      type = lib.types.nullOr lib.types.int;
+                      default = null;
+                    };
                   };
                 };
               };
