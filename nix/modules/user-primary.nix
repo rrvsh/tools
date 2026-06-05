@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   cfg = config.flake;
   inherit (cfg.paths) root;
@@ -36,7 +36,7 @@ in
       programs.fish.enable = true;
       users.users.${primaryUser.name} = {
         description = primaryUser.fullName;
-        uid = 1000;
+        uid = lib.mkDefault (if primaryUser.uid == null then 1000 else primaryUser.uid);
         isNormalUser = true;
         extraGroups = [ "wheel" ];
         openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
@@ -59,7 +59,7 @@ in
       users.knownUsers = [ primaryUser.name ];
       users.users.${primaryUser.name} = {
         home = "/Users/${primaryUser.name}";
-        uid = 501;
+        uid = lib.mkDefault (if primaryUser.uid == null then 501 else primaryUser.uid);
         openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
       };
     };

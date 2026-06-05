@@ -1,28 +1,51 @@
 { config, ... }:
 let
   cfg = config.flake;
+  rrvshSshAuthorizedKeys = [
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
+    "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDAgeb4QgH9YPUfS9lG2GMC1/fnxaxCX2F+lbgfxN1d6"
+  ];
   rafiq = {
     name = "rafiq";
     fullName = "Mohammad Rafiq";
     email = "rafiq@rrv.sh";
     gitDefaultBranch = "prime";
-    sshAuthorizedKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILdsZyY3gu8IGB8MzMnLdh+ClDxQQ2RYG9rkeetIKq8n"
-    ];
+    sshAuthorizedKeys = rrvshSshAuthorizedKeys;
+  };
+  binmohm = {
+    name = "binmohm";
+    fullName = "binmohm";
+    email = "rafiq@rrv.sh";
+    uid = 502;
+    sshAuthorizedKeys = rrvshSshAuthorizedKeys;
   };
 in
 {
-  config.flake.hosts.darwin.alpha = {
-    hostPlatform = "aarch64-darwin";
-    primaryUser = rafiq;
-    profiles = [
-      "graphical"
-      "development"
-    ];
-    modules = [
-      cfg.modules.darwin.user-primary
-      cfg.modules.darwin.rosetta-builder
-    ];
+  config.flake.hosts.darwin = {
+    alpha = {
+      hostPlatform = "aarch64-darwin";
+      primaryUser = rafiq;
+      profiles = [
+        "graphical"
+        "development"
+      ];
+      modules = [
+        cfg.modules.darwin.user-primary
+        cfg.modules.darwin.rosetta-builder
+      ];
+    };
+    auto = {
+      hostPlatform = "aarch64-darwin";
+      primaryUser = binmohm;
+      profiles = [
+        "development"
+        "graphical"
+      ];
+      modules = [
+        cfg.modules.darwin.user-primary
+        cfg.modules.darwin.sudo-env-wrapper
+      ];
+    };
   };
   config.flake.hosts.nixos.nemesis = {
     hostPlatform = "x86_64-linux";
