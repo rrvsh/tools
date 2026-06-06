@@ -17,10 +17,10 @@ in
         nativeBuildInputs = [ pkgs.makeWrapper ];
         installPhase = ''
           runHook preInstall
-          mkdir -p $out/share/rrv-sh
-          cp -R ${root + /rs/site/static} $out/share/rrv-sh/static
+          mkdir -p $out/share/site
+          cp -R ${root + /rs/site/static} $out/share/site/static
           makeWrapper ${siteBin}/bin/site $out/bin/site \
-            --set STATIC_DIR $out/share/rrv-sh/static \
+            --set STATIC_DIR $out/share/site/static \
             --prefix PATH : ${
               pkgs.lib.makeBinPath [
                 pkgs.git
