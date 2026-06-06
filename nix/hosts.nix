@@ -125,7 +125,7 @@ in
         )
       ];
     };
-    hermes = {
+    "rrv.sh" = {
       hostPlatform = "x86_64-linux";
       primaryUser = rafiq;
       modules = [
@@ -173,6 +173,7 @@ in
               };
             };
             swapDevices = [ { device = "/swapfile"; } ];
+            networking.hostName = lib.mkForce "rrv-sh";
             networking.firewall.allowedTCPPorts = [
               22
               80
