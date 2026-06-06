@@ -6,6 +6,7 @@ in
   config.flake.modules.darwin.profile-default = {
     imports = with cfg.modules.darwin; [
       allowedUnfreePackages
+      auto-upgrade
       homebrew
       nix-settings
       ssh-config
@@ -18,6 +19,7 @@ in
   config.flake.modules.nixos.profile-default = {
     imports = with cfg.modules.nixos; [
       allowedUnfreePackages
+      auto-upgrade
       nix-settings
       ssh-config
     ];
