@@ -1,4 +1,4 @@
-{ inputs, config, ... }:
+{ config, ... }:
 let
   cfg = config.flake;
   osModule = {
@@ -13,7 +13,7 @@ in
       { pkgs, ... }:
       {
         home.packages = [
-          (inputs.prismlauncher-cracked.packages.${pkgs.stdenv.hostPlatform.system}.prismlauncher.override {
+          (pkgs.prismlauncher.override {
             jdks = [ pkgs.jdk25 ];
           })
         ];
