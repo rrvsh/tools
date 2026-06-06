@@ -126,6 +126,7 @@ in
       ];
     };
     "rrv.sh" = {
+      hostName = "site";
       hostPlatform = "x86_64-linux";
       primaryUser = rafiq;
       modules = [
@@ -173,7 +174,6 @@ in
               };
             };
             swapDevices = [ { device = "/swapfile"; } ];
-            networking.hostName = lib.mkForce "rrv-sh";
             networking.firewall.allowedTCPPorts = [
               22
               80
@@ -200,7 +200,7 @@ in
               users.site = {
                 isSystemUser = true;
                 group = "site";
-                home = "/var/lib/rrv-sh";
+                home = "/var/lib/site";
               };
             };
             systemd.services.site = {
@@ -214,8 +214,8 @@ in
                 ExecStart = "${cfg.packages.${pkgs.stdenv.hostPlatform.system}.site-deploy}/bin/site";
                 Restart = "always";
                 RestartSec = "5s";
-                StateDirectory = "rrv-sh";
-                WorkingDirectory = "/var/lib/rrv-sh";
+                StateDirectory = "site";
+                WorkingDirectory = "/var/lib/site";
               };
             };
           }

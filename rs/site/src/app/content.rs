@@ -1,8 +1,8 @@
 use std::path::Path;
 use std::process::Command;
 
-pub const SITE_CONTENT_DIR: &str = "/var/lib/rrv-sh/content";
-const SITE_CONTENT_PARENT: &str = "/var/lib/rrv-sh";
+pub const SITE_CONTENT_DIR: &str = "/var/lib/site/content";
+const SITE_CONTENT_PARENT: &str = "/var/lib/site";
 const SITE_CONTENT_REPO: &str = "https://github.com/rrvsh/site-content.git";
 
 pub fn sync() -> Result<(), String> {

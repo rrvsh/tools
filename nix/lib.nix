@@ -30,6 +30,10 @@ let
                   };
                 };
               };
+              hostName = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+              };
               profiles = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
                 default = [ ];
@@ -49,17 +53,20 @@ let
           platformModules,
         }:
         name: value:
+        let
+          hostName = if value.hostName == null then name else value.hostName;
+        in
         systemBuilder {
           specialArgs = {
-            hostName = name;
+            inherit hostName;
             inherit (value) primaryUser;
           };
           modules = [
             {
-              networking.hostName = name;
+              networking.hostName = hostName;
               nixpkgs = { inherit (value) hostPlatform; };
               home-manager.extraSpecialArgs = {
-                hostName = name;
+                inherit hostName;
                 inherit (value) primaryUser;
               };
             }
