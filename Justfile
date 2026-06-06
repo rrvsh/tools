@@ -16,7 +16,7 @@ rb:
 
 deploy-rrv-sh:
   nix build '.#nixosConfigurations."rrv.sh".config.system.build.toplevel'
-  nix copy --to ssh-ng://root@rrv.sh ./result
+  nix copy --no-check-sigs --to ssh-ng://root@rrv.sh ./result
   ssh root@rrv.sh "$(readlink -f result)/bin/switch-to-configuration switch"
 
 _rb-macos:
