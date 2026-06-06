@@ -12,9 +12,11 @@ let
     builders-use-substitutes = true; # Let remote builders use their own configured caches.
     allow-import-from-derivation = false; # Disallow building derivations during evaluation.
     extra-substituters = [
+      "https://rrvsh.cachix.org"
       "https://nix-community.cachix.org"
     ];
     extra-trusted-public-keys = [
+      "rrvsh.cachix.org-1:pkljA9d1Q88P7GB/bUHB5CBJacyCUp/m4zXu8IzI4a4="
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
     ];
   };
