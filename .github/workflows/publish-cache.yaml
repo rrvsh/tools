@@ -35,7 +35,6 @@ jobs:
         timeout-minutes: 5
         uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
@@ -72,7 +71,6 @@ jobs:
         timeout-minutes: 5
         uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
         with:
-          install_url: https://releases.nixos.org/nix/nix-2.34.7/install
           extra_nix_config: |
             access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
 
