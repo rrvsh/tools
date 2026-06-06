@@ -2,7 +2,7 @@ let
   settings = {
     KbdInteractiveAuthentication = false;
     PasswordAuthentication = false;
-    PermitRootLogin = "no";
+    PermitRootLogin = "prohibit-password";
   };
   renderValue =
     value: if builtins.isBool value then (if value then "yes" else "no") else toString value;
@@ -20,10 +20,13 @@ in
     };
   };
 
-  config.flake.modules.nixos.ssh-config = {
-    services.openssh = {
-      enable = true;
-      inherit settings;
+  config.flake.modules.nixos.ssh-config =
+    { primaryUser, ... }:
+    {
+      services.openssh = {
+        enable = true;
+        inherit settings;
+      };
+      users.users.root.openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
     };
-  };
 }

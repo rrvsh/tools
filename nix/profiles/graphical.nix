@@ -52,6 +52,8 @@ in
         audio-config
       ];
       time.timeZone = "Asia/Singapore";
+      security.polkit.enable = true;
+      programs.dconf.enable = true;
       hardware.i2c.enable = true; # ddc
       home-manager.sharedModules = [
         {

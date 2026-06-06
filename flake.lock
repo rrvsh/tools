@@ -912,7 +912,6 @@
         "path-from-root-yazi": "path-from-root-yazi",
         "prismlauncher-cracked": "prismlauncher-cracked",
         "rust-overlay": "rust-overlay",
-        "site-content": "site-content",
         "sops-nix": "sops-nix",
         "waybar-peek": "waybar-peek",
         "yazi": "yazi"
@@ -935,22 +934,6 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "site-content": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1779199106,
-        "narHash": "sha256-xgtnIqppSW2OGuX603eKEUF7s6oRe+J0y0RvpmgdHRc=",
-        "owner": "rrvsh",
-        "repo": "site-content",
-        "rev": "8c2d3b6f801d32f09edf5c2dcb883ff58593507b",
-        "type": "github"
-      },
-      "original": {
-        "owner": "rrvsh",
-        "repo": "site-content",
         "type": "github"
       }
     },

@@ -6,6 +6,9 @@ in
   config.flake.modules = {
     darwin.profile-development = {
       imports = with cfg.modules.darwin; [
+        passwordless-sudo
+        sops-config
+        tailscale-config
         neovim
         nix-index-comma
         pi-agent
@@ -15,11 +18,15 @@ in
     };
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
+        passwordless-sudo
+        sops-config
+        tailscale-config
         neovim
         nix-index-comma
         pi-agent
         yazi
       ];
+      networking.networkmanager.enable = true;
       home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];
     };
     homeManager.profile-development =
