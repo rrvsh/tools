@@ -15,7 +15,7 @@ rb:
   just _rb-{{os()}}
 
 deploy-rrv-sh:
-  nix build '.#nixosConfigurations."rrv.sh".config.system.build.toplevel'
+  nix build .#nixosConfigurations.hermes.config.system.build.toplevel
   nix copy --no-check-sigs --to ssh-ng://root@rrv.sh ./result
   ssh root@rrv.sh "$(readlink -f result)/bin/switch-to-configuration switch"
 

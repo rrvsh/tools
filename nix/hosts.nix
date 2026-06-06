@@ -125,8 +125,7 @@ in
         )
       ];
     };
-    "rrv.sh" = {
-      hostName = "site";
+    hermes = {
       hostPlatform = "x86_64-linux";
       primaryUser = rafiq;
       modules = [
