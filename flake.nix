@@ -51,10 +51,6 @@
       url = "github:homebrew/homebrew-cask";
       flake = false;
     };
-    site-content = {
-      url = "github:rrvsh/site-content";
-      flake = false;
-    };
     path-from-root-yazi = {
       url = "github:aresler/path-from-root.yazi";
       flake = false;
