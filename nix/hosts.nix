@@ -211,7 +211,7 @@ in
               serviceConfig = {
                 User = "site";
                 Group = "site";
-                ExecStart = "${cfg.packages."x86_64-linux".site-deploy}/bin/site";
+                ExecStart = "${cfg.packages.${pkgs.stdenv.hostPlatform.system}.site-deploy}/bin/site";
                 Restart = "always";
                 RestartSec = "5s";
                 StateDirectory = "rrv-sh";
