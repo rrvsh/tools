@@ -12,6 +12,35 @@ permissions:
   contents: read
 
 jobs:
+  rosetta-image:
+    name: Rosetta builder image
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/prime' }}
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout repository
+        timeout-minutes: 5
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - name: Install Nix
+        timeout-minutes: 5
+        uses: cachix/install-nix-action@4e002c8ec80594ecd40e759629461e26c8abed15 # v31.9.0
+        with:
+          extra_nix_config: |
+            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+
+      - name: Use Cachix
+        uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
+        with:
+          name: rrvsh
+          extraPullNames: nix-community,hyprland,yazi
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+
+      - name: Build and publish Rosetta builder image
+        timeout-minutes: 120
+        run: nix build --print-build-logs .#packages.aarch64-linux.rosetta-builder-image
+
   linux:
     name: Linux ${{ matrix.target }}
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/prime' }}
@@ -42,6 +71,7 @@ jobs:
         uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
         with:
           name: rrvsh
+          extraPullNames: nix-community,hyprland,yazi
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Build and publish output
@@ -50,6 +80,7 @@ jobs:
 
   darwin:
     name: Darwin ${{ matrix.target }}
+    needs: rosetta-image
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/prime' }}
     runs-on: macos-14
     strategy:
@@ -81,6 +112,7 @@ jobs:
         uses: cachix/cachix-action@5f2d7c5294214f71b873db4b969586b980625e71 # v17
         with:
           name: rrvsh
+          extraPullNames: nix-community,hyprland,yazi
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
       - name: Build and publish output
