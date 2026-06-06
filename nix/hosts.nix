@@ -208,7 +208,6 @@ in
               wantedBy = [ "multi-user.target" ];
               after = [ "network-online.target" ];
               wants = [ "network-online.target" ];
-              environment.HOST = "127.0.0.1";
               serviceConfig = {
                 User = "site";
                 Group = "site";
