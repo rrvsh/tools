@@ -38,9 +38,22 @@ jobs:
           extraPullNames: nix-community,hyprland,yazi
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
 
-      - name: Build and publish Rosetta builder image
+      - name: Build and publish alpha Rosetta builder image
         timeout-minutes: 120
-        run: nix build --print-build-logs .#packages.aarch64-linux.rosetta-builder-image
+        run: |
+          drv_count="$({
+            nix derivation show --recursive .#darwinConfigurations.alpha.system \
+              | jq -r '
+                .derivations
+                | to_entries[]
+                | select(.value.system == "aarch64-linux")
+                | select(.key | endswith("-nixos-disk-image.drv"))
+                | "/nix/store/" + .key
+              '
+          } | tee /tmp/alpha-rosetta-image-drvs | wc -l)"
+          test "$drv_count" -eq 1
+          drv="$(cat /tmp/alpha-rosetta-image-drvs)"
+          nix build --print-build-logs "$drv"
 
   linux:
     name: Linux ${{ matrix.target }}
