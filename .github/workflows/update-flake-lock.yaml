@@ -39,9 +39,6 @@ jobs:
         with:
           token: ${{ secrets.GH_TOKEN_FOR_UPDATES || github.token }}
           base: prime
-          branch: update-flake-lock
-          commit-msg: "chore(nix): update flake.lock"
-          pr-title: "chore(nix): update flake.lock"
-          pr-labels: |
-            dependencies
-            nix
+          branch: detsys-update-flake-lock
+          commit-msg: "build(flake.lock): update inputs"
+          pr-title: "build(flake.lock): update inputs"
