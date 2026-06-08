@@ -11,6 +11,8 @@ run-docker:
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
 
 rb:
+  just format-nix
+  just lint-nix
   just check-nix
   just _rb-{{os()}}
 
