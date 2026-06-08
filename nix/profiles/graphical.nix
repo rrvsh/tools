@@ -46,6 +46,7 @@ in
     {
       imports = with cfg.modules.nixos; [
         waybar
+        wofi
         ghostty
         firefox
         hyprland
@@ -61,9 +62,6 @@ in
             mixxx
             libnotify
           ];
-          programs = {
-            wofi.enable = true;
-          };
           services = {
             hypridle.enable = true;
             dunst.enable = true;
