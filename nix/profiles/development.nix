@@ -33,6 +33,7 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [
+          git-bug
           ddgr
           gh
           ripgrep
