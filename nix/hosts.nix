@@ -44,6 +44,7 @@ in
       modules = [
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.sudo-env-wrapper
+        cfg.modules.darwin.claude-code
       ];
     };
   };
