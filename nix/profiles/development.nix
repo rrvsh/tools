@@ -52,7 +52,7 @@ in
           gds = "git diff --staged";
           grc = "git rebase --continue";
           gs = "git status";
-          gu = "git push";
+          gu = "git push && git-bug push";
           v = "$EDITOR";
           e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         };
