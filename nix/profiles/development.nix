@@ -40,6 +40,7 @@ in
         ];
         home.shellAliases = {
           cd = "echo \"Please use z\"";
+          gb = "git-bug termui";
           gc = "git commit";
           gcam = "git commit -am";
           gcamend = "git commit -a --amend --no-edit";
