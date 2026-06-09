@@ -69,7 +69,7 @@ in
             settings = {
               add_newline = false;
               format = lib.strings.concatStrings [
-                "$hostname$directory$git_branch$git_status$git_state"
+                "$hostname$directory$git_branch$git_status$git_state\${custom.git-bug}"
                 "$fill"
                 "$nix_shell"
                 "$time"
@@ -90,6 +90,17 @@ in
               shlvl.disabled = false;
               username.disabled = true;
               fill.symbol = " ";
+              custom.git-bug = {
+                when = ''
+                  git for-each-ref --count=1 refs/bugs/ > /dev/null 2>&1 || exit 1
+                  l=$(git for-each-ref refs/bugs/ --format="%(objectname) %(refname:lstrip=2)" 2>/dev/null | sort)
+                  r=$(git for-each-ref refs/remotes/origin/bugs/ --format="%(objectname) %(refname:lstrip=4)" 2>/dev/null | sort)
+                  [ "$l" != "$r" ]
+                '';
+                command = "true";
+                format = "[ 🐛]($style)";
+                shell = [ "${lib.getExe pkgs.bash}" ];
+              };
             };
           };
           zoxide.enable = true;
