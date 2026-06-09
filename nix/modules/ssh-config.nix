@@ -18,8 +18,26 @@ in
       enable = true;
       extraConfig = renderSettings settings;
     };
+    home-manager.sharedModules = [
+      (
+        { config, ... }:
+        {
+          launchd.agents.ssh-add = {
+            enable = true;
+            config = {
+              ProgramArguments = [
+                "/bin/sh"
+                "-c"
+                "ssh-add ${config.home.homeDirectory}/.ssh/id_ed25519"
+              ];
+              RunAtLoad = true;
+              KeepAlive = false;
+            };
+          };
+        }
+      )
+    ];
   };
-
   config.flake.modules.nixos.ssh-config =
     { primaryUser, ... }:
     {
@@ -28,5 +46,25 @@ in
         inherit settings;
       };
       users.users.root.openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      home-manager.sharedModules = [
+        (
+          { pkgs, config, ... }:
+          {
+            systemd.user.services.ssh-add = {
+              Unit = {
+                Description = "Add SSH key to agent on login";
+                After = [ "ssh-agent.service" ];
+              };
+              Service = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.openssh}/bin/ssh-add ${config.home.homeDirectory}/.ssh/id_ed25519";
+                RemainAfterExit = true;
+              };
+              Install.WantedBy = [ "default.target" ];
+            };
+          }
+        )
+      ];
     };
+
 }
