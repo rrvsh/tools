@@ -46,6 +46,7 @@ in
         inherit settings;
       };
       users.users.root.openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      programs.ssh.startAgent = true;
       home-manager.sharedModules = [
         (
           { pkgs, config, ... }:
