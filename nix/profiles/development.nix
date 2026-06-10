@@ -55,10 +55,12 @@ in
             systemd.user.services.ssh-add = {
               Unit = {
                 Description = "Add SSH key to agent on login";
+                Wants = [ "ssh-agent.service" ];
                 After = [ "ssh-agent.service" ];
               };
               Service = {
                 Type = "oneshot";
+                Environment = "SSH_AUTH_SOCK=%t/ssh-agent";
                 ExecStart = "${pkgs.openssh}/bin/ssh-add ${config.home.homeDirectory}/.ssh/id_ed25519";
                 RemainAfterExit = true;
               };
