@@ -27,6 +27,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-master.url = "github:nixos/nixpkgs/master";
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
     nix-rosetta-builder = {

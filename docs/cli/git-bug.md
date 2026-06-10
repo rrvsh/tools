@@ -5,15 +5,21 @@ rel: 8f34a17
 
 `git-bug` is used for issue tracking. The remote used is `origin` (git@github.com:rrvsh/tools).
 
+Integration
+-------------------
+
 Aliases:
 - `gu`: runs `git push` and `git-bug push`.
 - `gy`: runs `git pull` and `git-bug pull`.
 
 A custom Starship module diffs `.git/refs/bugs/` against `.git/refs/remotes/origin/bugs/` and displays an 🐛 emoji when they are not in sync.
 
+Notes
+-----
+
 The `ssh-add` user service is a dependency, because git-bug requires the ssh-agent to have the private key saved and can't use the private key file as a fallback like git.
 
-There was a bug in the nixpkgs derivation that resulted in fish shell completions being broken - fixed in [this PR](https://github.com/NixOS/nixpkgs/pull/529885).
+There was a bug in the nixpkgs derivation that resulted in fish shell completions being broken - fixed in [this PR](https://github.com/NixOS/nixpkgs/pull/529885). We currently use the nixpkgs-master flake input to fix this.
 
 Note that when running `git-bug pull` on an existing remote onto a new machine, you will be unable to adopt the identity of the existing user. You will have to create a new user for the bootstrap, then git-bug pull, then adopt the existing user. Here are the commands for this:
 

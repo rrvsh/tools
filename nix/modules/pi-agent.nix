@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   cfg = config.flake;
   osModule = {
@@ -14,6 +19,7 @@ in
       {
         programs.pi-coding-agent = {
           enable = true;
+          package = inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent;
           extraPackages = [ pkgs.nodejs_22 ];
           settings = {
             lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;

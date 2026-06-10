@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   cfg = config.flake;
 in
@@ -74,7 +79,7 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [
-          git-bug
+          inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.git-bug
           ddgr
           gh
           ripgrep
