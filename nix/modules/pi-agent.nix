@@ -10,13 +10,18 @@ in
     darwin.pi-agent = osModule;
     nixos.pi-agent = osModule;
     homeManager.pi-agent =
-      { pkgs, ... }:
-      let
-        package = pkgs.pi-coding-agent;
-      in
+      { pkgs, config, ... }:
       {
-        home = {
-          file.".pi/agent/AGENTS.md".text = ''
+        programs.pi-coding-agent = {
+          enable = true;
+          extraPackages = [ pkgs.nodejs_22 ];
+          settings = {
+            lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
+            packages = [ "npm:@vanillagreen/pi-claude-bridge" ];
+            defaultProvider = "claude-bridge";
+            defaultModel = "claude-sonnet-4-6";
+          };
+          context = ''
             # Global pi instructions
 
             - If a command is missing, use comma: `, <command> [args...]`
@@ -34,25 +39,6 @@ in
               - `nix flake metadata --json | jq '.locks.nodes | keys'`
               - `nix eval --impure --raw --expr '(builtins.getFlake (toString ./.)).inputs.<name>.outPath'`
           '';
-          file.".pi/agent/settings.json".text = builtins.toJSON {
-            lastChangelogVersion = lib.getVersion package;
-            packages = [ "npm:@vanillagreen/pi-claude-bridge" ];
-            defaultProvider = "claude-bridge";
-            defaultModel = "claude-sonnet-4-6";
-          };
-          packages = [
-            (pkgs.symlinkJoin {
-              inherit (package) meta;
-              name = "${lib.getName package}-wrapped-${lib.getVersion package}";
-              paths = [ package ];
-              preferLocalBuild = true;
-              nativeBuildInputs = [ pkgs.makeWrapper ];
-              postBuild = ''
-                wrapProgram $out/bin/pi \
-                  --suffix PATH : ${lib.makeBinPath [ pkgs.nodejs_22 ]}
-              '';
-            })
-          ];
         };
       };
   };
