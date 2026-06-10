@@ -14,7 +14,26 @@ in
         pi-agent
         yazi
       ];
-      home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];
+      home-manager.sharedModules = [
+        cfg.modules.homeManager.profile-development
+        (
+          { config, ... }:
+          {
+            launchd.agents.ssh-add = {
+              enable = true;
+              config = {
+                ProgramArguments = [
+                  "/bin/sh"
+                  "-c"
+                  "ssh-add ${config.home.homeDirectory}/.ssh/id_ed25519"
+                ];
+                RunAtLoad = true;
+                KeepAlive = false;
+              };
+            };
+          }
+        )
+      ];
     };
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
@@ -27,7 +46,27 @@ in
         yazi
       ];
       networking.networkmanager.enable = true;
-      home-manager.sharedModules = [ cfg.modules.homeManager.profile-development ];
+      programs.ssh.startAgent = true;
+      home-manager.sharedModules = [
+        cfg.modules.homeManager.profile-development
+        (
+          { pkgs, config, ... }:
+          {
+            systemd.user.services.ssh-add = {
+              Unit = {
+                Description = "Add SSH key to agent on login";
+                After = [ "ssh-agent.service" ];
+              };
+              Service = {
+                Type = "oneshot";
+                ExecStart = "${pkgs.openssh}/bin/ssh-add ${config.home.homeDirectory}/.ssh/id_ed25519";
+                RemainAfterExit = true;
+              };
+              Install.WantedBy = [ "default.target" ];
+            };
+          }
+        )
+      ];
     };
     homeManager.profile-development =
       { pkgs, ... }:
