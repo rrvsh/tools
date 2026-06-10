@@ -21,12 +21,7 @@ in
           enable = true;
           package = inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent;
           extraPackages = [ pkgs.nodejs_22 ];
-          settings = {
-            lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
-            packages = [ "npm:@vanillagreen/pi-claude-bridge" ];
-            defaultProvider = "claude-bridge";
-            defaultModel = "claude-sonnet-4-6";
-          };
+          settings.lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
           context = ''
             # Global pi instructions
 

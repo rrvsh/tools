@@ -45,6 +45,16 @@ in
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.sudo-env-wrapper
         cfg.modules.darwin.claude-code
+        {
+          home-manager.sharedModules = [
+            {
+              programs.pi-coding-agent.settings = {
+                defaultProvider = "claude-bridge";
+                defaultModel = "claude-sonnet-4-6";
+              };
+            }
+          ];
+        }
       ];
     };
   };
