@@ -92,6 +92,7 @@ in
           grc = "git rebase --continue";
           gs = "git status";
           gu = "git push && git-bug push";
+          gy = "git pull && git-bug pull";
           v = "$EDITOR";
           e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         };
