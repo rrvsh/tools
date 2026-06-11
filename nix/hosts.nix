@@ -52,6 +52,10 @@ in
                 defaultProvider = "claude-bridge";
                 defaultModel = "claude-sonnet-4-6";
               };
+              programs.mcp = {
+                enable = true;
+                servers.atlassian-mcp.url = "https://mcp.atlassian.com/v1/mcp";
+              };
             }
           ];
         }

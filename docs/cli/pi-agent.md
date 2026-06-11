@@ -3,6 +3,11 @@ pi-agent
 
 pi-coding-agent is used as the CLI agent of choice.
 
+Extensions
+----------
+
+`pi-mcp-adapter` is used for the Atlassian Cloud MCP on `auto`.
+
 Notes
 -----
 

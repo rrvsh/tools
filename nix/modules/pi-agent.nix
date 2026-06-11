@@ -22,6 +22,7 @@ in
           package = inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent;
           extraPackages = [ pkgs.nodejs_22 ];
           settings.lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
+          settings.packages = [ "npm:pi-mcp-adapter" ];
           context = ''
             # Global pi instructions
 
