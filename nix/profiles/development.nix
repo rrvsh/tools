@@ -80,6 +80,7 @@ in
       {
         home.packages = with pkgs; [
           inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.git-bug
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.gtnh-daily-updater
           ddgr
           gh
           git-lfs

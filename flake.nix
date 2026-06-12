@@ -8,6 +8,10 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
+    gtnh-daily-updater = {
+      url = "github:Caedis/gtnh-daily-updater";
+      flake = false;
+    };
     waybar-peek = {
       url = "github:rrvsh/waybar_peek";
       inputs.nixpkgs.follows = "nixpkgs";
