@@ -94,6 +94,27 @@ sudo sed -i 's/^eula=false/eula=true/' /var/lib/gtnh-daily/server/eula.txt
 
 The server service rewrites `server-port=25566` in `server.properties` before startup.
 
+## Client sync
+
+The Prism module installs `gtnh-daily-client-sync` and an hourly user timer. The client pulls the server-published manifest over SSH from `nemesis` by default; override with `GTNH_DAILY_SERVER=<host>`.
+
+The sync command refuses to run while Prism/Minecraft appears active, backs up the Prism instance to `~/.local/share/PrismLauncher/backups/`, verifies the manifest hash, then runs:
+
+```sh
+gtnh-daily-updater update \
+  --instance-dir ~/.local/share/PrismLauncher/instances/GT\ New\ Horizons\ \(Daily\) \
+  --manifest-file ~/.cache/gtnh-daily-client-sync/current-manifest.json
+```
+
+Initialize updater state once before the first sync:
+
+```sh
+gtnh-daily-updater init \
+  --instance-dir ~/.local/share/PrismLauncher/instances/GT\ New\ Horizons\ \(Daily\) \
+  --side client \
+  --config <server-config-version>
+```
+
 ## Operations
 
 Start the server:

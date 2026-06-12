@@ -125,7 +125,7 @@
       environment.systemPackages = [ rollback ];
       systemd = {
         tmpfiles.rules = [
-          "d ${rootDir} 0750 ${user} ${group} -"
+          "d ${rootDir} 0755 ${user} ${group} -"
           "d ${serverDir} 0750 ${user} ${group} -"
           "d ${backupDir} 0750 ${user} ${group} -"
           "d ${cacheDir} 0750 ${user} ${group} -"
