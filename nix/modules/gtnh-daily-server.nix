@@ -118,6 +118,7 @@
           isSystemUser = true;
           inherit group;
           home = rootDir;
+          homeMode = "0755";
           createHome = true;
         };
         groups.${group} = { };
