@@ -411,7 +411,7 @@ The update service intentionally only stops/restarts the Daily server. It record
 
 ### Client module
 
-`nix/modules/prismlauncher.nix` manages Prism Launcher with JDK 25, the stable GTNH desktop entry, the Daily desktop entry, and the Linux-only client sync helper/timer.
+`nix/modules/prismlauncher.nix` manages Prism Launcher with JDK 25, the stable GTNH desktop entry, the Daily desktop entry, and the Linux-only client sync helper/timer. The client sync package and user systemd units are only enabled when Home Manager is evaluated for Linux, so the shared Prism module still evaluates on Darwin.
 
 `gtnh-daily-client-sync` defaults to `nemesis` as the SSH source host. Override per invocation with:
 
@@ -423,7 +423,7 @@ The command is installed only on Linux Home Manager systems because it depends o
 
 ### Filesystem permissions
 
-`/var/lib/gtnh-daily` is mode `0755` so SSH users can traverse it and read the published manifest files. Sensitive subdirectories remain private:
+`/var/lib/gtnh-daily` is mode `0755` so SSH users can traverse it and read the published manifest files. This is enforced both by the tmpfiles rule and by `users.users.gtnh-daily.homeMode = "0755"`, so rebuild/user activation does not reset the home directory back to a private mode. Sensitive subdirectories remain private:
 
 ```text
 /var/lib/gtnh-daily/server   0750 gtnh-daily:gtnh-daily
@@ -462,6 +462,7 @@ The setup was built in stages:
 17. Initialized the local Daily Prism instance updater state.
 18. Added `gtnh-daily-client-sync` and an hourly user timer.
 19. Tested client sync over SSH against `nemesis`; it verified the hash, created a client backup, and reported the client already up to date.
+20. Reviewed the full diff since `prime`, made the client sync package Linux-only for shared Home Manager evaluation, and set `gtnh-daily.homeMode = "0755"` so the published manifest remains reachable over SSH after rebuilds.
 
 Validation performed during the session included:
 
