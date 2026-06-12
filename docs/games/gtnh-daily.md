@@ -110,10 +110,12 @@ sudo systemctl start gtnh-daily-update.service
 
 The update service:
 
-1. Stops only `gtnh-daily-server.service`.
-2. Creates `/var/lib/gtnh-daily/backups/pre-update-<timestamp>.tar.zst`.
-3. Runs `gtnh-daily-updater update --instance-dir /var/lib/gtnh-daily/server` as `gtnh-daily` with `git` on `PATH`.
-4. Restarts the daily server only if it was active before the update.
+1. Fetches the current Daily manifest once.
+2. Stops only `gtnh-daily-server.service`.
+3. Creates `/var/lib/gtnh-daily/backups/pre-update-<timestamp>.tar.zst`.
+4. Runs `gtnh-daily-updater update --manifest-file <fetched-manifest> --instance-dir /var/lib/gtnh-daily/server` as `gtnh-daily` with `git` on `PATH`.
+5. Publishes the applied manifest and hash at `/var/lib/gtnh-daily/current-manifest.json` and `/var/lib/gtnh-daily/current-manifest.sha256`.
+6. Restarts the daily server only if it was active before the update.
 
 The timer uses `Persistent=true`, so missed scheduled updates run after the system comes back online.
 
