@@ -205,6 +205,22 @@
         "type": "github"
       }
     },
+    "gtnh-daily-updater": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1780928507,
+        "narHash": "sha256-4GxAYwfR6UEk+7wqOVhe1i55Wtfg1Zrx9RlfBvtPFkI=",
+        "owner": "Caedis",
+        "repo": "gtnh-daily-updater",
+        "rev": "dd84d7a5b84d468fb1cbfea261dbc97d8115666c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Caedis",
+        "repo": "gtnh-daily-updater",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -903,6 +919,7 @@
     "root": {
       "inputs": {
         "flake-parts": "flake-parts",
+        "gtnh-daily-updater": "gtnh-daily-updater",
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
