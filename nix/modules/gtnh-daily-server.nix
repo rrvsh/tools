@@ -13,6 +13,9 @@
       configDir = "${rootDir}/config";
       stdin = "/run/${unit}.stdin";
       lockFile = "/run/gtnh-daily-update.lock";
+      manifestUrl = "https://raw.githubusercontent.com/GTNewHorizons/DreamAssemblerXXL/master/releases/manifests/daily.json";
+      currentManifest = "${rootDir}/current-manifest.json";
+      currentManifestHash = "${rootDir}/current-manifest.sha256";
       port = 25566;
       java = pkgs.jdk25_headless;
       updater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.gtnh-daily-updater;
@@ -50,6 +53,13 @@
         set -euo pipefail
         exec 9>${lockFile}
         ${pkgs.util-linux}/bin/flock -n 9
+        manifest="$(${pkgs.coreutils}/bin/mktemp --tmpdir gtnh-daily-manifest.XXXXXX.json)"
+        cleanup() {
+          ${pkgs.coreutils}/bin/rm -f "$manifest"
+        }
+        trap cleanup EXIT
+        ${pkgs.curl}/bin/curl --fail --location --silent --show-error ${manifestUrl} --output "$manifest"
+        ${pkgs.coreutils}/bin/chmod 0644 "$manifest"
         was_active=0
         if ${pkgs.systemd}/bin/systemctl is-active --quiet ${unit}.service; then
           was_active=1
@@ -60,12 +70,20 @@
             ${pkgs.systemd}/bin/systemctl start ${unit}.service || true
           fi
         }
-        trap restart_if_needed EXIT
+        finish() {
+          cleanup
+          restart_if_needed
+        }
+        trap finish EXIT
         ${backupScript}
         ${pkgs.util-linux}/bin/runuser -u ${user} -- \
           env ${updaterEnv} \
-          ${updater}/bin/gtnh-daily-updater update --instance-dir ${serverDir}
+          ${updater}/bin/gtnh-daily-updater update --instance-dir ${serverDir} --manifest-file "$manifest"
+        ${pkgs.coreutils}/bin/install -o ${user} -g ${group} -m 0644 "$manifest" ${currentManifest}
+        ${pkgs.coreutils}/bin/sha256sum ${currentManifest} > ${currentManifestHash}
+        ${pkgs.coreutils}/bin/chown ${user}:${group} ${currentManifestHash}
         restart_if_needed
+        cleanup
         trap - EXIT
       '';
       rollback = pkgs.writeShellScriptBin "gtnh-daily-rollback" ''

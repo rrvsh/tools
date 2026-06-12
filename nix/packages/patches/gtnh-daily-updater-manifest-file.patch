@@ -1,0 +1,142 @@
+diff --git a/cmd/root.go b/cmd/root.go
+index aa09fb4..060f4ba 100644
+--- a/cmd/root.go
++++ b/cmd/root.go
+@@ -168,6 +168,7 @@ func expandFlagPaths() {
+ 	logFile = paths.ExpandTilde(logFile)
+ 	cacheDir = paths.ExpandTilde(cacheDir)
+ 	cacheDirAll = paths.ExpandTilde(cacheDirAll)
++	manifestFile = paths.ExpandTilde(manifestFile)
+ }
+ 
+ func getGithubToken() string {
+diff --git a/cmd/update.go b/cmd/update.go
+index 391a6a7..39ab4c0 100644
+--- a/cmd/update.go
++++ b/cmd/update.go
+@@ -9,12 +9,13 @@ import (
+ )
+ 
+ var (
+-	dryRun      bool
+-	force       bool
+-	latest      bool
+-	concurrency int
+-	cacheDir    string
+-	noCache     bool
++	dryRun       bool
++	force        bool
++	latest       bool
++	concurrency  int
++	cacheDir     string
++	noCache      bool
++	manifestFile string
+ )
+ 
+ var updateCmdName = "update"
+@@ -33,6 +34,7 @@ var updateCmd = &cobra.Command{
+ 			CurseForgeKey: getCurseForgeKey(),
+ 			CacheDir:      cacheDir,
+ 			NoCache:       noCache,
++			ManifestFile:  manifestFile,
+ 		}
+ 
+ 		result, err := updater.Run(context.Background(), opts)
+@@ -71,6 +73,7 @@ func init() {
+ 	updateCmd.Flags().IntVar(&concurrency, "concurrency", 6, "Number of concurrent downloads")
+ 	updateCmd.Flags().StringVar(&cacheDir, "cache-dir", "", "Directory for caching downloaded mods (default: OS user cache dir + /gtnh-daily-updater/mods/)")
+ 	updateCmd.Flags().BoolVar(&noCache, "no-cache", false, "Disable download caching")
++	updateCmd.Flags().StringVar(&manifestFile, "manifest-file", "", "Use a local daily manifest JSON instead of fetching the latest remote manifest")
+ 	rootCmd.AddCommand(updateCmd)
+ }
+ 
+diff --git a/internal/updater/run.go b/internal/updater/run.go
+index ac0e7a1..ded91c9 100644
+--- a/internal/updater/run.go
++++ b/internal/updater/run.go
+@@ -21,7 +21,7 @@ func Run(ctx context.Context, opts Options) (*UpdateResult, error) {
+ 		return nil, err
+ 	}
+ 
+-	m, db, mode, err := resolveSharedData(ctx, state, opts.Shared)
++	m, db, mode, err := resolveSharedData(ctx, state, opts)
+ 	if err != nil {
+ 		return nil, err
+ 	}
+diff --git a/internal/updater/types.go b/internal/updater/types.go
+index c655e4b..310ff85 100644
+--- a/internal/updater/types.go
++++ b/internal/updater/types.go
+@@ -24,6 +24,7 @@ type Options struct {
+ 	CurseForgeKey   string
+ 	CacheDir        string
+ 	NoCache         bool
++	ManifestFile    string
+ 	// Shared optionally supplies pre-fetched manifest and assets DB.
+ 	// When non-nil, Run skips those network fetches.
+ 	Shared *SharedData
+diff --git a/internal/updater/workflow_steps.go b/internal/updater/workflow_steps.go
+index 4361908..32f322c 100644
+--- a/internal/updater/workflow_steps.go
++++ b/internal/updater/workflow_steps.go
+@@ -2,6 +2,7 @@ package updater
+ 
+ import (
+ 	"context"
++	"encoding/json"
+ 	"errors"
+ 	"fmt"
+ 	"maps"
+@@ -79,6 +80,29 @@ func fetchAndLogManifest(ctx context.Context, mode string) (*manifest.DailyManif
+ 	return m, nil
+ }
+ 
++func loadAndLogManifestFile(path string) (*manifest.DailyManifest, error) {
++	logging.Infof("Loading pinned manifest %s...\n", path)
++	data, err := os.ReadFile(path)
++	if err != nil {
++		return nil, fmt.Errorf("reading manifest file: %w", err)
++	}
++
++	var m manifest.DailyManifest
++	if err := json.Unmarshal(data, &m); err != nil {
++		return nil, fmt.Errorf("parsing manifest file: %w", err)
++	}
++
++	logging.Debugf(
++		"Verbose: loaded pinned manifest version=%s updated=%s config=%s github-mods=%d external-mods=%d\n",
++		m.Version,
++		m.LastUpdated,
++		m.Config,
++		len(m.GithubMods),
++		len(m.ExternalMods),
++	)
++	return &m, nil
++}
++
+ func fetchAndLogAssetsDB(ctx context.Context) (*assets.AssetsDB, error) {
+ 	logging.Infoln("Fetching assets database...")
+ 	db, err := assets.Fetch(ctx)
+@@ -108,8 +132,21 @@ func FetchSharedData(ctx context.Context, mode string) (*SharedData, error) {
+ 	return &SharedData{Manifest: m, AssetsDB: db, Mode: parsedMode}, nil
+ }
+ 
+-func resolveSharedData(ctx context.Context, state *config.LocalState, shared *SharedData) (*manifest.DailyManifest, *assets.AssetsDB, string, error) {
++func resolveSharedData(ctx context.Context, state *config.LocalState, opts Options) (*manifest.DailyManifest, *assets.AssetsDB, string, error) {
+ 	mode := resolveMode(state)
++	if opts.ManifestFile != "" {
++		m, err := loadAndLogManifestFile(opts.ManifestFile)
++		if err != nil {
++			return nil, nil, "", err
++		}
++		db, err := fetchAndLogAssetsDB(ctx)
++		if err != nil {
++			return nil, nil, "", err
++		}
++		return m, db, mode, nil
++	}
++
++	shared := opts.Shared
+ 	if shared != nil && shared.Manifest != nil && shared.AssetsDB != nil {
+ 		sharedMode, err := manifest.ParseMode(shared.Mode)
+ 		if err != nil {
