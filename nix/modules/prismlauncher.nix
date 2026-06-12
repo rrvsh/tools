@@ -92,11 +92,11 @@ in
           };
         };
         home.packages = [
-          gtnhDailyClientSync
           (pkgs.prismlauncher.override {
             jdks = [ pkgs.jdk25 ];
           })
-        ];
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ gtnhDailyClientSync ];
         systemd.user = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
           services.gtnh-daily-client-sync = {
             Unit = {
