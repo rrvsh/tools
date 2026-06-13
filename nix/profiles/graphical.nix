@@ -51,6 +51,7 @@ in
         firefox
         hyprland
         audio-config
+        usb-automount
       ];
       time.timeZone = "Asia/Singapore";
       security.polkit.enable = true;
