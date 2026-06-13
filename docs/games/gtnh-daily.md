@@ -358,6 +358,102 @@ Accept the Minecraft EULA before starting the server:
 sudo sed -i 's/^eula=false/eula=true/' /var/lib/gtnh-daily/server/eula.txt
 ```
 
+### Manual daily extras: GTNH-Web-Map, ServerUtilities chunkloading, MineMenu
+
+These extras are intentionally manual because they are server/client instance state, not Nix-managed package state.
+
+Install GTNH-Web-Map and MineMenu on the server:
+
+```sh
+sudo install -d -o gtnh-daily -g gtnh-daily -m 0750 /var/lib/gtnh-daily/server/mods
+sudo find /var/lib/gtnh-daily/server/mods -maxdepth 1 -type f \
+  \( -name 'gtnh-web-map-*.jar' -o -name 'DynmapForge-*.jar' -o -name 'MineMenu-*.jar' \) -delete
+sudo install -o gtnh-daily -g gtnh-daily -m 0640 /path/to/gtnh-web-map-0.4-beta-1.jar \
+  /var/lib/gtnh-daily/server/mods/gtnh-web-map-0.4-beta-1.jar
+sudo install -o gtnh-daily -g gtnh-daily -m 0640 /path/to/MineMenu-1.7.10-1.2.0.B44-universal.jar \
+  /var/lib/gtnh-daily/server/mods/MineMenu-1.7.10-1.2.0.B44-universal.jar
+```
+
+Enable ServerUtilities chunk claiming/loading and ranks in `/var/lib/gtnh-daily/server/serverutilities/serverutilities.cfg`:
+
+```cfg
+ranks {
+    B:enabled=true
+}
+
+world {
+    B:chunk_claiming=true
+    B:chunk_loading=true
+}
+```
+
+Install MineMenu on each Prism client instance too:
+
+```sh
+mods_dir="$HOME/.local/share/PrismLauncher/instances/GT New Horizons (Daily)/.minecraft/mods"
+mkdir -p "$mods_dir"
+find "$mods_dir" -maxdepth 1 -type f -name 'MineMenu-*.jar' -delete
+install -m 0644 /path/to/MineMenu-1.7.10-1.2.0.B44-universal.jar \
+  "$mods_dir/MineMenu-1.7.10-1.2.0.B44-universal.jar"
+```
+
+Restart the server after changing server-side mods/config. GTNH-Web-Map listens on TCP `8123` by default, so expose that port where appropriate.
+
+### 2026-06-13 world migration from stable, player data stripped
+
+The Daily server was migrated to a copy of the stable `/srv/gtnh` world while stripping player state. `/srv/gtnh` itself was only stopped/read/backed up/restarted; its files were not otherwise modified.
+
+Backups created before the migration:
+
+```text
+/var/lib/gtnh-daily/backups/source-srv-gtnh-20260613-105333.tar.zst
+/var/lib/gtnh-daily/backups/pre-stripped-world-20260613-105333.tar.zst
+```
+
+Procedure performed:
+
+1. Stopped `gtnh-server.service` and `gtnh-daily-server.service` for a consistent copy.
+2. Archived `/srv/gtnh` into the Daily backup directory.
+3. Archived the previous Daily server directory.
+4. Copied `/srv/gtnh/world` into the Daily server.
+5. Corrected the copied directory to the active Daily level name, `World`, because Daily has `level-name=World` in `server.properties`.
+6. Removed old Daily in-instance `server/backups`; the canonical migration backups are in `/var/lib/gtnh-daily/backups`.
+7. Stripped player data from the copied world:
+   - `World/playerdata`
+   - `World/stats`
+   - BetterQuesting `QuestProgress`, `NameCache`, `LifeDatabase`, `QuestingParties`
+   - ServerUtilities world players/teams/claims
+   - backpack player data
+   - NEI player data
+   - Baubles and Thaumcraft username files
+   - OpenBlocks grave/death inventory backups
+   - Forestry player trackers
+   - POBox player data
+   - KubaTech player data
+   - mobsinfo player data
+   - LootBags player-ish data
+   - ThaumicExploration player warp queue
+   - nicknames
+   - LogisticPipes player/name info
+   - Daily sidecar `journeymap` and `visualprospecting`
+8. Reset root identity files: `usercache.json`, `whitelist.json`, `ops.json`, `banned-players.json`, and removed `usernamecache.json`.
+9. Restarted both servers.
+10. Accepted the expected FML/ChunkAPI migration prompts with `/fml confirm`; this was expected because the stable source world was GTNH 2.8.4 and Daily has newer mod IDs/managers.
+11. Verified Daily reached `Done`, listened on `25566`, and GTNH-Web-Map served on `8123`.
+12. Re-added `wagoqi` to the Daily whitelist and ops:
+
+```sh
+printf 'whitelist add wagoqi\nop wagoqi\n' | sudo tee /run/gtnh-daily-server.stdin >/dev/null
+```
+
+Post-checks:
+
+- `gtnh-server.service`: active
+- `gtnh-daily-server.service`: active
+- Daily map: `http://nemesis:8123/`
+- No old `wagoqi`, `22c6c7d9-3c10-41a0-9e9d-759f2aeec75b`, or `e43c1aea-e5b8-3c4f-95b0-ef6163be3402` references remained in active Daily server data after excluding logs/mods/libraries/dynmap/backups.
+- New `wagoqi` whitelist/op entries were regenerated with UUID `22c6c7d9-3c10-41a0-9e9d-759f2aeec75b`.
+
 ## Implementation notes
 
 ### Nix package
