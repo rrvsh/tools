@@ -358,20 +358,73 @@ Accept the Minecraft EULA before starting the server:
 sudo sed -i 's/^eula=false/eula=true/' /var/lib/gtnh-daily/server/eula.txt
 ```
 
-### Manual daily extras: GTNH-Web-Map, ServerUtilities chunkloading, MineMenu
+### Daily updater-managed extras: JourneyMap Unlimited, GTNH-Web-Map, MineMenu
 
-These extras are intentionally manual because they are server/client instance state, not Nix-managed package state.
+Extra/excluded Daily mods are tracked in each instance's `.gtnh-daily-updater.json`, not in Nix. Back up that file before changing updater state.
 
-Install GTNH-Web-Map and MineMenu on the server:
+The GTNH JourneyMap wiki says the pack server uses JourneyMap FairPlay by default. For a private server with JourneyMap Unlimited, remove the server-side JourneyMap FairPlay jar and replace the client-side FairPlay jar with JourneyMap Unlimited. `gtnh-daily-updater` supports this directly: a same-name extra overrides the manifest entry, so client `JourneyMap` is an extra sourced from TeamJM's legacy releases with the `unlimited.jar` asset selected.
+
+Current client extras:
 
 ```sh
-sudo install -d -o gtnh-daily -g gtnh-daily -m 0750 /var/lib/gtnh-daily/server/mods
-sudo find /var/lib/gtnh-daily/server/mods -maxdepth 1 -type f \
-  \( -name 'gtnh-web-map-*.jar' -o -name 'DynmapForge-*.jar' -o -name 'MineMenu-*.jar' \) -delete
-sudo install -o gtnh-daily -g gtnh-daily -m 0640 /path/to/gtnh-web-map-0.4-beta-1.jar \
-  /var/lib/gtnh-daily/server/mods/gtnh-web-map-0.4-beta-1.jar
-sudo install -o gtnh-daily -g gtnh-daily -m 0640 /path/to/MineMenu-1.7.10-1.2.0.B44-universal.jar \
-  /var/lib/gtnh-daily/server/mods/MineMenu-1.7.10-1.2.0.B44-universal.jar
+gtnh-daily-updater extra add JourneyMap \
+  --instance-dir "$HOME/.local/share/PrismLauncher/instances/GT New Horizons (Daily)" \
+  --side client \
+  --source github:TeamJM/journeymap-legacy \
+  --match 'unlimited\.jar$'
+
+gtnh-daily-updater extra add MineMenu \
+  --instance-dir "$HOME/.local/share/PrismLauncher/instances/GT New Horizons (Daily)" \
+  --side client \
+  --source modrinth:mine-menu/HNivj4HD
+```
+
+Current server exclude/extra state:
+
+```sh
+sudo -u gtnh-daily env \
+  HOME=/var/lib/gtnh-daily \
+  XDG_CACHE_HOME=/var/lib/gtnh-daily/cache \
+  XDG_CONFIG_HOME=/var/lib/gtnh-daily/config \
+  gtnh-daily-updater exclude add \
+    --instance-dir /var/lib/gtnh-daily/server \
+    "JourneyMap Server"
+
+sudo -u gtnh-daily env \
+  HOME=/var/lib/gtnh-daily \
+  XDG_CACHE_HOME=/var/lib/gtnh-daily/cache \
+  XDG_CONFIG_HOME=/var/lib/gtnh-daily/config \
+  gtnh-daily-updater extra add GTNH-Web-Map \
+    --instance-dir /var/lib/gtnh-daily/server \
+    --side server \
+    --source github:GTNewHorizons/GTNH-Web-Map \
+    --match '^gtnh-web-map-.*[0-9]\.jar$'
+
+sudo -u gtnh-daily env \
+  HOME=/var/lib/gtnh-daily \
+  XDG_CACHE_HOME=/var/lib/gtnh-daily/cache \
+  XDG_CONFIG_HOME=/var/lib/gtnh-daily/config \
+  gtnh-daily-updater extra add MineMenu \
+    --instance-dir /var/lib/gtnh-daily/server \
+    --side server \
+    --source modrinth:mine-menu/HNivj4HD
+```
+
+Verify state with:
+
+```sh
+gtnh-daily-updater extra list \
+  --instance-dir "$HOME/.local/share/PrismLauncher/instances/GT New Horizons (Daily)"
+
+sudo -u gtnh-daily env HOME=/var/lib/gtnh-daily \
+  XDG_CACHE_HOME=/var/lib/gtnh-daily/cache \
+  XDG_CONFIG_HOME=/var/lib/gtnh-daily/config \
+  gtnh-daily-updater exclude list --instance-dir /var/lib/gtnh-daily/server
+
+sudo -u gtnh-daily env HOME=/var/lib/gtnh-daily \
+  XDG_CACHE_HOME=/var/lib/gtnh-daily/cache \
+  XDG_CONFIG_HOME=/var/lib/gtnh-daily/config \
+  gtnh-daily-updater extra list --instance-dir /var/lib/gtnh-daily/server
 ```
 
 Enable ServerUtilities chunk claiming/loading and ranks in `/var/lib/gtnh-daily/server/serverutilities/serverutilities.cfg`:
@@ -387,17 +440,7 @@ world {
 }
 ```
 
-Install MineMenu on each Prism client instance too:
-
-```sh
-mods_dir="$HOME/.local/share/PrismLauncher/instances/GT New Horizons (Daily)/.minecraft/mods"
-mkdir -p "$mods_dir"
-find "$mods_dir" -maxdepth 1 -type f -name 'MineMenu-*.jar' -delete
-install -m 0644 /path/to/MineMenu-1.7.10-1.2.0.B44-universal.jar \
-  "$mods_dir/MineMenu-1.7.10-1.2.0.B44-universal.jar"
-```
-
-Restart the server after changing server-side mods/config. GTNH-Web-Map listens on TCP `8123` by default, so expose that port where appropriate.
+The next `gtnh-daily-updater update` / `gtnh-daily-client-sync` run downloads and applies changed extras/excludes. Restart the server after changing server-side mods/config. GTNH-Web-Map listens on TCP `8123` by default, so expose that port where appropriate.
 
 ### 2026-06-13 world migration from stable, player data stripped
 
