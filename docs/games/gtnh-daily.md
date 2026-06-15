@@ -1,5 +1,7 @@
 # GT New Horizons Daily administration guide
 
+This is the long-form administration and historical session record for the isolated GT New Horizons Daily setup. For the clearer from-scratch guide, start with `docs/gtnh-daily/README.md`; for unfamiliar terms, use `docs/gtnh-daily/glossary.md`.
+
 This guide documents the isolated GT New Horizons Daily setup managed by this repo. It covers day-to-day administration, bootstrap/recovery commands, client/server synchronization, and implementation details from the initial setup session.
 
 ## Overview
@@ -206,7 +208,7 @@ GT New Horizons (Daily)
 The desktop entry runs:
 
 ```sh
-prismlauncher --launch "GT New Horizons (Daily)"
+prismlauncher --launch "GT New Horizons (Daily)" --server localhost:25566
 ```
 
 Run a manual client sync:
@@ -241,13 +243,14 @@ journalctl --user -u gtnh-daily-client-sync.service -n 120 --no-pager
 
 The client sync command:
 
-1. Uses SSH to read the server's `/var/lib/gtnh-daily/current-manifest.sha256` from `nemesis` by default.
-2. Exits if the local applied hash in `~/.cache/gtnh-daily-client-sync/current-manifest.sha256` matches the server hash.
-3. Refuses to run if Prism or Minecraft appears to be running.
-4. Copies `/var/lib/gtnh-daily/current-manifest.json` from the server with `scp`.
-5. Verifies the copied manifest against the server-published hash.
-6. Creates a full client instance backup under `~/.local/share/PrismLauncher/backups`.
-7. Runs:
+1. Refuses to run if Prism or Minecraft appears to be running.
+2. Runs `gtnh-daily-client-bootstrap`, which creates/initializes the Prism instance if needed and downloads/verifies declared resource/shader packs.
+3. Uses SSH to read the server's `/var/lib/gtnh-daily/current-manifest.sha256` from `nemesis` by default.
+4. Exits if the local applied hash in `~/.cache/gtnh-daily-client-sync/current-manifest.sha256` matches the server hash.
+5. Copies `/var/lib/gtnh-daily/current-manifest.json` from the server with `scp`.
+6. Verifies the copied manifest against the server-published hash.
+7. Creates a full client instance backup under `~/.local/share/PrismLauncher/backups`.
+8. Runs:
 
    ```sh
    gtnh-daily-updater update \
@@ -255,15 +258,15 @@ The client sync command:
      --manifest-file "$HOME/.cache/gtnh-daily-client-sync/current-manifest.json"
    ```
 
-8. Writes the applied server hash to `~/.cache/gtnh-daily-client-sync/current-manifest.sha256`.
+9. Writes the applied server hash to `~/.cache/gtnh-daily-client-sync/current-manifest.sha256`.
 
 The client sync timer is hourly with a 15 minute randomized delay and `Persistent=true`.
 
 ## Initial client updater state
 
-A Prism instance must be initialized once before `gtnh-daily-client-sync` can update it. If state is missing, the sync command prints the init command and exits.
+Manual initialization is no longer needed in the normal path: `gtnh-daily-client-sync` invokes `gtnh-daily-client-bootstrap`, and the bootstrap command initializes updater state if `.gtnh-daily-updater.json` is missing.
 
-Initialize the Daily Prism instance against the server's current config version:
+The historical manual initialization flow was:
 
 ```sh
 config=$(ssh nemesis "python3 - <<'PY'
@@ -288,6 +291,14 @@ jq -r .config /tmp/gtnh-daily-current-manifest.json
 ## Bootstrap from GitHub Actions artifacts
 
 Normal updates do not need GitHub Actions artifact downloads; they use `gtnh-daily-updater` and the published Daily manifest. Artifact downloads are only needed for first bootstrap or full manual re-seeding.
+
+The NixOS/Home Manager configuration now performs this bootstrap idempotently:
+
+- `gtnh-daily-bootstrap.service` creates `/var/lib/gtnh-daily`, downloads a non-expired Daily server artifact when the server files are missing, initializes `.gtnh-daily-updater.json`, accepts the EULA, and reconciles declared server extras/excludes before the server starts.
+- `gtnh-daily-client-bootstrap` downloads the server-published manifest, creates the Prism instance from a Daily `mmcprism-java17-25` artifact if missing, initializes client updater state, reconciles declared client extras, installs declared resource/shader packs, and enables the selected resource packs in `options.txt`.
+- `gtnh-daily-client-sync` runs the client bootstrap first, then performs the pinned-manifest update.
+
+GitHub artifact downloads may require `GITHUB_TOKEN` in the service/user environment if GitHub refuses unauthenticated artifact API downloads.
 
 List recent successful Daily workflow runs:
 
@@ -360,7 +371,7 @@ sudo sed -i 's/^eula=false/eula=true/' /var/lib/gtnh-daily/server/eula.txt
 
 ### Daily updater-managed extras: JourneyMap Unlimited, GTNH-Web-Map, MineMenu
 
-Extra/excluded Daily mods are tracked in each instance's `.gtnh-daily-updater.json`, not in Nix. Back up that file before changing updater state.
+Extra/excluded Daily mods are stored by `gtnh-daily-updater` in each instance's `.gtnh-daily-updater.json`; this repo now treats the desired entries as declarative and reconciles that updater state during server/client bootstrap.
 
 The GTNH JourneyMap wiki says the pack server uses JourneyMap FairPlay by default. For a private server with JourneyMap Unlimited, remove the server-side JourneyMap FairPlay jar and replace the client-side FairPlay jar with JourneyMap Unlimited. `gtnh-daily-updater` supports this directly: a same-name extra overrides the manifest entry, so client `JourneyMap` is an extra sourced from TeamJM's legacy releases with the `unlimited.jar` asset selected.
 
