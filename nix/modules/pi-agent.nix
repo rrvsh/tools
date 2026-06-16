@@ -30,6 +30,7 @@ in
             "npm:pi-mcp-adapter"
             "npm:pi-subagents"
             "npm:pi-web-access"
+            "npm:pi-hermes-memory"
           ];
           context = ''
             # Global pi instructions
