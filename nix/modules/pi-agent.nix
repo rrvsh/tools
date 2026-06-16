@@ -7,6 +7,10 @@
 let
   cfg = config.flake;
   osModule = {
+    nix.settings = {
+      extra-substituters = [ "https://pi.cachix.org" ];
+      extra-trusted-public-keys = [ "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk=" ];
+    };
     home-manager.sharedModules = [ cfg.modules.homeManager.pi-agent ];
   };
 in
@@ -19,10 +23,14 @@ in
       {
         programs.pi-coding-agent = {
           enable = true;
-          package = inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent;
+          package = inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.coding-agent-bun;
           extraPackages = [ pkgs.nodejs_22 ];
           settings.lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
-          settings.packages = [ "npm:pi-mcp-adapter" ];
+          settings.packages = [
+            "npm:pi-mcp-adapter"
+            "npm:pi-subagents"
+            "npm:pi-web-access"
+          ];
           context = ''
             # Global pi instructions
 

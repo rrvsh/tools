@@ -43,5 +43,6 @@
       flake = false;
     };
     mac-app-util.url = "github:hraban/mac-app-util";
+    pi.url = "github:lukasl-dev/pi.nix";
   };
 }
