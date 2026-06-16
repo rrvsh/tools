@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Minecraft server management research: itzg Docker, GTNH, NixOS, and flakes</title>
+</head>
+<body>
+  <h1>Minecraft server management research: itzg Docker, GTNH, NixOS, and flakes</h1>
+  <p>Date: 2026-06-15</p>
+  <p>
+    This document is an exhaustive implementation-oriented walkthrough of the Minecraft server management options researched for the GTNH Daily setup in this repo. It covers how each implementation works, what problem it solves, what state it owns, how it starts/stops servers, how it handles mods/modpacks, and whether it fits the current GTNH Daily goals.
+  </p>
+  <p>
+    The current GTNH Daily goals are unusual: recreate the server and Prism client after a wipe/rebuild, exclude mutable world/runtime data, use <code>gtnh-daily-updater</code>, pin the exact server-applied Daily manifest, and sync the client to that server-published manifest. Most generic Minecraft server tools solve only part of that problem.
+  </p>
+
+  <h2>Short conclusion</h2>
+  <p>
+    The current custom NixOS/Home Manager implementation remains justified for GTNH Daily. The researched alternatives are useful references, but none covers the full combination of:
+  </p>
+  <ul>
+    <li>GTNH Daily GitHub Actions artifact bootstrap;</li>
+    <li><code>gtnh-daily-updater</code> initialization and update;</li>
+    <li>server-published pinned manifest and SHA-256 hash;</li>
+    <li>Prism client bootstrap from Daily artifacts;</li>
+    <li>client update against the exact server-applied manifest;</li>
+    <li>declared updater extras/excludes;</li>
+    <li>resource/shader pack download and verification;</li>
+    <li>clear separation between declarative pack/service/client state and mutable world data.</li>
+  </ul>
+  <p>
+    The strongest ideas to borrow are: nixpkgs' simple systemd FIFO service pattern, Infinidoge's multi-server file/symlink model and environment-file support, and itzg's GTNH-specific Java/defaults knowledge. The current custom implementation already uses several of those patterns.
+  </p>
+
+  <h2>Important terms</h2>
+  <dl>
+    <dt>GTNH</dt>
+    <dd>GT New Horizons, a large Minecraft 1.7.10 expert modpack.</dd>
+    <dt>Daily</dt>
+    <dd>A frequently rebuilt development/testing GTNH build, produced by GitHub Actions artifacts and represented by a manifest JSON file.</dd>
+    <dt>Manifest</dt>
+    <dd>A JSON file describing one modpack build: version metadata, config version, timestamp, and selected mods.</dd>
+    <dt>Pinned manifest</dt>
+    <dd>A saved exact manifest file. In this repo, the server publishes the manifest it actually used, and the client updates from that exact file.</dd>
+    <dt>Artifact</dt>
+    <dd>A downloadable output of a build job. GTNH Daily artifacts include server zips, Prism/MultiMC client zips, and manifest JSON files.</dd>
+    <dt>Mutable world data</dt>
+    <dd>The Minecraft world and runtime state, especially <code>World/</code>, dimensions, chunks, player data, logs, caches, generated map data, and backups. This is not recreated by Nix.</dd>
+    <dt>Declarative state</dt>
+    <dd>State described in code/config so it can be recreated automatically after a rebuild.</dd>
+    <dt>Bootstrap</dt>
+    <dd>Create missing initial files so the normal updater or server process can work.</dd>
+    <dt>Idempotent</dt>
+    <dd>Safe to run repeatedly. If the desired state already exists, it should not clobber it.</dd>
+  </dl>
+
+  <h2>Section 1: itzg/docker-minecraft-server</h2>
+  <p>
+    Repository: <a href="https://github.com/itzg/docker-minecraft-server">itzg/docker-minecraft-server</a>. Researched commit: <code>1a8844cb625d753409f02f3cfbd46eefd5c5d939</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    <code>itzg/docker-minecraft-server</code> is a general-purpose Docker image for running Minecraft Java Edition servers. Instead of installing Java, server jars, and helper scripts directly on the host, the server runs inside a container. The persistent server data is mounted at the container path <code>/data</code>.
+  </p>
+  <p>
+    The image is configured primarily through environment variables. A typical compose file sets <code>EULA=TRUE</code>, exposes a port, mounts a volume at <code>/data</code>, and selects a server type such as <code>VANILLA</code>, <code>PAPER</code>, <code>FORGE</code>, <code>FABRIC</code>, <code>MODRINTH</code>, <code>AUTO_CURSEFORGE</code>, or <code>GTNH</code>. The docs list core variables such as <code>EULA</code>, <code>TYPE</code>, <code>VERSION</code>, <code>UID</code>, <code>GID</code>, <code>MEMORY</code>, <code>INIT_MEMORY</code>, <code>MAX_MEMORY</code>, <code>TZ</code>, <code>DEBUG</code>, <code>SETUP_ONLY</code>, <code>FORCE_REDOWNLOAD</code>, and proxy options.
+  </p>
+  <p>
+    Documentation references:
+  </p>
+  <ul>
+    <li><a href="https://itzg-docker-minecraft-server.mintlify.app/configuration/environment-variables">Core environment variables</a></li>
+    <li><a href="https://itzg-docker-minecraft-server.mintlify.app/docker-compose">Docker Compose setup</a></li>
+    <li><a href="https://itzg-docker-minecraft-server.mintlify.app/mod-platforms/overview">Mod platforms overview</a></li>
+    <li><a href="https://itzg-docker-minecraft-server.mintlify.app/mods-plugins/generic-packs">Generic pack files</a></li>
+  </ul>
+
+  <h3>How the base container works</h3>
+  <ol>
+    <li>The user starts the container with Docker or Docker Compose.</li>
+    <li>The image's startup scripts inspect environment variables.</li>
+    <li>The scripts install or update server files in <code>/data</code>.</li>
+    <li>The scripts render or update Minecraft configuration such as <code>server.properties</code> based on environment variables.</li>
+    <li>The container launches Java with the selected server jar or launch command.</li>
+    <li>Persistent data remains in the mounted volume or bind mount, not inside the disposable container filesystem.</li>
+  </ol>
+
+  <h3>Core variables and their meaning</h3>
+  <dl>
+    <dt><code>EULA</code></dt>
+    <dd>Must be <code>TRUE</code> to accept the Minecraft EULA. The server will not run without it.</dd>
+    <dt><code>TYPE</code></dt>
+    <dd>Selects the server implementation or modpack platform, such as <code>PAPER</code>, <code>FORGE</code>, <code>FABRIC</code>, <code>CUSTOM</code>, or <code>GTNH</code>.</dd>
+    <dt><code>VERSION</code></dt>
+    <dd>Selects the Minecraft version for types that use normal Minecraft versions. GTNH sets this internally to Minecraft 1.7.10.</dd>
+    <dt><code>MEMORY</code>, <code>INIT_MEMORY</code>, <code>MAX_MEMORY</code></dt>
+    <dd>Control Java heap size. <code>MEMORY</code> sets both initial and max heap unless the more specific variables override it.</dd>
+    <dt><code>UID</code> and <code>GID</code></dt>
+    <dd>The Linux user/group IDs used inside the container for server files. Defaults are normally 1000:1000.</dd>
+    <dt><code>SETUP_ONLY</code></dt>
+    <dd>Prepare server files and stop before launching. Useful for inspecting a data directory or doing manual setup.</dd>
+    <dt><code>FORCE_REDOWNLOAD</code></dt>
+    <dd>For supported server types, forces the server file to be downloaded again.</dd>
+    <dt><code>CUSTOM_SERVER</code></dt>
+    <dd>For <code>TYPE=CUSTOM</code>, a URL or container path to the custom server jar.</dd>
+  </dl>
+
+  <h3>Docker Compose operating model</h3>
+  <p>
+    Docker Compose stores configuration in <code>compose.yaml</code>. It can run one or more Minecraft containers, attach volumes, expose ports, and add helper services such as backups or RCON web administration. The official docs show examples for Paper, CurseForge, Modrinth, Bedrock-compatible proxy setups, multiple servers, RCON web admin, and automatic backups using <code>itzg/mc-backup</code>.
+  </p>
+  <p>
+    Important operational commands are:
+  </p>
+  <ul>
+    <li><code>docker compose up -d</code> — create/start containers in the background.</li>
+    <li><code>docker compose logs -f</code> — follow logs.</li>
+    <li><code>docker compose stop</code> — stop gracefully.</li>
+    <li><code>docker compose down</code> — remove containers while preserving named volumes.</li>
+    <li><code>docker compose pull</code> — update images.</li>
+  </ul>
+
+  <h3>Mod platform model</h3>
+  <p>
+    itzg supports modpack platforms through <code>MODPACK_PLATFORM</code>, <code>TYPE</code>, or <code>MOD_PLATFORM</code>. The mod-platform overview lists common platforms such as Auto CurseForge, Modrinth, FTBA, and GTNH. These platforms can install mod loaders, resolve downloads, apply configuration files, support upgrades/downgrades, and clean old files.
+  </p>
+  <p>
+    The platform comparison says GTNH supports auto-update, no API key, version pinning, and is specifically recommended for GT New Horizons.
+  </p>
+
+  <h3>Generic pack model</h3>
+  <p>
+    Generic packs are archives applied into the server data directory. <code>GENERIC_PACK</code> points at one zip/tgz file, while <code>GENERIC_PACKS</code> can apply multiple archives. Optional variables such as <code>GENERIC_PACKS_PREFIX</code> and <code>GENERIC_PACKS_SUFFIX</code> reduce repetition. Update-related flags include <code>SKIP_GENERIC_PACK_UPDATE_CHECK</code>, <code>FORCE_GENERIC_PACK_UPDATE</code>, and <code>SKIP_GENERIC_PACK_CHECKSUM</code>.
+  </p>
+  <p>
+    This is relevant because older/manual GTNH container guides used <code>TYPE=CUSTOM</code> plus <code>GENERIC_PACK</code> to apply a downloaded GTNH server zip. The newer dedicated <code>TYPE=GTNH</code> path is more specialized.
+  </p>
+
+  <h2>Section 2: itzg GTNH support</h2>
+  <p>
+    itzg has first-class GTNH support. The GTNH docs say GTNH has its own <code>TYPE</code> because it has specific deployment/update requirements. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/docs/types-and-platforms/mod-platforms/gtnh.md#L1-L11">GTNH docs lines 1-11</a>.
+  </p>
+
+  <h3>GTNH user-facing configuration</h3>
+  <p>The documented GTNH variables are:</p>
+  <dl>
+    <dt><code>TYPE=GTNH</code></dt>
+    <dd>Activates the GTNH-specific deployment script.</dd>
+    <dt><code>GTNH_PACK_VERSION</code></dt>
+    <dd>Defaults to <code>latest</code>. Can be <code>latest</code>, <code>latest-dev</code>, or a specific version such as <code>2.8.1</code>. The docs recommend pinning a specific version for manual update control.</dd>
+    <dt><code>GTNH_DELETE_BACKUPS</code></dt>
+    <dd>Defaults to <code>false</code>. If true, deletes old GTNH upgrade backup folders.</dd>
+    <dt><code>SKIP_GTNH_UPDATE_CHECK</code></dt>
+    <dd>Defaults to <code>false</code>. If true, skips GTNH install/update checking. The docs warn to set this only after initial setup because it also prevents installation.</dd>
+  </dl>
+
+  <h3>GTNH compose example</h3>
+  <p>
+    The repo includes <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/examples/gtnh/docker-compose-type-gtnh.yaml#L1-L24">examples/gtnh/docker-compose-type-gtnh.yaml</a>. It uses:
+  </p>
+  <ul>
+    <li><code>image: itzg/minecraft-server:java25</code></li>
+    <li><code>EULA: "TRUE"</code></li>
+    <li><code>TYPE: GTNH</code></li>
+    <li><code>GTNH_PACK_VERSION: "2.8.1"</code></li>
+    <li><code>MEMORY: 6G</code></li>
+    <li>a volume mounted at <code>/data</code></li>
+  </ul>
+  <p>
+    The GTNH wiki container page similarly recommends type-based deployment with <code>itzg/minecraft-server:java25</code>, <code>TYPE: GTNH</code>, a pinned <code>GTNH_PACK_VERSION</code>, <code>MEMORY</code>, optional whitelist/ops, and a persistent <code>/data</code> volume.
+  </p>
+
+  <h3>GTNH resource and Java guidance</h3>
+  <p>
+    The itzg GTNH docs recommend 2-4 CPU cores, 6 GiB RAM plus extra memory per player/tier, 20+ GiB storage, and SSD where possible. They state GTNH supports Java 8 and Java 17+, recommend Java 17+ for performance, and recommend Java 25 for GTNH 2.8.0 and later. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/docs/types-and-platforms/mod-platforms/gtnh.md#L19-L34">GTNH docs lines 19-34</a>.
+  </p>
+
+  <h3>GTNH version selection internals</h3>
+  <p>
+    The GTNH script is <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH">scripts/start-deployGTNH</a>. It defines <code>getGTNHdownloadPath</code>, which fetches <code>https://downloads.gtnewhorizons.com/versions.json</code>. The selection behavior is:
+  </p>
+  <ul>
+    <li><code>GTNH_PACK_VERSION=latest-dev</code> selects the latest entry whose title is <code>Beta release</code>.</li>
+    <li><code>GTNH_PACK_VERSION=latest</code> selects the latest entry whose title is <code>Stable release</code>.</li>
+    <li>Any other value is matched against the exact version key.</li>
+  </ul>
+  <p>
+    Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L7-L40">start-deployGTNH lines 7-40</a>.
+  </p>
+
+  <h3>GTNH Java/server zip selection internals</h3>
+  <p>
+    The script checks the container Java version with <code>mc-image-helper java-release</code>. If Java is 8, it chooses <code>.value.server.java8Url</code>. If Java is 17 or newer, it verifies the current Java does not exceed the release's <code>maxJavaVersion</code>, then chooses <code>.value.server.java17_2XUrl</code>. If the Java version is unsupported, startup fails. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L42-L60">start-deployGTNH lines 42-60</a>.
+  </p>
+
+  <h3>GTNH install/update marker</h3>
+  <p>
+    The script uses <code>/data/.gtnh-version</code> as its install/update marker. If that file is missing or does not equal the basename of the selected download URL, it downloads and applies the selected server pack. If the marker matches, it reports that no update is required. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L163-L224">start-deployGTNH lines 163-224</a>.
+  </p>
+
+  <h3>GTNH update behavior</h3>
+  <p>
+    On update, <code>updateGTNH</code> removes/replaces pack-managed directories and files. It deletes <code>libraries</code>, <code>mods</code>, <code>resources</code>, and <code>scripts</code>. It deletes launch files such as <code>lwjgl3ify-forgePatches.jar</code>, <code>java9args.txt</code>, start scripts, Forge jar, and server icon. It backs up <code>config</code> to <code>/data/gtnh-upgrade-&lt;timestamp&gt;</code>, deletes the original config folder, copies new pack folders/files, recreates <code>config</code> if needed, and restores <code>JourneyMapServer</code> from the backup if present. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L73-L150">start-deployGTNH lines 73-150</a>.
+  </p>
+  <p>
+    This is a pragmatic container update strategy. It is simple and direct, but it differs from <code>gtnh-daily-updater</code>'s config-git merge model.
+  </p>
+
+  <h3>GTNH server.properties defaults</h3>
+  <p>
+    The script exports GTNH-suitable defaults before continuing normal container setup:
+  </p>
+  <ul>
+    <li><code>ALLOW_FLIGHT=true</code></li>
+    <li><code>LEVEL_TYPE=rwg</code></li>
+    <li><code>DIFFICULTY=3</code></li>
+    <li><code>ENABLE_COMMAND_BLOCK=true</code></li>
+    <li><code>MOTD="Greg Tech New Horizons $GTNH_PACK_VERSION"</code></li>
+  </ul>
+  <p>
+    Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L228-L235">start-deployGTNH lines 228-235</a>.
+  </p>
+
+  <h3>GTNH launch command internals</h3>
+  <p>
+    For Java 8, the script sets <code>SERVER=/data/forge-1.7.10-10.13.4.1614-1.7.10-universal.jar</code>. For Java 17+, it sets <code>SERVER=/data/lwjgl3ify-forgePatches.jar</code>. It also sets <code>VERSION=1.7.10</code> and <code>USES_MODS=true</code>. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH#L239-L259">start-deployGTNH lines 239-259</a>.
+  </p>
+  <p>
+    Later, final Java argument handling adds <code>-Dfml.readTimeout=180</code>. For Java 8 it adds old JVM tuning flags; for Java 17+ it appends <code>@java9args.txt</code>. Source: <a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-finalExec#L409-L423">start-finalExec lines 409-423</a>.
+  </p>
+
+  <h3>GTNH container strengths</h3>
+  <ul>
+    <li>Best ready-made Docker path for GTNH stable/beta release servers.</li>
+    <li>Officially documented by both itzg and the GTNH wiki.</li>
+    <li>Simple compose file with one data volume.</li>
+    <li>Encodes GTNH defaults and Java-specific launch choices.</li>
+    <li>Good for non-NixOS hosts and users already comfortable with Docker.</li>
+  </ul>
+
+  <h3>GTNH container limitations for this repo</h3>
+  <ul>
+    <li>Targets GTNH release downloads from <code>versions.json</code>, not GTNH Daily GitHub Actions artifacts.</li>
+    <li>Uses <code>.gtnh-version</code> based on a zip basename, not a server-published Daily manifest hash.</li>
+    <li>Does not initialize or drive <code>gtnh-daily-updater</code>.</li>
+    <li>Does not publish the exact applied manifest for clients.</li>
+    <li>Does not bootstrap/sync a Prism client.</li>
+    <li>Uses a config replacement/backup model, not the updater's config-git merge model.</li>
+    <li>Adds Docker/container orchestration to a host that is already NixOS-managed.</li>
+  </ul>
+
+  <h2>Section 3: nixpkgs <code>services.minecraft-server</code></h2>
+  <p>
+    Source: local checkout <code>/home/rafiq/1_repos/nixpkgs</code>, commit <code>b5e9cca1667666e70abf6814c62dc0b1c759d7b1</code>, file <code>nixos/modules/services/games/minecraft-server.nix</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    nixpkgs' <code>services.minecraft-server</code> is the standard NixOS module for running one Minecraft server. It is intentionally simple. You provide a package that has a <code>bin/minecraft-server</code> executable, accept the EULA, optionally declare <code>server.properties</code> and whitelist, and NixOS creates a systemd service.
+  </p>
+
+  <h3>Options</h3>
+  <p>
+    The module's main options are defined in <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L67-L190">lines 67-190</a>:
+  </p>
+  <dl>
+    <dt><code>enable</code></dt>
+    <dd>Start the service.</dd>
+    <dt><code>declarative</code></dt>
+    <dd>When true, apply Nix-declared whitelist and <code>server.properties</code>.</dd>
+    <dt><code>eula</code></dt>
+    <dd>Must be true. The module asserts this before running.</dd>
+    <dt><code>dataDir</code></dt>
+    <dd>Persistent server data directory, default <code>/var/lib/minecraft</code>.</dd>
+    <dt><code>openFirewall</code></dt>
+    <dd>Open Minecraft ports in the NixOS firewall.</dd>
+    <dt><code>whitelist</code></dt>
+    <dd>Attribute set of usernames to UUIDs, used only in declarative mode.</dd>
+    <dt><code>serverProperties</code></dt>
+    <dd>Attribute set rendered to <code>server.properties</code>, used only in declarative mode.</dd>
+    <dt><code>package</code></dt>
+    <dd>The server package, defaulting to nixpkgs' Minecraft server package.</dd>
+    <dt><code>jvmOpts</code></dt>
+    <dd>JVM options string, defaulting to <code>-Xmx2048M -Xms2048M</code>.</dd>
+  </dl>
+
+  <h3>Rendered files</h3>
+  <p>
+    The module creates a Nix-store <code>eula.txt</code> with <code>eula=true</code>, a generated <code>whitelist.json</code>, and a generated <code>server.properties</code>. The code for these generated files is in <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L10-L34">lines 10-34</a>.
+  </p>
+
+  <h3>System user and FIFO socket</h3>
+  <p>
+    The module creates a system user/group named <code>minecraft</code>, with home at <code>dataDir</code>. It also creates a systemd socket with <code>ListenFIFO=/run/minecraft-server.stdin</code>. This gives the server a named pipe for console input. Source: <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L193-L214">lines 193-214</a>.
+  </p>
+
+  <h3>Service execution</h3>
+  <p>
+    The service starts <code>${cfg.package}/bin/minecraft-server ${cfg.jvmOpts}</code>, runs as user <code>minecraft</code>, uses <code>cfg.dataDir</code> as working directory, takes standard input from the socket, and logs stdout/stderr to journald. Source: <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L216-L235">lines 216-235</a>.
+  </p>
+
+  <h3>Hardening</h3>
+  <p>
+    The service includes substantial systemd hardening: empty capabilities, private devices/tmp/users, home protection, kernel protections, invisible proc, address-family restrictions, namespace restrictions, realtime/SUID restrictions, native syscall architecture, and <code>UMask=0077</code>. Source: <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L236-L260">lines 236-260</a>.
+  </p>
+
+  <h3>Pre-start declarative behavior</h3>
+  <p>
+    Pre-start always symlinks the Nix-managed EULA file. If <code>declarative=true</code>, it symlinks/copies the generated whitelist and <code>server.properties</code>. The first time declarative mode is enabled, it backs up existing stateful files with a <code>.stateful</code> suffix and creates a <code>.declarative</code> marker. Source: <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L262-L295">lines 262-295</a>.
+  </p>
+
+  <h3>Firewall behavior</h3>
+  <p>
+    If <code>openFirewall=true</code> and <code>declarative=true</code>, the module opens the declared server port, query port, and RCON port if enabled. If not declarative, it opens default port 25565. Source: <a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix#L298-L313">lines 298-313</a>.
+  </p>
+
+  <h3>Strengths</h3>
+  <ul>
+    <li>Simple upstream NixOS-native module.</li>
+    <li>Good systemd service hardening.</li>
+    <li>Clean EULA, FIFO, journald, and firewall patterns.</li>
+    <li>Good fit for vanilla or a prebuilt server package exposing <code>bin/minecraft-server</code>.</li>
+  </ul>
+
+  <h3>Limitations for GTNH Daily</h3>
+  <ul>
+    <li>Only one server.</li>
+    <li>No modpack artifact bootstrap.</li>
+    <li>No GTNH launch-file awareness.</li>
+    <li>No <code>gtnh-daily-updater</code>.</li>
+    <li>No server-published manifest or client sync.</li>
+    <li>Assumes a package with <code>bin/minecraft-server</code>, while GTNH Daily runs from a mutable server directory with <code>java @java9args.txt -jar lwjgl3ify-forgePatches.jar nogui</code>.</li>
+  </ul>
+
+  <h2>Section 4: Infinidoge/nix-minecraft</h2>
+  <p>
+    Repository: <a href="https://github.com/Infinidoge/nix-minecraft">Infinidoge/nix-minecraft</a>. Researched commit: <code>e6f8bec35104ca5955efe73742da58d2823684f7</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    <code>nix-minecraft</code> is a flake focused on Minecraft server packaging and management in the Nix ecosystem. The README says it packages Vanilla, Fabric, Legacy Fabric, Quilt, Paper, Purpur, NeoForge, Velocity, and tools such as <code>nix-modrinth-prefetch</code>, <code>fetchPackwizModpack</code>, and <code>fetchModrinthModpack</code>. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/README.md#L3-L22">README lines 3-22</a>.
+  </p>
+
+  <h3>Installation model</h3>
+  <p>
+    The README describes adding <code>nix-minecraft.url = "github:Infinidoge/nix-minecraft"</code> to flake inputs, importing <code>inputs.nix-minecraft.nixosModules.minecraft-servers</code>, and adding the overlay. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/README.md#L34-L56">README lines 34-56</a>.
+  </p>
+
+  <h3>Packages and modpack helpers</h3>
+  <p>
+    The flake provides versioned server package sets, including <code>vanillaServers</code>, <code>fabricServers</code>, <code>quiltServers</code>, <code>legacyFabricServers</code>, <code>paperServers</code>, <code>purpurServers</code>, <code>neoforgeServers</code>, <code>velocityServers</code>, and combined <code>minecraftServers</code>. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/README.md#L66-L155">README lines 66-155</a>.
+  </p>
+  <p>
+    <code>fetchPackwizModpack</code> can fetch a Packwiz modpack and expose its <code>mods</code> and <code>config</code> directories to a server. The docs warn to use stable URLs, such as git tags/commits, for reproducibility. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/README.md#L157-L180">README lines 157-180</a>.
+  </p>
+
+  <h3>Module structure</h3>
+  <p>
+    The module defines <code>services.minecraft-servers</code>, plural. It supports multiple named servers under <code>services.minecraft-servers.servers</code>. Global options include <code>enable</code>, <code>eula</code>, <code>openFirewall</code>, <code>dataDir</code>, <code>user</code>, <code>group</code>, <code>environmentFile</code>, and a default management system. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L180-L307">module lines 180-307</a>.
+  </p>
+
+  <h3>Management systems</h3>
+  <p>
+    Infinidoge supports two management systems:
+  </p>
+  <ul>
+    <li><strong>tmux</strong>: starts the server inside a tmux session and lets admins attach to the socket.</li>
+    <li><strong>systemd socket/FIFO</strong>: uses <code>StandardInput=socket</code>, journald output, and writes the stop command to a FIFO.</li>
+  </ul>
+  <p>
+    The module asserts that only one management system can be enabled at a time. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L80-L180">module lines 80-180</a>.
+  </p>
+
+  <h3>Per-server options</h3>
+  <p>
+    Each named server supports options including <code>enable</code>, <code>autoStart</code>, <code>openFirewall</code>, <code>restart</code>, <code>enableReload</code>, extra start/stop/reload hooks, <code>stopCommand</code>, whitelist, operators, banned players, <code>serverProperties</code>, allowed symlinks, package, <code>jvmOpts</code>, <code>path</code>, environment, <code>symlinks</code>, <code>files</code>, and per-server management system overrides. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L307-L617">module lines 307-617</a>.
+  </p>
+
+  <h3>File management model</h3>
+  <p>
+    Infinidoge's module has a powerful split between <code>symlinks</code> and <code>files</code>:
+  </p>
+  <ul>
+    <li><code>symlinks</code> put read-only Nix store paths into the server directory.</li>
+    <li><code>files</code> copy paths into the server directory, making them writable during runtime, then deleting them after stop so changes are discarded.</li>
+    <li>Files can be generated from Nix values in formats like JSON, YAML, TOML, INI, properties, and text.</li>
+    <li>An <code>environmentFile</code> can provide secrets outside the Nix store and substitute <code>@varname@</code> placeholders.</li>
+  </ul>
+  <p>
+    Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L1-L80">format helpers lines 1-80</a>, <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L260-L299">environmentFile lines 260-299</a>, and <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L560-L617">symlinks/files lines 560-617</a>.
+  </p>
+
+  <h3>Start-pre behavior</h3>
+  <p>
+    On start, the module cleans files it previously managed, backs up unmanaged files it would replace, creates parent directories, symlinks declarative paths, copies writable files, substitutes environment variables in non-binary files, and records managed paths in <code>.nix-minecraft-managed</code>. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L720-L854">module lines 720-854</a>.
+  </p>
+
+  <h3>Firewall and port assertions</h3>
+  <p>
+    The module asserts that open servers do not share the same server port. It opens TCP server/RCON ports and UDP query ports for servers with <code>openFirewall=true</code>. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L680-L717">module lines 680-717</a>.
+  </p>
+
+  <h3>Systemd service and hardening</h3>
+  <p>
+    The generated service uses start/stop/reload scripts, configured restart policy, working directory under the global data dir, service user/group, optional environment file, runtime directory, and systemd hardening. Hardening includes private devices/tmp/users, home and kernel protections, proc protection, address-family restrictions, namespace/realtime/SUID restrictions, and <code>UMask=0007</code>. Source: <a href="https://github.com/Infinidoge/nix-minecraft/blob/e6f8bec35104ca5955efe73742da58d2823684f7/modules/minecraft-servers.nix#L940-L1010">module lines 940-1010</a>.
+  </p>
+
+  <h3>Strengths</h3>
+  <ul>
+    <li>Most complete Nix-native Minecraft server framework researched.</li>
+    <li>Supports many server/loaders and multiple named servers.</li>
+    <li>Good declarative file/symlink model.</li>
+    <li>Good management choice: tmux or FIFO socket.</li>
+    <li>Good hardening and firewall/port assertions.</li>
+    <li>Useful Packwiz and Modrinth tooling.</li>
+  </ul>
+
+  <h3>Limitations for GTNH Daily</h3>
+  <ul>
+    <li>No direct old Forge 1.7.10 GTNH Daily packaging path.</li>
+    <li>No <code>gtnh-daily-updater</code> integration.</li>
+    <li>No GitHub Actions Daily artifact bootstrap.</li>
+    <li>No server-published manifest/client sync flow.</li>
+    <li>Could be a framework to build on, but would still need substantial GTNH-specific code.</li>
+  </ul>
+
+  <h2>Section 5: mkaito/nixos-modded-minecraft-servers</h2>
+  <p>
+    Repository: <a href="https://github.com/mkaito/nixos-modded-minecraft-servers">mkaito/nixos-modded-minecraft-servers</a>. Researched commit: <code>68f2066499c035fd81c9dacfea2f512d6b0b62e5</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    This flake provides <code>services.modded-minecraft-servers</code>, allowing multiple modded Minecraft server instances. Each instance gets a state folder and system user named from the instance, such as <code>/var/lib/mc-e2es</code> and user <code>mc-e2es</code>. Source: <a href="https://github.com/mkaito/nixos-modded-minecraft-servers/blob/68f2066499c035fd81c9dacfea2f512d6b0b62e5/README.md#L1-L39">README lines 1-39</a>.
+  </p>
+
+  <h3>Philosophy</h3>
+  <p>
+    The README explicitly says the module makes no attempt to package or install modpacks. Instead, it gives each server a folder where the operator puts the pack files, and then it runs <code>start.sh</code> in that folder. <code>$JVMOPTS</code> is provided by Nix, but the modpack's own launch script decides how to use it. Source: <a href="https://github.com/mkaito/nixos-modded-minecraft-servers/blob/68f2066499c035fd81c9dacfea2f512d6b0b62e5/README.md#L72-L112">README lines 72-112</a>.
+  </p>
+
+  <h3>Module behavior</h3>
+  <p>
+    The module renders <code>server.properties</code>, renders <code>eula.txt</code>, optionally configures rsync access, asserts unique server/RCON/query ports, creates a systemd service per instance, and creates a system user/group per instance. The service runs <code>/var/lib/${fullname}/start.sh</code>, sets <code>JVMOPTS</code>, uses <code>StateDirectory</code>, and works in the instance state directory. Source: <a href="https://github.com/mkaito/nixos-modded-minecraft-servers/blob/68f2066499c035fd81c9dacfea2f512d6b0b62e5/nixos/modules/services/games/minecraft-servers/default.nix#L1-L203">module lines 1-203</a>.
+  </p>
+
+  <h3>Rsync feature</h3>
+  <p>
+    If <code>rsyncSSHKeys</code> is set, the module creates forced-command SSH access for rsync to the instance state directory. This is read/write access, so it is meant for trusted operators. Source: <a href="https://github.com/mkaito/nixos-modded-minecraft-servers/blob/68f2066499c035fd81c9dacfea2f512d6b0b62e5/README.md#L114-L131">README lines 114-131</a>.
+  </p>
+
+  <h3>Strengths</h3>
+  <ul>
+    <li>Simple multi-instance model.</li>
+    <li>Per-instance users and directories.</li>
+    <li>Does not pretend arbitrary modpacks are easy to package.</li>
+    <li>Useful rsync operator workflow.</li>
+  </ul>
+
+  <h3>Limitations for GTNH Daily</h3>
+  <ul>
+    <li>Requires manual modpack installation into the state directory.</li>
+    <li>No reproducible wipe/rebuild from Nix by itself.</li>
+    <li>No GTNH Daily updater or manifest pinning.</li>
+    <li>We would still need most of our custom bootstrap/update code.</li>
+  </ul>
+
+  <h2>Section 6: aster-void/nix-mc</h2>
+  <p>
+    Repository: <a href="https://github.com/aster-void/nix-mc">aster-void/nix-mc</a>. Researched commit: <code>458b4590d6b41f06a54397a819d7307fc7d63891</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    <code>nix-mc</code> is a NixOS module for Forge, NeoForge, and Bedrock servers. Its README says most users should consider Infinidoge's <code>nix-minecraft</code> instead, and use <code>nix-mc</code> when unsupported loaders or Bedrock support are needed. Source: <a href="https://github.com/aster-void/nix-mc/blob/458b4590d6b41f06a54397a819d7307fc7d63891/README.md#L1-L20">README lines 1-20</a>.
+  </p>
+
+  <h3>Version-locked source model</h3>
+  <p>
+    The README recommends storing server files in a version-locked source, such as a flake input pointing at a git tag/commit. A server uses <code>upstreamDir</code> for read-only server files, then declares <code>symlinks</code>, copied <code>files</code>, and <code>serverProperties</code>. Source: <a href="https://github.com/aster-void/nix-mc/blob/458b4590d6b41f06a54397a819d7307fc7d63891/README.md#L22-L58">README lines 22-58</a> and <a href="https://github.com/aster-void/nix-mc/blob/458b4590d6b41f06a54397a819d7307fc7d63891/README.md#L140-L180">README lines 140-180</a>.
+  </p>
+
+  <h3>Sync/start behavior</h3>
+  <p>
+    The module builds a pre-start sync script. It creates the runtime/data directories, copies configured writable files, symlinks configured paths, and writes <code>server.properties</code> if configured. Source: <a href="https://github.com/aster-void/nix-mc/blob/458b4590d6b41f06a54397a819d7307fc7d63891/nixosModules/nix-mc.nix#L1-L45">nix-mc.nix lines 1-45</a>.
+  </p>
+
+  <h3>Service model</h3>
+  <p>
+    Services run through tmux. The start script kills any existing tmux session for the server, starts a new detached session in the data directory, verifies the session exists, and waits while it runs. The systemd service includes <code>Restart=on-failure</code>, <code>ProtectSystem=strict</code>, <code>ProtectHome=true</code>, <code>ReadWritePaths</code>, and other hardening. Source: <a href="https://github.com/aster-void/nix-mc/blob/458b4590d6b41f06a54397a819d7307fc7d63891/nixosModules/nix-mc.nix#L72-L131">nix-mc.nix lines 72-131</a>.
+  </p>
+
+  <h3>Strengths</h3>
+  <ul>
+    <li>Simple Forge/NeoForge/Bedrock abstraction.</li>
+    <li>Clear read-only upstream + data directory separation.</li>
+    <li>Good fit for a repo-pinned server tree.</li>
+    <li>Reasonable hardening.</li>
+  </ul>
+
+  <h3>Limitations for GTNH Daily</h3>
+  <ul>
+    <li>Assumes a version-locked pre-installed server source, not runtime discovery of Daily artifacts.</li>
+    <li>No <code>gtnh-daily-updater</code>.</li>
+    <li>No client sync.</li>
+    <li>No server manifest publication.</li>
+  </ul>
+
+  <h2>Section 7: TLATER/nix-minecraft-servers</h2>
+  <p>
+    Repository: <a href="https://github.com/TLATER/nix-minecraft-servers">TLATER/nix-minecraft-servers</a>. Researched commit: <code>d7271c7db69a7195fd5399f779299580a5fbea48</code>.
+  </p>
+
+  <h3>What it is</h3>
+  <p>
+    This repo is mostly a design/spec note and information dump. Its README says almost none of the actual functionality is implemented. Source: <a href="https://github.com/TLATER/nix-minecraft-servers/blob/d7271c7db69a7195fd5399f779299580a5fbea48/README.md#L1-L8">README lines 1-8</a>.
+  </p>
+
+  <h3>Forge analysis</h3>
+  <p>
+    The README explains that Forge installers download libraries during installation, which is impure from a Nix perspective. It proposes accounting for those libraries ahead of time and avoiding direct automated Forge installer download. Source: <a href="https://github.com/TLATER/nix-minecraft-servers/blob/d7271c7db69a7195fd5399f779299580a5fbea48/README.md#L12-L43">README lines 12-43</a>.
+  </p>
+
+  <h3>Modpack analysis</h3>
+  <p>
+    The README explains why modpack formats are difficult: CurseForge manifests may not include full direct download links, CurseForge access can be awkward, and many server zips are arbitrary author-defined directories/scripts/installers. It sketches possible future handling for manifest JSON and server-file packs, but does not implement it. Source: <a href="https://github.com/TLATER/nix-minecraft-servers/blob/d7271c7db69a7195fd5399f779299580a5fbea48/README.md#L45-L138">README lines 45-138</a>.
+  </p>
+
+  <h3>Relevance</h3>
+  <p>
+    TLATER's analysis is valuable because it explains why purely packaging old Forge/modpack ecosystems is hard. It supports the pragmatic approach used by the current GTNH Daily module: runtime bootstrap from upstream artifacts, then pin and reconcile the exact updater state needed for repeatability.
+  </p>
+
+  <h2>Section 8: jyooru/nix-minecraft-servers</h2>
+  <p>
+    Repository: <a href="https://github.com/jyooru/nix-minecraft-servers">jyooru/nix-minecraft-servers</a>. Researched commit: <code>48387fe72c74ad7b5bca624606f18d85e697022a</code>.
+  </p>
+  <p>
+    This older flake packaged Minecraft server versions for Nix and exposed them through a package set and overlay. Its README now says the project is no longer maintained and points to Infinidoge's <code>nix-minecraft</code>. Source: <a href="https://github.com/jyooru/nix-minecraft-servers/blob/48387fe72c74ad7b5bca624606f18d85e697022a/README.md#L1-L8">README lines 1-8</a>.
+  </p>
+  <p>
+    Relevance: historical only. Use Infinidoge instead for this category.
+  </p>
+
+  <h2>Section 9: Ninlives/minecraft.nix</h2>
+  <p>
+    Repository: <a href="https://github.com/Ninlives/minecraft.nix">Ninlives/minecraft.nix</a>. Researched commit: <code>a0b850c5a1ca542026b594d14576bacddef6dfeb</code>.
+  </p>
+  <p>
+    <code>minecraft.nix</code> packages vanilla and Fabric client/server derivations. It can run a client or server with <code>nix run</code>. Its <code>withConfig</code> function can add mods, resource packs, and shader packs. Source: <a href="https://github.com/Ninlives/minecraft.nix/blob/a0b850c5a1ca542026b594d14576bacddef6dfeb/README.md#L1-L27">README lines 1-27</a>.
+  </p>
+  <p>
+    The options table says client options include mods/resourcePacks/shaderPacks/auth/declarative, while server options include mods and declarative; server declarative mode is currently a no-op. Source: <a href="https://github.com/Ninlives/minecraft.nix/blob/a0b850c5a1ca542026b594d14576bacddef6dfeb/README.md#L77-L95">README lines 77-95</a>.
+  </p>
+  <p>
+    Relevance: useful for understanding fully Nix-managed client/server derivations and resource/shader pack handling, but not a NixOS GTNH Daily server management replacement.
+  </p>
+
+  <h2>Section 10: iamanaws/endernix</h2>
+  <p>
+    Repository: <a href="https://github.com/iamanaws/endernix">iamanaws/endernix</a>. Researched commit: <code>05d1f2016f24660b2774ba907fff82824abbcb30</code>.
+  </p>
+  <p>
+    <code>endernix</code> builds on <code>minecraft.nix</code> and manages multiple isolated Minecraft installations. Its README says <code>minecraft.nix</code> has a single shared game directory problem, while endernix gives each installation its own isolated game directory with saves, screenshots, and config. Source: <a href="https://github.com/iamanaws/endernix/blob/05d1f2016f24660b2774ba907fff82824abbcb30/README.adoc#L1-L10">README lines 1-10</a>.
+  </p>
+  <p>
+    It has a Modrinth lockfile flow: write <code>mods.nix</code>, run <code>nix run github:iamanaws/endernix#update-mods -- mods.nix</code>, and use the generated <code>mods.lock.nix</code> in <code>mkInstance</code>. Source: <a href="https://github.com/iamanaws/endernix/blob/05d1f2016f24660b2774ba907fff82824abbcb30/README.adoc#L13-L45">README lines 13-45</a>.
+  </p>
+  <p>
+    <code>mkInstance</code> creates an isolated Minecraft installation with parameters such as name, version, loader, mods, resource packs, shader packs, JVM args, and extra config. Source: <a href="https://github.com/iamanaws/endernix/blob/05d1f2016f24660b2774ba907fff82824abbcb30/README.adoc#L160-L187">README lines 160-187</a>.
+  </p>
+  <p>
+    Relevance: useful for client installation and Modrinth lockfile ideas. It is not a server-service framework for GTNH Daily.
+  </p>
+
+  <h2>Section 11: Current custom GTNH Daily implementation in this repo</h2>
+  <p>
+    The current implementation is split across <code>nix/modules/gtnh-daily-server.nix</code> and <code>nix/modules/prismlauncher.nix</code>. It exists because GTNH Daily needs both a server and a matching client, and both must follow the same server-published Daily manifest.
+  </p>
+
+  <h3>Server module responsibilities</h3>
+  <ul>
+    <li>Create system user/group <code>gtnh-daily</code>.</li>
+    <li>Create persistent directories under <code>/var/lib/gtnh-daily</code>.</li>
+    <li>Bootstrap missing server files from GTNH Daily GitHub Actions artifacts.</li>
+    <li>Initialize <code>gtnh-daily-updater</code> state if missing.</li>
+    <li>Reconcile declared server extras/excludes.</li>
+    <li>Accept the EULA.</li>
+    <li>Run the server with Java 25, ZGC, GTNH Java 17+ launch files, and port 25566.</li>
+    <li>Provide a FIFO stdin socket for console commands.</li>
+    <li>Run scheduled updates with pre-update backups.</li>
+    <li>Publish the exact applied manifest and SHA-256 hash for clients.</li>
+    <li>Provide rollback command.</li>
+    <li>Open the Minecraft port.</li>
+  </ul>
+
+  <h3>Client/Home Manager module responsibilities</h3>
+  <ul>
+    <li>Install Prism Launcher with JDK 25.</li>
+    <li>Create desktop entries for stable and Daily GTNH.</li>
+    <li>Bootstrap the Daily Prism instance from GTNH Daily Prism/MultiMC artifacts if missing.</li>
+    <li>Fetch the server-published manifest/hash over SSH.</li>
+    <li>Verify manifest SHA-256 before use.</li>
+    <li>Initialize <code>gtnh-daily-updater</code> state if missing.</li>
+    <li>Reconcile declared client extras.</li>
+    <li>Download and verify resource/shader packs by URL/hash instead of committing zips.</li>
+    <li>Unpack resource packs to names used by <code>options.txt</code>.</li>
+    <li>Write selected resource packs.</li>
+    <li>Run client sync as the normal user.</li>
+    <li>Refuse to mutate files while Prism/Minecraft appears active.</li>
+    <li>Create full Prism instance backups before updates.</li>
+    <li>Schedule hourly user sync timer.</li>
+  </ul>
+
+  <h3>Why it is different from itzg</h3>
+  <p>
+    itzg's GTNH implementation is optimized for Docker and GTNH release server packs. The current custom module is optimized for NixOS/Home Manager and GTNH Daily. The key difference is the source of truth: itzg tracks selected server pack downloads using <code>.gtnh-version</code>, while our setup tracks the server-applied Daily manifest hash and makes clients use the exact same manifest.
+  </p>
+
+  <h3>Why it is different from nixpkgs/Infinidoge modules</h3>
+  <p>
+    nixpkgs and Infinidoge assume the Minecraft server package or server files are already available in a form their modules can run. They provide excellent service management, but not the GTNH Daily-specific artifact/updater/client-pinning pipeline. Our module has to include that pipeline.
+  </p>
+
+  <h2>Section 12: Comparison table</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Concern</th>
+        <th>itzg GTNH</th>
+        <th>nixpkgs minecraft-server</th>
+        <th>Infinidoge nix-minecraft</th>
+        <th>Current custom module</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Runs on NixOS without Docker</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>Yes</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Runs in Docker</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>GTNH release server support</td>
+        <td>Yes</td>
+        <td>No</td>
+        <td>No direct support</td>
+        <td>Daily-focused, not release-focused</td>
+      </tr>
+      <tr>
+        <td>GTNH Daily GitHub Actions artifact bootstrap</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>gtnh-daily-updater</code></td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Server-published pinned manifest</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Prism client sync</td>
+        <td>No</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>Multiple servers</td>
+        <td>Yes via compose</td>
+        <td>No</td>
+        <td>Yes</td>
+        <td>No, one Daily server</td>
+      </tr>
+      <tr>
+        <td>FIFO console</td>
+        <td>Container helpers / console pipe options</td>
+        <td>Yes</td>
+        <td>Yes, optional</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td>tmux console</td>
+        <td>No</td>
+        <td>No</td>
+        <td>Yes, optional/default</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Declarative file/symlink abstraction</td>
+        <td>Environment variables and volume contents</td>
+        <td>Limited to server.properties/whitelist</td>
+        <td>Yes</td>
+        <td>Custom targeted reconciliation</td>
+      </tr>
+      <tr>
+        <td>World backup boundary</td>
+        <td>Volume/operator responsibility</td>
+        <td>dataDir/operator responsibility</td>
+        <td>dataDir/operator responsibility</td>
+        <td>Explicitly documented and excluded from Nix</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Section 13: Design lessons for this repo</h2>
+  <h3>Keep</h3>
+  <ul>
+    <li>Keep the custom Daily bootstrap/update/client-sync pipeline.</li>
+    <li>Keep server-published manifest pinning as the core anti-drift mechanism.</li>
+    <li>Keep mutable world data outside Nix.</li>
+    <li>Keep not committing large resource/shader pack zips; declare URLs and hashes instead.</li>
+    <li>Keep the FIFO console pattern.</li>
+    <li>Keep strong systemd hardening where it does not break GTNH.</li>
+  </ul>
+
+  <h3>Consider borrowing later</h3>
+  <ul>
+    <li>From Infinidoge: <code>environmentFile</code> support for secrets such as <code>GITHUB_TOKEN</code>.</li>
+    <li>From Infinidoge/aster-void: a generic <code>symlinks</code>/<code>files</code> abstraction if this repo grows more Minecraft servers.</li>
+    <li>From Infinidoge: port duplicate assertions if multiple GTNH-like servers are added.</li>
+    <li>From itzg: document GTNH server defaults more explicitly, especially <code>ALLOW_FLIGHT</code>, <code>LEVEL_TYPE=rwg</code>, <code>DIFFICULTY=hard</code>, and command blocks.</li>
+    <li>From itzg/mc-backup patterns: consider a separate world backup service/timer, explicitly outside the declarative bootstrap.</li>
+  </ul>
+
+  <h3>Avoid</h3>
+  <ul>
+    <li>Do not switch to Docker just to avoid maintaining the current NixOS module; it would lose Daily-specific reproducibility unless reimplemented inside/around the container.</li>
+    <li>Do not force the whole GTNH server tree into the Nix store unless prepared to solve mutable configs, updater state, artifact expiry, world data, and old Forge packaging complexity.</li>
+    <li>Do not use nixpkgs <code>services.minecraft-server</code> directly for GTNH Daily; it is too generic.</li>
+    <li>Do not use unpinned <code>latest</code> semantics for client and server independently; that recreates the drift problem the pinned manifest flow solves.</li>
+  </ul>
+
+  <h2>Section 14: Source index</h2>
+  <ul>
+    <li><a href="https://github.com/itzg/docker-minecraft-server">itzg/docker-minecraft-server</a>, commit <code>1a8844cb625d753409f02f3cfbd46eefd5c5d939</code></li>
+    <li><a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/docs/types-and-platforms/mod-platforms/gtnh.md">itzg GTNH docs</a></li>
+    <li><a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-deployGTNH">itzg GTNH deployment script</a></li>
+    <li><a href="https://github.com/itzg/docker-minecraft-server/blob/1a8844cb625d753409f02f3cfbd46eefd5c5d939/scripts/start-finalExec">itzg final execution script</a></li>
+    <li><a href="https://wiki.gtnewhorizons.com/wiki/Server_Setup_(Container)">GTNH wiki container setup</a></li>
+    <li><a href="https://github.com/NixOS/nixpkgs/blob/b5e9cca1667666e70abf6814c62dc0b1c759d7b1/nixos/modules/services/games/minecraft-server.nix">nixpkgs minecraft-server module</a>, local commit <code>b5e9cca1667666e70abf6814c62dc0b1c759d7b1</code></li>
+    <li><a href="https://github.com/Infinidoge/nix-minecraft">Infinidoge/nix-minecraft</a>, commit <code>e6f8bec35104ca5955efe73742da58d2823684f7</code></li>
+    <li><a href="https://github.com/mkaito/nixos-modded-minecraft-servers">mkaito/nixos-modded-minecraft-servers</a>, commit <code>68f2066499c035fd81c9dacfea2f512d6b0b62e5</code></li>
+    <li><a href="https://github.com/aster-void/nix-mc">aster-void/nix-mc</a>, commit <code>458b4590d6b41f06a54397a819d7307fc7d63891</code></li>
+    <li><a href="https://github.com/TLATER/nix-minecraft-servers">TLATER/nix-minecraft-servers</a>, commit <code>d7271c7db69a7195fd5399f779299580a5fbea48</code></li>
+    <li><a href="https://github.com/jyooru/nix-minecraft-servers">jyooru/nix-minecraft-servers</a>, commit <code>48387fe72c74ad7b5bca624606f18d85e697022a</code></li>
+    <li><a href="https://github.com/Ninlives/minecraft.nix">Ninlives/minecraft.nix</a>, commit <code>a0b850c5a1ca542026b594d14576bacddef6dfeb</code></li>
+    <li><a href="https://github.com/iamanaws/endernix">iamanaws/endernix</a>, commit <code>05d1f2016f24660b2774ba907fff82824abbcb30</code></li>
+  </ul>
+</body>
+</html>
