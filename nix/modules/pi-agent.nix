@@ -23,7 +23,7 @@ in
       {
         programs.pi-coding-agent = {
           enable = true;
-          package = inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.coding-agent-bun;
+          package = inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent;
           extraPackages = [ pkgs.nodejs_22 ];
           settings.lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
           settings.packages = [
