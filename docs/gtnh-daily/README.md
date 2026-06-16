@@ -37,5 +37,7 @@ ssh -N -L 25566:localhost:25566 nemesis
 7. [state-and-drift.md](./state-and-drift.md) — what we found on the live server/client and how it maps to declarative config.
 8. [recovery.md](./recovery.md) — wipe/rebuild flow and operational recovery notes.
 9. [implementation-notes.md](./implementation-notes.md) — guide for reading the Nix modules and generated shell/Python scripts.
+10. [research-server-management.md](./research-server-management.md) — research note comparing itzg Docker GTNH, nixpkgs, and Minecraft server flakes.
+11. [research-server-management.html](./research-server-management.html) — exhaustive plain HTML walkthrough of the same research, with each implementation separated into sections.
 
 `docs/games/gtnh-daily.md` is the older long-form administration/history record. Start here instead unless you need historical migration notes.
