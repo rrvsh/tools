@@ -220,3 +220,7 @@ Sync is the normal command because it performs both “make sure the instance ex
 - The timer is enabled by `Install.WantedBy = [ "timers.target" ]`.
 - If the timer fires while Prism/Minecraft is open, sync refuses to mutate files and exits.
 - Logs are visible with `journalctl --user -u gtnh-daily-client-sync.service`.
+
+### Booting after updates
+
+- The flag `-Dfml.queryResult=confirm` is added as during updates, blocks or items may be removed. Launching with this flag skips the need to send a `/fml confirm` to boot the server.
