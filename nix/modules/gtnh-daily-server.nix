@@ -362,6 +362,7 @@
                   -Xmx10G \
                   -XX:+UseZGC \
                   -Dfml.readTimeout=180 \
+                  -Dfml.queryResult=confirm \
                   @java9args.txt \
                   -jar lwjgl3ify-forgePatches.jar \
                   nogui
