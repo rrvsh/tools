@@ -261,6 +261,75 @@
         ${pkgs.systemd}/bin/systemctl start ${unit}.service
         echo "Rolled back ${serverDir} from $backup"
       '';
+      # Restore only the active Minecraft world from the latest or selected FTBUtilities/ServerUtilities zip backup.
+      ftbuRollback = pkgs.writeShellScriptBin "gtnh-daily-ftbu-rollback" ''
+                set -euo pipefail
+                if [ "$(${pkgs.coreutils}/bin/id -u)" != 0 ]; then
+                  echo "Run as root: sudo gtnh-daily-ftbu-rollback [backup.zip]" >&2
+                  exit 1
+                fi
+                if [ "$#" -gt 1 ]; then
+                  echo "Usage: sudo gtnh-daily-ftbu-rollback [backup.zip]" >&2
+                  exit 1
+                fi
+                backup="''${1:-}"
+                if [ -z "$backup" ]; then
+                  backup="$(${pkgs.findutils}/bin/find ${serverDir}/backups -maxdepth 1 -type f -name '*.zip' -printf '%T@ %p\n' | ${pkgs.coreutils}/bin/sort -nr | ${pkgs.gawk}/bin/awk 'NR == 1 { print $2 }')"
+                fi
+                if [ -z "$backup" ] || [ ! -f "$backup" ]; then
+                  echo "No FTBUtilities/ServerUtilities zip backup found under ${serverDir}/backups" >&2
+                  exit 1
+                fi
+                world="$(${pkgs.gawk}/bin/awk -F= '$1 == "level-name" { print $2 }' ${serverDir}/server.properties)"
+                if [ -z "$world" ]; then
+                  echo "Could not read level-name from ${serverDir}/server.properties" >&2
+                  exit 1
+                fi
+                ts="$(${pkgs.coreutils}/bin/date -u +%Y%m%d-%H%M%S)"
+                work="$(${pkgs.coreutils}/bin/mktemp -d --tmpdir gtnh-daily-ftbu-rollback.XXXXXX)"
+                cleanup() {
+                  ${pkgs.coreutils}/bin/rm -rf "$work"
+                }
+                trap cleanup EXIT
+                ${pkgs.python3}/bin/python3 - "$backup" "$work" "$world" <<'PY'
+        import os
+        import sys
+        import zipfile
+        backup, work, world = sys.argv[1:]
+        with zipfile.ZipFile(backup) as z:
+            top_level = sorted({name.split('/', 1)[0] for name in z.namelist() if name and not name.startswith('/')})
+            z.extractall(work)
+        if not os.path.isfile(os.path.join(work, world, 'level.dat')):
+            found = []
+            for root, _, files in os.walk(work):
+                if 'level.dat' in files:
+                    found.append(os.path.relpath(root, work))
+            print(f"Backup {backup} does not contain active world {world!r} with level.dat", file=sys.stderr)
+            if found:
+                print('Worlds found in backup:', file=sys.stderr)
+                for path in sorted(found):
+                    print(f"  {path}", file=sys.stderr)
+            sys.exit(1)
+        with open(os.path.join(work, 'top-level'), 'w') as f:
+            for name in top_level:
+                if name:
+                    f.write(name + '\n')
+        PY
+                ${pkgs.systemd}/bin/systemctl stop ${unit}.service || true
+                while IFS= read -r path; do
+                  [ -n "$path" ] || continue
+                  if [ -e "${serverDir}/$path" ]; then
+                    ${pkgs.coreutils}/bin/mv "${serverDir}/$path" "${serverDir}/$path.pre-ftbu-restore-$ts"
+                  fi
+                  parent="$(${pkgs.coreutils}/bin/dirname "${serverDir}/$path")"
+                  ${pkgs.coreutils}/bin/mkdir -p "$parent"
+                  ${pkgs.coreutils}/bin/mv "$work/$path" "${serverDir}/$path"
+                  ${pkgs.coreutils}/bin/chown -R ${user}:${group} "${serverDir}/$path"
+                  echo "Restored ${serverDir}/$path from $backup"
+                done < "$work/top-level"
+                ${pkgs.systemd}/bin/systemctl start ${unit}.service
+                echo "Previous restored paths were moved aside with suffix .pre-ftbu-restore-$ts"
+      '';
     in
     {
       # System user/group declaration makes ownership reproducible across rebuilds.
@@ -275,7 +344,10 @@
         };
         groups.${group} = { };
       };
-      environment.systemPackages = [ rollback ];
+      environment.systemPackages = [
+        rollback
+        ftbuRollback
+      ];
       systemd = {
         # Tmpfiles enforces directory existence/modes without overwriting mutable contents.
         tmpfiles.rules = [
