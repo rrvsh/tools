@@ -112,6 +112,20 @@ sudo gtnh-daily-rollback
 
 Rollback stops the Daily server and replaces the server directory from backup. It does not automatically roll back clients; run client sync carefully afterward if the server manifest changed.
 
+Restore only the active world from the latest in-instance FTBUtilities/ServerUtilities zip backup:
+
+```sh
+sudo gtnh-daily-ftbu-rollback
+```
+
+To restore a specific in-instance zip backup instead:
+
+```sh
+sudo gtnh-daily-ftbu-rollback /var/lib/gtnh-daily/server/backups/2026-06-20-14-46-50.zip
+```
+
+This stops the Daily server, reads the active world name from `server.properties`, validates that the zip contains that world with `level.dat`, moves aside each top-level path present in the zip, extracts those paths into the server directory, fixes ownership, and starts the server again. This preserves ServerUtilities/FTBUtilities additional backup paths such as `journeymap`, `TCNodeTracker`, NEI saves, or `visualprospecting` when they are included in the zip.
+
 ## Safety guarantees
 
 The bootstrap/update flow is designed to be idempotent:
