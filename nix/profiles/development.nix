@@ -82,6 +82,7 @@ in
           inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.git-bug
           ddgr
           gh
+          git-lfs
           ripgrep
         ];
         home.shellAliases = {
