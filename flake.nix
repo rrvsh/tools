@@ -44,5 +44,9 @@
     };
     mac-app-util.url = "github:hraban/mac-app-util";
     pi.url = "github:rrvsh/pi-coding-agent-nix";
+    pi-claude-bridge = {
+      url = "github:rrvsh/pi-claude-bridge-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }
