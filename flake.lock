@@ -163,6 +163,27 @@
         "type": "github"
       }
     },
+    "flake-parts_4": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "pi-claude-bridge",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1778716662,
+        "narHash": "sha256-m1Yf0wZ8j1OHjTc2UwHwyQRSnNeSgLJOd7q5Y45hzi4=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "f7c1a2d347e4c52d5fb8d10cb4d94b5884e546fb",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": [
@@ -624,6 +645,21 @@
         "type": "github"
       }
     },
+    "import-tree_3": {
+      "locked": {
+        "lastModified": 1778781969,
+        "narHash": "sha256-Jjuz5CmSkur8KvLDoGa+vylEp+RkQtv4mt/qcMznpH0=",
+        "owner": "vic",
+        "repo": "import-tree",
+        "rev": "d321337efd0f23a9eb14a42adb7b2c29313ab274",
+        "type": "github"
+      },
+      "original": {
+        "owner": "vic",
+        "repo": "import-tree",
+        "type": "github"
+      }
+    },
     "mac-app-util": {
       "inputs": {
         "cl-nix-lite": "cl-nix-lite",
@@ -893,6 +929,28 @@
         "type": "github"
       }
     },
+    "pi-claude-bridge": {
+      "inputs": {
+        "flake-parts": "flake-parts_4",
+        "import-tree": "import-tree_3",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1782466286,
+        "narHash": "sha256-+Zc0b1fIydm0OZyh1AfDykRZBLQYR82I/93Q/mLKibk=",
+        "owner": "rrvsh",
+        "repo": "pi-claude-bridge-nix",
+        "rev": "f69bd3a63349d115db44a6360041df11444c222b",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "repo": "pi-claude-bridge-nix",
+        "type": "github"
+      }
+    },
     "pre-commit-hooks": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -934,6 +992,7 @@
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
         "nixpkgs-master": "nixpkgs-master",
         "pi": "pi",
+        "pi-claude-bridge": "pi-claude-bridge",
         "sops-nix": "sops-nix",
         "waybar-peek": "waybar-peek"
       }
