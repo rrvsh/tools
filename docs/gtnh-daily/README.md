@@ -31,13 +31,15 @@ ssh -N -L 25566:localhost:25566 nemesis
 1. [glossary.md](./glossary.md) — plain-language definitions for Minecraft, Linux, systemd, Nix, and updater terms.
 2. [concepts.md](./concepts.md) — Minecraft/Forge/GTNH concepts and file layout.
 3. [daily-builds.md](./daily-builds.md) — GTNH Daily artifacts, manifests, and why client/server pinning matters.
-4. [gtnh-daily-updater.md](./gtnh-daily-updater.md) — updater behavior, state, extras/excludes, config git repo, and our patch.
-5. [server.md](./server.md) — NixOS server user, paths, services, bootstrap, update, rollback, firewall, and world-data boundary.
-6. [client.md](./client.md) — Prism Launcher instance, bootstrap, client sync, resource packs, shader packs, desktop entries, and user timer.
-7. [state-and-drift.md](./state-and-drift.md) — what we found on the live server/client and how it maps to declarative config.
-8. [recovery.md](./recovery.md) — wipe/rebuild flow and operational recovery notes.
-9. [implementation-notes.md](./implementation-notes.md) — guide for reading the Nix modules and generated shell/Python scripts.
-10. [research-server-management.md](./research-server-management.md) — research note comparing itzg Docker GTNH, nixpkgs, and Minecraft server flakes.
-11. [research-server-management.html](./research-server-management.html) — exhaustive plain HTML walkthrough of the same research, with each implementation separated into sections.
+4. [pack-builds.md](./pack-builds.md) — upstream GTNH config repo and DreamAssemblerXXL Daily build pipeline.
+5. [gtnh-daily-updater.md](./gtnh-daily-updater.md) — updater behavior, state, extras/excludes, config git repo, and our patch.
+6. [server.md](./server.md) — NixOS server user, paths, services, bootstrap, update, rollback, firewall, and world-data boundary.
+7. [client.md](./client.md) — Prism Launcher instance, bootstrap, client sync, resource packs, shader packs, desktop entries, and user timer.
+8. [state-and-drift.md](./state-and-drift.md) — what we found on the live server/client and how it maps to declarative config.
+9. [recovery.md](./recovery.md) — wipe/rebuild flow and operational recovery notes.
+10. [implementation-notes.md](./implementation-notes.md) — guide for reading the Nix modules and generated shell/Python scripts.
+11. [research-server-management.md](./research-server-management.md) — research note comparing itzg Docker GTNH, nixpkgs, and Minecraft server flakes.
+12. [nix-horizons-handoff.md](./nix-horizons-handoff.md) — preserved standalone nix-horizons research handoff before resetting that repo.
+13. [research-server-management.html](./research-server-management.html) — exhaustive plain HTML walkthrough of the same research, with each implementation separated into sections.
 
 `docs/games/gtnh-daily.md` is the older long-form administration/history record. Start here instead unless you need historical migration notes.

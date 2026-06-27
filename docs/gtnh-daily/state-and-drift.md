@@ -87,4 +87,11 @@ The explicit config policy we currently enforce in Nix is:
 - updater extras/excludes are reconciled;
 - client resource pack selection is set in `options.txt` when that file exists.
 
+Manual local config overrides applied on 2026-06-27:
+
+- `config/GregTech/Pollution.cfg`: `B:"Activate Pollution"=false` on both server and Daily Prism client;
+- `config/bogosorter.cfg`: `I:dropoffRadius=16` on both server and Daily Prism client.
+
+These overrides are live mutable config edits, not declarative Nix policy yet. The updater's config merge normally preserves local edits, but a future pack config conflict may overwrite them because the updater merges pack config changes with pack-side conflict preference. To make these settings reproducible, add a targeted post-bootstrap/post-update config patch step rather than symlinking whole config files from the Nix store.
+
 World data, logs, generated maps, backups, caches, and runtime/player files were intentionally excluded.
