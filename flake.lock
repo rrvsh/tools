@@ -922,11 +922,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782518187,
-        "narHash": "sha256-zI5k/1wA4sNGIYlQTuOk6MbtJKUpS9oMhL6aWEFjWXM=",
+        "lastModified": 1782521032,
+        "narHash": "sha256-s8hrrD1cJVHDDBVjBqbDEwE3TP+Ihs5XV7ZjVOwV9ws=",
         "owner": "rrvsh",
         "repo": "pi-claude-bridge-nix",
-        "rev": "85a4de18b3bbd5dfc8b05c71f403e1e1329aa9fb",
+        "rev": "4b61075072b3e330a4a83aa79c07c8876657684c",
         "type": "github"
       },
       "original": {
