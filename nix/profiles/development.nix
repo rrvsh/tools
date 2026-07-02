@@ -1,6 +1,5 @@
 {
   config,
-  inputs,
   lib,
   ...
 }:
@@ -79,7 +78,6 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [
-          inputs.nixpkgs-master.legacyPackages.${pkgs.stdenv.hostPlatform.system}.git-bug
           ddgr
           gh
           git-lfs
@@ -87,7 +85,6 @@ in
         ];
         home.shellAliases = {
           cd = "echo \"Please use z\"";
-          gb = "git-bug termui";
           gc = "git commit";
           gcam = "git commit -am";
           gcamend = "git commit -a --amend --no-edit";
@@ -99,8 +96,8 @@ in
           gds = "git diff --staged";
           grc = "git rebase --continue";
           gs = "git status";
-          gu = "git push && git-bug push";
-          gy = "git pull && git-bug pull";
+          gu = "git push";
+          gy = "git pull";
           v = "$EDITOR";
           e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
         };
@@ -117,7 +114,7 @@ in
             settings = {
               add_newline = false;
               format = lib.strings.concatStrings [
-                "$hostname$directory$git_branch$git_status$git_state\${custom.git-bug}"
+                "$hostname$directory$git_branch$git_status$git_state"
                 "$fill"
                 "$nix_shell"
                 "$time"
@@ -138,17 +135,6 @@ in
               shlvl.disabled = false;
               username.disabled = true;
               fill.symbol = " ";
-              custom.git-bug = {
-                when = ''
-                  git for-each-ref --count=1 refs/bugs/ > /dev/null 2>&1 || exit 1
-                  l=$(git for-each-ref refs/bugs/ --format="%(objectname) %(refname:lstrip=2)" 2>/dev/null | sort)
-                  r=$(git for-each-ref refs/remotes/origin/bugs/ --format="%(objectname) %(refname:lstrip=4)" 2>/dev/null | sort)
-                  [ "$l" != "$r" ]
-                '';
-                command = "true";
-                format = "[ 🐛]($style)";
-                shell = [ "${lib.getExe pkgs.bash}" ];
-              };
             };
           };
           zoxide.enable = true;
