@@ -28,6 +28,8 @@ in
         # Exact Prism instance name used by launcher metadata, desktop entries, and sync scripts.
         gtnhDailyInstanceName = "GT New Horizons (Daily)";
         gtnhDailyInstanceDir = "${config.home.homeDirectory}/.local/share/PrismLauncher/instances/${gtnhDailyInstanceName}";
+        # Keep only the newest successful pre-sync backups; each archive is about 2 GiB.
+        gtnhDailyBackupRetentionCount = 5;
         # Repo-built updater includes our local manifest pinning patch.
         gtnhDailyUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.gtnh-daily-updater;
         # Resource/shader pack artifacts are downloaded at bootstrap time instead of committed to git.
@@ -308,6 +310,13 @@ in
             --instance-dir "$instance_dir" \
             --manifest-file "$local_manifest"
           printf '%s\n' "$fetched_hash" > "$local_hash"
+
+          ${pkgs.findutils}/bin/find "$backup_dir" -maxdepth 1 -type f -name 'gtnh-daily-client-*.tar.zst' -printf '%T@ %p\0' \
+            | ${pkgs.coreutils}/bin/sort -z -nr \
+            | ${pkgs.coreutils}/bin/tail -z -n +$(( ${toString gtnhDailyBackupRetentionCount} + 1 )) \
+            | ${pkgs.gawk}/bin/awk -v RS='\0' '{ sub(/^[^ ]+ /, ""); if ($0 != "") print $0 }' \
+            | ${pkgs.findutils}/bin/xargs -r -d '\n' ${pkgs.coreutils}/bin/rm -f --
+
           echo "Synced GTNH Daily client to $server manifest $expected_hash"
         '';
       in
@@ -344,6 +353,10 @@ in
             };
             Service = {
               Type = "oneshot";
+              # Run sync/backup work at lower CPU and disk priority so interactive desktop use wins.
+              Nice = 10;
+              IOSchedulingClass = "best-effort";
+              IOSchedulingPriority = 7;
               ExecStart = "${gtnhDailyClientSync}/bin/gtnh-daily-client-sync";
             };
           };
