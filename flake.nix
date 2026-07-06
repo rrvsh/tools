@@ -4,6 +4,7 @@
     inputs@{ flake-parts, import-tree, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } ((import-tree ./nix) // { flake.paths.root = ./.; });
   inputs = {
+    agent-browser.url = "github:rrvsh/agent-browser-nix";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
