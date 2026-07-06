@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  inputs,
   ...
 }:
 let
@@ -78,6 +79,7 @@ in
       { pkgs, ... }:
       {
         home.packages = with pkgs; [
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.gtnh-daily-updater
           ddgr
           gh
           git-lfs
