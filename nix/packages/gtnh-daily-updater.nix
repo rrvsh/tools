@@ -11,7 +11,7 @@
         inherit version;
         src = inputs.gtnh-daily-updater;
         patches = [ ./patches/gtnh-daily-updater-manifest-file.patch ];
-        vendorHash = "sha256-qW5Ybfbo+ss/f9QZv1zTCERhk8cN8I3A3kuPs2eA8rw=";
+        vendorHash = "sha256-PXBvGE3UJTJzV1nCAQXlT3OnLBSmNxt6x7lqisdYzyU=";
         nativeCheckInputs = [ pkgs.git ];
         meta = {
           description = "Automated updater for GT: New Horizons daily builds";
