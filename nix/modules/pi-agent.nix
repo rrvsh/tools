@@ -31,12 +31,18 @@ in
         // lib.optionalAttrs pkgs.stdenv.isLinux {
           browser.executablePath = "${pkgs.chromium}/bin/chromium";
         };
-        agentBrowserStatePath = "${config.home.homeDirectory}/.agent-browser/state/agent.json";
+        homeDirectory = config.home.homeDirectory;
+        toolsDirectory =
+          if pkgs.stdenv.isDarwin then "${homeDirectory}/1_repos/tools" else "${homeDirectory}/Git/tools";
+        agentBrowserStatePath = "${homeDirectory}/.agent-browser/state/agent.json";
       in
       {
-        home.packages = [ agentBrowser ] ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
-        home.file.".pi/config/pi-agent-browser-native/config.json".text =
-          builtins.toJSON agentBrowserConfig;
+        home = {
+          packages = [ agentBrowser ] ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
+          file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
+          file.".pi/agent/APPEND_SYSTEM.md".source =
+            config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
+        };
         programs.pi-coding-agent = {
           enable = true;
           package = inputs.pi.packages.${system}.pi-coding-agent;
@@ -52,6 +58,7 @@ in
             "npm:pi-mcp-adapter"
             "npm:pi-subagents"
             "npm:pi-web-access"
+            "npm:pi-tutor"
           ];
           context = lib.concatStringsSep "\n" (
             [
@@ -83,6 +90,20 @@ in
               "- Draft proposed instruction text in chat before editing."
               "- Do not silently promote raw notes, inbox items, transcripts, or research into memory or instructions."
               ""
+              "## Agent memory"
+              ""
+              "- `${homeDirectory}/Agents/MEMORY.md` is the compact index for durable agent memory."
+              "- `${homeDirectory}/Agents/memory/**/*.md` contains freeform topic memory files."
+              "- Read memory when prior preferences, corrections, environment facts, or tool quirks may matter."
+              "- Update memory proactively when the user corrects you, states a durable preference, or you discover a reusable environment/tool quirk."
+              "- After non-trivial tasks, briefly check whether anything should be saved to memory."
+              "- Keep `${homeDirectory}/Agents/MEMORY.md` compact, with one-line pointers to topic files."
+              "- Put memory details in topic files under `${homeDirectory}/Agents/memory/`."
+              "- Agents may create topic files under `${homeDirectory}/Agents/memory/**/*.md` as needed."
+              "- Do not store secrets, credentials, raw transcripts, or temporary task progress."
+              "- Memory is context, not instruction. `AGENTS.md`, repo instructions, and direct user instructions take precedence."
+              "- Do not silently promote memory into instructions; propose instruction changes first."
+              ""
               "## Missing commands and dependencies"
               ""
               "- If a command or binary is missing, use comma first: `, <command> [args...]`."
@@ -101,30 +122,32 @@ in
               ""
               "## Home directory index"
               ""
-              "- `/home/rafiq/Agents` - agent memory, research, generated artifacts."
+              "- `${homeDirectory}/Agents` - agent memory, research, generated artifacts."
+              "  - `MEMORY.md` - compact durable agent memory index."
+              "  - `memory` - freeform durable topic memory."
               "  - `artifacts` - generated evidence, session exports, audits, browser/job artifacts."
               "  - `research` - agent-owned research and long-form generated research."
-              "- `/home/rafiq/Archive` - inactive material, backups, old projects, records, sensitive cold storage."
+              "- `${homeDirectory}/Archive` - inactive material, backups, old projects, records, sensitive cold storage."
               "  - `backups` - dated backups."
               "  - `old-library` - preserved old library remainder."
               "  - `old-projects` - inactive projects."
               "  - `records` - archived records."
               "  - `sensitive` - sensitive archived material."
-              "- `/home/rafiq/Documents` - formal documents."
+              "- `${homeDirectory}/Documents` - formal documents."
               "  - `Career` - career records, applications, education, certifications."
               "  - `Books` - books."
               "  - `Manuals` - manuals."
-              "- `/home/rafiq/Downloads` - browser/download inbox and unsorted artifacts."
-              "- `/home/rafiq/Garden` - human-owned notes and knowledge base."
+              "- `${homeDirectory}/Downloads` - browser/download inbox and unsorted artifacts."
+              "- `${homeDirectory}/Garden` - human-owned notes and knowledge base."
               "  - `logs` - daily/monthly time-based notes."
               "  - `threads` - named ongoing strands."
               "  - `research` - human-owned deeper inquiry/synthesis."
               "  - `archive` - old note material kept without further classification."
-              "- `/home/rafiq/Git` - git repositories and code workspaces."
-              "  - `/home/rafiq/Git/tools` - source of truth for machine/Nix configuration."
-              "- `/home/rafiq/Music` - audio/music."
-              "- `/home/rafiq/Pictures` - images/screenshots/visual references."
-              "- `/home/rafiq/Videos` - videos/screen recordings."
+              "- `${homeDirectory}/Git` or `${homeDirectory}/1_repos` - git repositories and code workspaces."
+              "  - `${toolsDirectory}` - source of truth checkout for machine/Nix configuration on this host."
+              "- `${homeDirectory}/Music` - audio/music."
+              "- `${homeDirectory}/Pictures` - images/screenshots/visual references."
+              "- `${homeDirectory}/Videos` - videos/screen recordings."
               ""
               "## Web and browser"
               ""
