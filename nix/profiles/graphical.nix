@@ -61,10 +61,23 @@ in
           home.packages = with pkgs; [
             mixxx
             libnotify
+            activitywatch
+            aw-watcher-window-wayland
           ];
           services = {
             hypridle.enable = true;
             dunst.enable = true;
+            activitywatch = {
+              enable = true;
+              package = pkgs.activitywatch;
+              watchers.aw-watcher-window-wayland = {
+                package = pkgs.aw-watcher-window-wayland;
+              };
+            };
+          };
+          systemd.user.services.activitywatch-watcher-aw-watcher-window-wayland.Service = {
+            Restart = "on-failure";
+            RestartSec = 5;
           };
         }
       ];
