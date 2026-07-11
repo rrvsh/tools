@@ -75,6 +75,8 @@ in
         cfg.modules.nixos.nvidia-graphics
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
+        cfg.modules.nixos.gtnh-server
+        cfg.modules.nixos.gtnh-backups
         cfg.modules.nixos.pi-tg
         (
           {

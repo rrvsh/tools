@@ -45,6 +45,10 @@
     };
     mac-app-util.url = "github:hraban/mac-app-util";
     pi.url = "github:rrvsh/pi-coding-agent-nix";
+    pi-tg = {
+      url = "https://registry.npmjs.org/@atharva-again/pi-tg/-/pi-tg-0.1.3.tgz";
+      flake = false;
+    };
     pi-claude-bridge = {
       url = "github:rrvsh/pi-claude-bridge-nix";
       inputs.nixpkgs.follows = "nixpkgs";
