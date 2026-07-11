@@ -32,8 +32,7 @@ in
           browser.executablePath = "${pkgs.chromium}/bin/chromium";
         };
         homeDirectory = config.home.homeDirectory;
-        toolsDirectory =
-          if pkgs.stdenv.isDarwin then "${homeDirectory}/1_repos/tools" else "${homeDirectory}/Git/tools";
+        toolsDirectory = "${homeDirectory}/Git/tools";
         agentBrowserStatePath = "${homeDirectory}/.agent-browser/state/agent.json";
       in
       {
@@ -143,7 +142,7 @@ in
               "  - `threads` - named ongoing strands."
               "  - `research` - human-owned deeper inquiry/synthesis."
               "  - `archive` - old note material kept without further classification."
-              "- `${homeDirectory}/Git` or `${homeDirectory}/1_repos` - git repositories and code workspaces."
+              "- `${homeDirectory}/Git` - git repositories and code workspaces."
               "  - `${toolsDirectory}` - source of truth checkout for machine/Nix configuration on this host."
               "- `${homeDirectory}/Music` - audio/music."
               "- `${homeDirectory}/Pictures` - images/screenshots/visual references."
