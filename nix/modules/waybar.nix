@@ -37,6 +37,29 @@ in
             </object>
           </interface>
         '';
+        "waybar/scripts/current-task" = {
+          executable = true;
+          text = ''
+            #!${pkgs.bash}/bin/bash
+            minutes=$((10#$(${pkgs.coreutils}/bin/date +%H) * 60 + 10#$(${pkgs.coreutils}/bin/date +%M)))
+
+            if (( minutes >= 360 && minutes < 480 )); then
+              echo chill
+            elif (( minutes >= 480 && minutes < 600 )); then
+              echo study
+            elif (( minutes >= 600 && minutes < 840 )); then
+              echo work
+            elif (( minutes >= 840 && minutes < 960 )); then
+              echo chill
+            elif (( minutes >= 960 && minutes < 1080 )); then
+              echo work
+            elif (( minutes >= 1080 && minutes < 1260 )); then
+              echo chill
+            else
+              echo free
+            fi
+          '';
+        };
       };
       programs.waybar = {
         enable = true;
@@ -46,6 +69,7 @@ in
           }
 
           #clock,
+          #custom-current-task,
           #custom-power {
             background: #000000;
             color: #ffffff;
@@ -89,11 +113,16 @@ in
             ipc = true;
             on-sigusr1 = "hide";
             on-sigusr2 = "show";
-            modules-left = [ ];
+            modules-left = [ "custom/current-task" ];
             modules-center = [ "clock" ];
             modules-right = [ "custom/power" ];
             clock = {
               format = "{:%H:%M}";
+              tooltip = false;
+            };
+            "custom/current-task" = {
+              exec = "~/.config/waybar/scripts/current-task";
+              interval = 60;
               tooltip = false;
             };
             "custom/power" = {
