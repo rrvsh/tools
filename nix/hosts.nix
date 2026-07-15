@@ -141,6 +141,88 @@ in
         )
       ];
     };
+    orichalcum = {
+      hostPlatform = "x86_64-linux";
+      primaryUser = rafiq;
+      modules = [
+        cfg.modules.nixos.user-config
+        (
+          {
+            config,
+            lib,
+            modulesPath,
+            pkgs,
+            ...
+          }:
+          {
+            imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
+            hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
+            boot = {
+              kernelParams = [
+                "console=ttyS1,115200n8"
+                "console=tty0"
+              ];
+              # Vultr boots reliably from the UEFI fallback path, so use GRUB's removable EFI install
+              # instead of relying on mutable EFI NVRAM entries like a local workstation can.
+              loader = {
+                efi = {
+                  canTouchEfiVariables = false;
+                  efiSysMountPoint = "/boot/efi";
+                };
+                grub = {
+                  enable = true;
+                  device = "nodev";
+                  efiSupport = true;
+                  efiInstallAsRemovable = true;
+                  useOSProber = false;
+                };
+              };
+            };
+            fileSystems = {
+              "/" = {
+                device = "/dev/disk/by-uuid/1f65557f-5f29-4375-99ed-45859a999f8e";
+                fsType = "ext4";
+              };
+              "/boot/efi" = {
+                device = "/dev/disk/by-uuid/F558-B6A7";
+                fsType = "vfat";
+              };
+            };
+            swapDevices = [ { device = "/swapfile"; } ];
+            networking.firewall.allowedTCPPorts = [ 22 ];
+            users = {
+              groups.aenyrathia = { };
+              users.aenyrathia = {
+                isSystemUser = true;
+                group = "aenyrathia";
+                home = "/var/lib/aenyrathia";
+                createHome = true;
+              };
+            };
+            system.activationScripts.aenyrathia-deploy-key = {
+              deps = [ "users" ];
+              text = ''
+                set -eu
+                install -d -m 0750 -o aenyrathia -g aenyrathia /var/lib/aenyrathia
+                install -d -m 0700 -o aenyrathia -g aenyrathia /var/lib/aenyrathia/.ssh
+                if [ ! -e /var/lib/aenyrathia/.ssh/id_ed25519 ]; then
+                  ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" -C orichalcum-aenyrathia -f /var/lib/aenyrathia/.ssh/id_ed25519
+                fi
+                chown aenyrathia:aenyrathia /var/lib/aenyrathia/.ssh/id_ed25519 /var/lib/aenyrathia/.ssh/id_ed25519.pub
+                chmod 0600 /var/lib/aenyrathia/.ssh/id_ed25519
+                chmod 0644 /var/lib/aenyrathia/.ssh/id_ed25519.pub
+                known_hosts=$(mktemp)
+                ${pkgs.openssh}/bin/ssh-keyscan -t rsa,ecdsa,ed25519 github.com > "$known_hosts"
+                if [ -s "$known_hosts" ]; then
+                  install -m 0644 -o aenyrathia -g aenyrathia "$known_hosts" /var/lib/aenyrathia/.ssh/known_hosts
+                fi
+                rm -f "$known_hosts"
+              '';
+            };
+          }
+        )
+      ];
+    };
     hermes = {
       hostPlatform = "x86_64-linux";
       primaryUser = rafiq;

@@ -21,6 +21,29 @@ deploy-rrv-sh:
   nix copy --no-check-sigs --to ssh-ng://root@rrv.sh ./result
   ssh root@rrv.sh "$(readlink -f result)/bin/switch-to-configuration switch"
 
+register-aenyrathia-deploy-key:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  repo="rrvsh/aenyrathia"
+  title="orichalcum-aenyrathia"
+  public_key="$(ssh root@aenyrathia.wiki 'cat /var/lib/aenyrathia/.ssh/id_ed25519.pub')"
+  public_fingerprint="$(ssh-keygen -lf - <<< "$public_key" | awk '{print $2}')"
+  existing_keys="$(gh api "repos/$repo/keys" --paginate --jq ".[] | select(.title == \"$title\") | [.id, .key] | @tsv")"
+  if [ -n "$existing_keys" ]; then
+    while IFS=$'\t' read -r id existing_key; do
+      existing_fingerprint="$(ssh-keygen -lf - <<< "$existing_key" | awk '{print $2}')"
+      if [ "$existing_fingerprint" = "$public_fingerprint" ]; then
+        echo "Deploy key '$title' already registered for $repo as id $id."
+        exit 0
+      fi
+    done <<< "$existing_keys"
+    echo "Deploy key title '$title' already exists for $repo, but with a different key." >&2
+    echo "Delete or rename the existing key before rerunning this recipe." >&2
+    exit 1
+  fi
+  gh api --method POST "repos/$repo/keys" -f title="$title" -f key="$public_key" -F read_only=false >/dev/null
+  echo "Registered read/write deploy key '$title' for $repo."
+
 _rb-macos:
   nh darwin switch .
 
