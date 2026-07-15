@@ -8,11 +8,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784091529,
-        "narHash": "sha256-xRc0zvwam1eqkhZceSMa7KqsS6u/r+IQxX9gnujuELs=",
+        "lastModified": 1784104429,
+        "narHash": "sha256-gp1W+Dh/T0l3goHyW5uKK3dEgzwUcr4Wkw57mWSTnaM=",
         "owner": "rrvsh",
         "repo": "aenyrathia",
-        "rev": "4f93d3f9aae15c4cca3a7ca251b5cb82336701ef",
+        "rev": "32d5d0a15d0590f60aebbddabd9adfe5ef252016",
         "type": "github"
       },
       "original": {
