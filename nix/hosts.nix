@@ -199,6 +199,7 @@ in
                 ATTACHMENT_ACCESS = "ADMIN";
                 DISABLE_REGISTRATION = "True";
                 READ_ACCESS = "ANONYMOUS";
+                RENDERER_HTML_ALLOWLIST = "iframe[src width height style allow allowfullscreen loading referrerpolicy]";
                 RETAIN_PAGE_NAME_CASE = "True";
                 SERVER_NAME = "old.aenyrathia.wiki";
                 SITE_DESCRIPTION = "Archived Aenyrathia OtterWiki";
