@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, inputs, ... }:
 let
   cfg = config.flake;
   rrvshSshAuthorizedKeys = [
@@ -189,7 +189,11 @@ in
               };
             };
             swapDevices = [ { device = "/swapfile"; } ];
-            networking.firewall.allowedTCPPorts = [ 22 ];
+            networking.firewall.allowedTCPPorts = [
+              22
+              80
+              443
+            ];
             users = {
               groups.aenyrathia = { };
               users.aenyrathia = {
@@ -218,6 +222,48 @@ in
                 fi
                 rm -f "$known_hosts"
               '';
+            };
+            security.acme = {
+              acceptTerms = true;
+              defaults.email = "rafiq@rrv.sh";
+            };
+            services.nginx = {
+              enable = true;
+              recommendedGzipSettings = true;
+              recommendedOptimisation = true;
+              recommendedProxySettings = true;
+              recommendedTlsSettings = true;
+              virtualHosts."aenyrathia.wiki" = {
+                enableACME = true;
+                forceSSL = true;
+                locations."/".proxyPass = "http://127.0.0.1:3001";
+              };
+            };
+            systemd.services.aenyrathia = {
+              description = "Aenyrathia wiki";
+              wantedBy = [ "multi-user.target" ];
+              after = [ "network-online.target" ];
+              wants = [ "network-online.target" ];
+              environment = {
+                COOKIE_SECURE = "true";
+                DATABASE_URL = "sqlite:///var/lib/aenyrathia/aenyrathia.sqlite3";
+                GIT_REMOTE = "git@github.com:rrvsh/aenyrathia.git";
+                GIT_SSH_KEY_PATH = "/var/lib/aenyrathia/.ssh/id_ed25519";
+                HOST = "127.0.0.1";
+                PB_LOG = "info";
+                PORT = "3001";
+              };
+              serviceConfig = {
+                User = "aenyrathia";
+                Group = "aenyrathia";
+                ExecStart = "${
+                  inputs.aenyrathia.packages.${pkgs.stdenv.hostPlatform.system}.aenyrathia
+                }/bin/aenyrathia";
+                Restart = "always";
+                RestartSec = "5s";
+                StateDirectory = "aenyrathia";
+                WorkingDirectory = "/var/lib/aenyrathia";
+              };
             };
           }
         )
