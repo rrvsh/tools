@@ -1,8 +1,30 @@
 {
   "nodes": {
-    "agent-browser": {
+    "aenyrathia": {
       "inputs": {
         "flake-parts": "flake-parts",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784091529,
+        "narHash": "sha256-xRc0zvwam1eqkhZceSMa7KqsS6u/r+IQxX9gnujuELs=",
+        "owner": "rrvsh",
+        "repo": "aenyrathia",
+        "rev": "4f93d3f9aae15c4cca3a7ca251b5cb82336701ef",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "ref": "prime",
+        "repo": "aenyrathia",
+        "type": "github"
+      }
+    },
+    "agent-browser": {
+      "inputs": {
+        "flake-parts": "flake-parts_2",
         "import-tree": "import-tree",
         "nixpkgs": "nixpkgs"
       },
@@ -72,7 +94,7 @@
     },
     "cl-nix-lite": {
       "inputs": {
-        "flake-parts": "flake-parts_3",
+        "flake-parts": "flake-parts_4",
         "nixpkgs": "nixpkgs_2",
         "systems": "systems_2",
         "treefmt-nix": "treefmt-nix"
@@ -127,6 +149,27 @@
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
+          "aenyrathia",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1760948891,
+        "narHash": "sha256-TmWcdiUUaWk8J4lpjzu4gCGxWY6/Ok7mOK4fIFfBuU4=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "864599284fc7c0ba6357ed89ed5e2cd5040f0c04",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_2": {
+      "inputs": {
+        "nixpkgs-lib": [
           "agent-browser",
           "nixpkgs"
         ]
@@ -145,7 +188,7 @@
         "type": "github"
       }
     },
-    "flake-parts_2": {
+    "flake-parts_3": {
       "inputs": {
         "nixpkgs-lib": [
           "nixpkgs"
@@ -165,7 +208,7 @@
         "type": "github"
       }
     },
-    "flake-parts_3": {
+    "flake-parts_4": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
       },
@@ -183,7 +226,7 @@
         "type": "github"
       }
     },
-    "flake-parts_4": {
+    "flake-parts_5": {
       "inputs": {
         "nixpkgs-lib": [
           "pi",
@@ -204,7 +247,7 @@
         "type": "github"
       }
     },
-    "flake-parts_5": {
+    "flake-parts_6": {
       "inputs": {
         "nixpkgs-lib": [
           "pi-claude-bridge",
@@ -967,7 +1010,7 @@
     },
     "pi": {
       "inputs": {
-        "flake-parts": "flake-parts_4",
+        "flake-parts": "flake-parts_5",
         "import-tree": "import-tree_3",
         "nixpkgs": "nixpkgs_7"
       },
@@ -987,7 +1030,7 @@
     },
     "pi-claude-bridge": {
       "inputs": {
-        "flake-parts": "flake-parts_5",
+        "flake-parts": "flake-parts_6",
         "import-tree": "import-tree_4",
         "nixpkgs": [
           "nixpkgs"
@@ -1032,8 +1075,9 @@
     },
     "root": {
       "inputs": {
+        "aenyrathia": "aenyrathia",
         "agent-browser": "agent-browser",
-        "flake-parts": "flake-parts_2",
+        "flake-parts": "flake-parts_3",
         "home-manager": "home-manager",
         "homebrew-cask": "homebrew-cask",
         "homebrew-core": "homebrew-core",
