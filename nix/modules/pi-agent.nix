@@ -58,6 +58,7 @@ in
             "npm:pi-mcp-adapter"
             "npm:pi-subagents"
             "npm:pi-web-access"
+            "npm:pi-slopchop"
           ];
           context = lib.concatStringsSep "\n" (
             [
