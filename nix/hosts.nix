@@ -148,39 +148,35 @@ in
         cfg.modules.nixos.user-config
         (
           {
-            config,
-            lib,
             modulesPath,
             pkgs,
             ...
           }:
           {
             imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
-            hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
             boot = {
-              kernelParams = [
-                "console=ttyS1,115200n8"
-                "console=tty0"
-              ];
-              # Vultr boots reliably from the UEFI fallback path, so use GRUB's removable EFI install
-              # instead of relying on mutable EFI NVRAM entries like a local workstation can.
+              initrd = {
+                availableKernelModules = [
+                  "ata_piix"
+                  "uhci_hcd"
+                  "xen_blkfront"
+                  "vmw_pvscsi"
+                ];
+                kernelModules = [ "nvme" ];
+                systemd.enable = false;
+              };
               loader = {
-                efi = {
-                  canTouchEfiVariables = false;
-                  efiSysMountPoint = "/boot/efi";
-                };
+                efi.efiSysMountPoint = "/boot/efi";
                 grub = {
-                  enable = true;
-                  device = "nodev";
                   efiSupport = true;
                   efiInstallAsRemovable = true;
-                  useOSProber = false;
+                  device = "nodev";
                 };
               };
             };
             fileSystems = {
               "/" = {
-                device = "/dev/disk/by-uuid/1f65557f-5f29-4375-99ed-45859a999f8e";
+                device = "/dev/vda2";
                 fsType = "ext4";
               };
               "/boot/efi" = {
@@ -216,10 +212,12 @@ in
                 chmod 0600 /var/lib/aenyrathia/.ssh/id_ed25519
                 chmod 0644 /var/lib/aenyrathia/.ssh/id_ed25519.pub
                 known_hosts=$(mktemp)
-                ${pkgs.openssh}/bin/ssh-keyscan -t rsa,ecdsa,ed25519 github.com > "$known_hosts"
-                if [ -s "$known_hosts" ]; then
-                  install -m 0644 -o aenyrathia -g aenyrathia "$known_hosts" /var/lib/aenyrathia/.ssh/known_hosts
-                fi
+                cat > "$known_hosts" <<'KNOWN_HOSTS'
+                github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=
+                github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=
+                github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl
+                KNOWN_HOSTS
+                install -m 0644 -o aenyrathia -g aenyrathia "$known_hosts" /var/lib/aenyrathia/.ssh/known_hosts
                 rm -f "$known_hosts"
               '';
             };
