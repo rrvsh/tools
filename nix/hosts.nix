@@ -146,6 +146,7 @@ in
       primaryUser = rafiq;
       modules = [
         cfg.modules.nixos.user-config
+        cfg.modules.nixos.podman
         (
           {
             modulesPath,
@@ -190,25 +191,19 @@ in
               80
               443
             ];
-            virtualisation = {
-              podman.enable = true;
-              oci-containers = {
-                backend = "podman";
-                containers.otterwiki-old = {
-                  image = "redimp/otterwiki:2-slim";
-                  ports = [ "127.0.0.1:18080:8080" ];
-                  volumes = [ "/var/lib/otterwiki-old/app-data:/app-data" ];
-                  environment = {
-                    ATTACHMENT_ACCESS = "ADMIN";
-                    DISABLE_REGISTRATION = "True";
-                    READ_ACCESS = "ANONYMOUS";
-                    RETAIN_PAGE_NAME_CASE = "True";
-                    SERVER_NAME = "old.aenyrathia.wiki";
-                    SITE_DESCRIPTION = "Archived Aenyrathia OtterWiki";
-                    SITE_NAME = "Aenyrathia Archive";
-                    WRITE_ACCESS = "ADMIN";
-                  };
-                };
+            virtualisation.oci-containers.containers.otterwiki-old = {
+              image = "redimp/otterwiki:2-slim";
+              ports = [ "127.0.0.1:18080:8080" ];
+              volumes = [ "/var/lib/otterwiki-old/app-data:/app-data" ];
+              environment = {
+                ATTACHMENT_ACCESS = "ADMIN";
+                DISABLE_REGISTRATION = "True";
+                READ_ACCESS = "ANONYMOUS";
+                RETAIN_PAGE_NAME_CASE = "True";
+                SERVER_NAME = "old.aenyrathia.wiki";
+                SITE_DESCRIPTION = "Archived Aenyrathia OtterWiki";
+                SITE_NAME = "Aenyrathia Archive";
+                WRITE_ACCESS = "ADMIN";
               };
             };
             systemd.tmpfiles.rules = [
