@@ -202,6 +202,7 @@ in
                     ATTACHMENT_ACCESS = "ADMIN";
                     DISABLE_REGISTRATION = "True";
                     READ_ACCESS = "ANONYMOUS";
+                    RETAIN_PAGE_NAME_CASE = "True";
                     SERVER_NAME = "old.aenyrathia.wiki";
                     SITE_DESCRIPTION = "Archived Aenyrathia OtterWiki";
                     SITE_NAME = "Aenyrathia Archive";
