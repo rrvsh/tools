@@ -33,14 +33,17 @@ Hyprland --verify-config -c ~/.config/hypr/hyprland.lua
 hyprctl configerrors
 ```
 
-## systemd-boot EFI default entry override
+## systemd-boot EFI persistent entry overrides
 
-If `bootctl status` shows a stale `Default Entry` while `/boot/loader/loader.conf` has a newer `default`, the EFI variable `LoaderEntryDefault` is overriding `loader.conf`.
+If `bootctl status` shows a stale `Default Entry` or `Preferred Entry` while `/boot/loader/loader.conf` has a newer `default`, an EFI variable is overriding `loader.conf`:
 
-Inspect current default:
+- `LoaderEntryDefault` is written by `bootctl set-default` or `D` in the boot menu.
+- `LoaderEntryPreferred` is written by `bootctl set-preferred` or `d` in the boot menu.
+
+Inspect current entry selection:
 
 ```bash
-sudo bootctl status | rg "Current Entry|Default Entry"
+sudo bootctl status | rg "Current Entry|Preferred Entry|Default Entry"
 sudo grep '^default ' /boot/loader/loader.conf
 ```
 
@@ -50,11 +53,16 @@ Set EFI default explicitly:
 sudo bootctl set-default nixos-generation-<N>.conf
 ```
 
-Unset EFI override (use `loader.conf` as source of truth):
+Unset EFI overrides (use `loader.conf` as source of truth):
 
 ```bash
-# remove LoaderEntryDefault EFI variable
-sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-*; do [ -e "$v" ] || continue; chattr -i "$v" 2>/dev/null || true; rm -f "$v" || true; done'
+just clear-systemd-boot-entry-overrides
+```
+
+Equivalent command:
+
+```bash
+sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-* /sys/firmware/efi/efivars/LoaderEntryPreferred-*; do [ -e "$v" ] || continue; chattr -i "$v" 2>/dev/null || true; rm -f "$v" || true; done'
 ```
 
 Note: on this machine, unsetting from `boot.loader.systemd-boot.extraInstallCommands` did not persist (the variable reappeared by end of switch). The reliable approach here is to unset it after `nh os switch` completes (wired into `Justfile` `rb`).

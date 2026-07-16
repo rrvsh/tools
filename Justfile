@@ -49,7 +49,10 @@ _rb-macos:
 
 _rb-linux:
   nh os switch .
-  sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-*; do [ -e "$v" ] || continue; chattr -i "$v" 2>/dev/null || true; rm -f "$v" || true; done'
+  just clear-systemd-boot-entry-overrides
+
+clear-systemd-boot-entry-overrides:
+  sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-* /sys/firmware/efi/efivars/LoaderEntryPreferred-*; do [ -e "$v" ] || continue; chattr -i "$v" 2>/dev/null || true; rm -f "$v" || true; done'
 
 # checks
 
