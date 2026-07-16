@@ -23,6 +23,7 @@ in
       let
         system = pkgs.stdenv.hostPlatform.system;
         agentBrowser = inputs.agent-browser.packages.${system}.agent-browser;
+        slopchop = inputs.pi-slopchop.packages.${system}.pi-slopchop;
         # NixOS cannot run agent-browser's downloaded generic Chrome, so point the
         # extension at Nix-provided Chromium for fresh browser launches by default.
         agentBrowserConfig = {
@@ -58,7 +59,7 @@ in
             "npm:pi-mcp-adapter"
             "npm:pi-subagents"
             "npm:pi-web-access"
-            "npm:pi-slopchop"
+            slopchop.passthru.packagePath
           ];
           context = lib.concatStringsSep "\n" (
             [
