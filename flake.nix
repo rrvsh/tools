@@ -53,5 +53,9 @@
       url = "github:rrvsh/pi-claude-bridge-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pi-slopchop = {
+      url = "github:rrvsh/pi-slopchop-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 }

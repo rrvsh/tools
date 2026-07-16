@@ -268,6 +268,24 @@
         "type": "github"
       }
     },
+    "flake-parts_7": {
+      "inputs": {
+        "nixpkgs-lib": "nixpkgs-lib_2"
+      },
+      "locked": {
+        "lastModified": 1782949081,
+        "narHash": "sha256-vp6Y/Grm98ESt6ceOkWiHWyZRDV3J1RID4w+6NWK9yA=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "17c9d6cdfc60c64f4ee8d306f9bc0b4ccb51481e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
     "flake-utils": {
       "inputs": {
         "systems": [
@@ -896,6 +914,21 @@
         "type": "github"
       }
     },
+    "nixpkgs-lib_2": {
+      "locked": {
+        "lastModified": 1782614948,
+        "narHash": "sha256-ePjCwr1sNm9NYUqywL7QfK3JnlS015msC+eBu2zKlp8=",
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "rev": "db3f255737b94216eb71cce308e2912cf6bc2d7c",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "nixpkgs.lib",
+        "type": "github"
+      }
+    },
     "nixpkgs-master": {
       "locked": {
         "lastModified": 1781092718,
@@ -1050,6 +1083,27 @@
         "type": "github"
       }
     },
+    "pi-slopchop": {
+      "inputs": {
+        "flake-parts": "flake-parts_7",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784245505,
+        "narHash": "sha256-5K4uZXtofUupjIoZPmD3ssRCvoEgkAYRVgI4+BEW4NE=",
+        "owner": "rrvsh",
+        "repo": "pi-slopchop-nix",
+        "rev": "b920e25b619cc0b41071119e386f7d31e8f49273",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "repo": "pi-slopchop-nix",
+        "type": "github"
+      }
+    },
     "pre-commit-hooks": {
       "inputs": {
         "flake-compat": "flake-compat",
@@ -1093,6 +1147,7 @@
         "nixpkgs-master": "nixpkgs-master",
         "pi": "pi",
         "pi-claude-bridge": "pi-claude-bridge",
+        "pi-slopchop": "pi-slopchop",
         "sops-nix": "sops-nix",
         "waybar-peek": "waybar-peek"
       }
