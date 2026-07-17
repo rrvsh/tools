@@ -24,6 +24,7 @@ in
         system = pkgs.stdenv.hostPlatform.system;
         agentBrowser = inputs.agent-browser.packages.${system}.agent-browser;
         slopchop = inputs.pi-slopchop.packages.${system}.pi-slopchop;
+        sessionDrain = inputs.pi-session-drain.packages.${system}.pi-session-drain;
         # NixOS cannot run agent-browser's downloaded generic Chrome, so point the
         # extension at Nix-provided Chromium for fresh browser launches by default.
         agentBrowserConfig = {
@@ -60,6 +61,7 @@ in
             "npm:pi-subagents"
             "npm:pi-web-access"
             slopchop.passthru.packagePath
+            sessionDrain.passthru.packagePath
           ];
           context = lib.concatStringsSep "\n" (
             [
