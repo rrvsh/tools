@@ -1124,11 +1124,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784256461,
-        "narHash": "sha256-2/s1scpHsbI4cSCxS/deqcTqqoKi+LR+EMlylZVyRvY=",
+        "lastModified": 1784257503,
+        "narHash": "sha256-HULQx7ND05JQyxCjSBv+bUlM1lvm0V/1gq2olp+McFw=",
         "owner": "rrvsh",
         "repo": "pi-session-drain",
-        "rev": "665ff443ca2d35a98b155d14940be4d44a48aed3",
+        "rev": "63bcc7f110832a20b8812eb8a58a9f82ef8f93db",
         "type": "github"
       },
       "original": {
