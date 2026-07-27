@@ -32,21 +32,12 @@ in
           text = ''
             export PI_OFFLINE=1
             export PI_SKIP_VERSION_CHECK=1
+            export PI_SESSION_DRAIN_MAX_SESSIONS=''${PI_SESSION_DRAIN_MAX_SESSIONS:-1}
+            export PI_SESSION_DRAIN_MAX_CHUNKS_PER_SESSION=''${PI_SESSION_DRAIN_MAX_CHUNKS_PER_SESSION:-80}
+            export PI_SESSION_DRAIN_CHUNK_CONCURRENCY=''${PI_SESSION_DRAIN_CHUNK_CONCURRENCY:-4}
+            export PI_SESSION_DRAIN_TIMEOUT_MS=''${PI_SESSION_DRAIN_TIMEOUT_MS:-7200000}
 
-            # Keep this prompt in sync with /session-drain:drain in pi-session-drain.
-            exec pi --no-session -p 'Drain Pi sessions using the session-drain tools.
-
-Process loop:
-1. Call session_drain_next with limit 4.
-2. If no sessions are returned and no oversized_session_id is returned, summarize current drain status and stop.
-3. If oversized_session_id is returned, call session_drain_next again with that session_id and limit equal to required_limit.
-4. Use the chunks embedded in the returned sessions. Do not call session_drain_chunks in the normal drain path.
-5. Assign one session-drain-chunk subagent per chunk, with bounded concurrency. Pass session_id, session_path, session_dir, chunk_index, after_line, until_line, entry_count, and approx_chars.
-6. Require each chunk subagent to report chunk telemetry, memory candidates with source references, skipped candidates, and chunk-processed or chunk-failed.
-7. Parent synthesis checklist: verify every chunk returned chunk-processed; verify chunks cover the full session in order; verify the final chunk reports session_complete true; dedupe candidates; discard transient diagnostics and task-only paths; normalize obsolete paths; check existing memory before adding duplicates; apply memory edits serially in parent.
-8. Mark the session processed only when all chunks succeeded, edits are complete, and uncertainty is resolved. Mark failed otherwise.
-9. Prefer session_drain_mark_many when marking reviewed batches.
-10. Continue with another batch until no unprocessed or failed sessions remain or you need user input.'
+            exec pi --no-session -p '/session-drain:run'
           '';
         };
         # NixOS cannot run agent-browser's downloaded generic Chrome, so point the
@@ -75,7 +66,20 @@ Process loop:
             Type = "oneshot";
             WorkingDirectory = homeDirectory;
             ExecStart = "${sessionDrainRun}/bin/pi-session-drain-run";
+            TimeoutStartSec = "2h 15m";
           };
+        };
+        systemd.user.timers.pi-session-drain = {
+          Unit.Description = "Run Pi session drain daily";
+          Timer = {
+            OnCalendar = "daily";
+            OnBootSec = "30m";
+            RandomizedDelaySec = "2h";
+            AccuracySec = "15m";
+            Persistent = false;
+            Unit = "pi-session-drain.service";
+          };
+          Install.WantedBy = [ "timers.target" ];
         };
         programs.pi-coding-agent = {
           enable = true;
