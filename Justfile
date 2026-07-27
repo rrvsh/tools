@@ -7,7 +7,7 @@ watch-clippy:
   bacon clippy -- --manifest-path rs/Cargo.toml --all
 
 run-docker:
-  docker load -i $(nix build .#packages.aarch64-linux.site-image --print-out-paths)
+  docker load -i $(nix build --accept-flake-config .#packages.aarch64-linux.site-image --print-out-paths)
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
 
 rb:
@@ -17,7 +17,7 @@ rb:
   just _rb-{{os()}}
 
 deploy-rrv-sh:
-  nix build .#nixosConfigurations.hermes.config.system.build.toplevel
+  nix build --accept-flake-config .#nixosConfigurations.hermes.config.system.build.toplevel
   nix copy --no-check-sigs --to ssh-ng://root@rrv.sh ./result
   ssh root@rrv.sh "$(readlink -f result)/bin/switch-to-configuration switch"
 
@@ -45,10 +45,10 @@ register-aenyrathia-deploy-key:
   echo "Registered read/write deploy key '$title' for $repo."
 
 _rb-macos:
-  nh darwin switch .
+  nh darwin switch --accept-flake-config .
 
 _rb-linux:
-  nh os switch .
+  nh os switch --accept-flake-config .
   just clear-systemd-boot-entry-overrides
 
 clear-systemd-boot-entry-overrides:
@@ -89,7 +89,7 @@ lint-rs:
 test: test-nix test-rs
 
 test-nix:
-  if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --all-systems; else nix flake check; fi
+  if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi
 
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all
