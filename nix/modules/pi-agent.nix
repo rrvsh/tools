@@ -92,6 +92,7 @@ in
             "npm:pi-mcp-adapter"
             "npm:pi-subagents"
             "npm:pi-web-access"
+            "npm:pi-context-breadcrumbs"
             slopchop.passthru.packagePath
             sessionDrain.passthru.packagePath
           ];
