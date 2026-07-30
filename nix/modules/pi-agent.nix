@@ -93,6 +93,7 @@ in
             "npm:pi-subagents"
             "npm:pi-web-access"
             "npm:pi-context-breadcrumbs"
+            "npm:context-mode"
             slopchop.passthru.packagePath
             sessionDrain.passthru.packagePath
           ];
