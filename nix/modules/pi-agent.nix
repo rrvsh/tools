@@ -45,6 +45,7 @@ in
           browser.executablePath = "${pkgs.chromium}/bin/chromium";
         };
         homeDirectory = config.home.homeDirectory;
+        inherit (cfg.paths) root;
       in
       {
         home = {
@@ -53,10 +54,12 @@ in
             sessionDrainRun
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
-          file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
-          # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
-          file.".pi/agent/APPEND_SYSTEM.md".source =
-            config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
+          file = {
+            ".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
+            # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
+            ".pi/agent/APPEND_SYSTEM.md".source =
+              config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
+          };
         };
         systemd.user.services.pi-session-drain = {
           Unit.Description = "Drain Pi sessions into agent memory";
@@ -86,19 +89,22 @@ in
             pkgs.nodejs_22
             agentBrowser
           ];
-          settings.lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
-          settings.packages = [
-            # Keep this pinned with the agent-browser flake input: pi-agent-browser-native
-            # tracks specific agent-browser CLI versions in its command surface and result parsing.
-            "npm:pi-agent-browser-native@0.2.64"
-            "npm:pi-mcp-adapter"
-            "npm:pi-subagents"
-            "npm:pi-web-access"
-            "npm:pi-context-breadcrumbs"
-            "npm:context-mode"
-            slopchop.passthru.packagePath
-            sessionDrain.passthru.packagePath
-          ];
+          settings = {
+            lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
+            extensions = [ (root + "/pi/extensions/hostname-context.ts") ];
+            packages = [
+              # Keep this pinned with the agent-browser flake input: pi-agent-browser-native
+              # tracks specific agent-browser CLI versions in its command surface and result parsing.
+              "npm:pi-agent-browser-native@0.2.64"
+              "npm:pi-mcp-adapter"
+              "npm:pi-subagents"
+              "npm:pi-web-access"
+              "npm:pi-context-breadcrumbs"
+              "npm:context-mode"
+              slopchop.passthru.packagePath
+              sessionDrain.passthru.packagePath
+            ];
+          };
         };
       };
   };
