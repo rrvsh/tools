@@ -24,14 +24,105 @@ in
         piPackage = inputs.pi.packages.${system}.pi-coding-agent;
         sessionDrainRun = pkgs.writeShellApplication {
           name = "pi-session-drain-run";
-          runtimeInputs = [ piPackage ];
+          runtimeInputs = [
+            piPackage
+            pkgs.nodejs_22
+          ];
           text = ''
             export PI_OFFLINE=1
             export PI_SKIP_VERSION_CHECK=1
-            export PI_SESSION_DRAIN_MAX_SESSIONS=''${PI_SESSION_DRAIN_MAX_SESSIONS:-1}
+            export PI_SESSION_DRAIN_MAX_SESSIONS=''${PI_SESSION_DRAIN_MAX_SESSIONS:-20}
             export PI_SESSION_DRAIN_MAX_CHUNKS_PER_SESSION=''${PI_SESSION_DRAIN_MAX_CHUNKS_PER_SESSION:-80}
+            export PI_SESSION_DRAIN_SESSION_CONCURRENCY=''${PI_SESSION_DRAIN_SESSION_CONCURRENCY:-2}
             export PI_SESSION_DRAIN_CHUNK_CONCURRENCY=''${PI_SESSION_DRAIN_CHUNK_CONCURRENCY:-4}
             export PI_SESSION_DRAIN_TIMEOUT_MS=''${PI_SESSION_DRAIN_TIMEOUT_MS:-7200000}
+            export PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT=''${PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT:-50}
+
+            usage_decision="$(node <<'NODE'
+            const fs = require("node:fs");
+            const https = require("node:https");
+            const os = require("node:os");
+            const path = require("node:path");
+            const threshold = Number(process.env.PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT || "50");
+            const authPath = path.join(os.homedir(), ".pi", "agent", "auth.json");
+            function decide(decision, message) {
+              console.log("Codex usage gate: " + message);
+              console.log("Decision: " + decision);
+            }
+            function getUsage(accessToken) {
+              return new Promise((resolve, reject) => {
+                const req = https.request("https://chatgpt.com/backend-api/wham/usage", {
+                  headers: {
+                    accept: "application/json",
+                    authorization: "Bearer " + accessToken,
+                  },
+                }, (res) => {
+                  let body = "";
+                  res.on("data", (chunk) => {
+                    body += chunk;
+                    if (body.length > 1000000) req.destroy(new Error("usage response too large"));
+                  });
+                  res.on("end", () => resolve({ statusCode: res.statusCode, body }));
+                });
+                req.on("error", reject);
+                req.setTimeout(20000, () => req.destroy(new Error("usage request timed out")));
+                req.end();
+              });
+            }
+            (async () => {
+              if (!Number.isFinite(threshold) || threshold <= 0) {
+                decide("allow", "disabled by threshold " + threshold);
+                return;
+              }
+              let auth;
+              try {
+                auth = JSON.parse(fs.readFileSync(authPath, "utf8"))["openai-codex"];
+              } catch (error) {
+                decide("skip", "could not read Pi OpenAI Codex OAuth state");
+                return;
+              }
+              if (!auth || auth.type !== "oauth" || typeof auth.access !== "string") {
+                decide("skip", "Pi OpenAI Codex OAuth state is missing");
+                return;
+              }
+              if (typeof auth.expires === "number" && auth.expires <= Date.now()) {
+                decide("skip", "Pi OpenAI Codex OAuth token is expired");
+                return;
+              }
+              let response;
+              try {
+                response = await getUsage(auth.access);
+              } catch (error) {
+                decide("skip", "usage request failed: " + error.message);
+                return;
+              }
+              if (response.statusCode !== 200) {
+                decide("skip", "usage request returned HTTP " + response.statusCode);
+                return;
+              }
+              let usage;
+              try {
+                usage = JSON.parse(response.body);
+              } catch (error) {
+                decide("skip", "usage response was not valid JSON");
+                return;
+              }
+              const used = usage && usage.rate_limit && usage.rate_limit.primary_window && usage.rate_limit.primary_window.used_percent;
+              if (typeof used !== "number") {
+                decide("skip", "usage response did not include primary used_percent");
+                return;
+              }
+              const remaining = Math.max(0, 100 - used);
+              const suffix = used + "% used, " + remaining + "% remaining, threshold " + threshold + "%";
+              decide(remaining >= threshold ? "allow" : "skip", suffix);
+            })().catch((error) => decide("skip", "usage gate crashed: " + error.message));
+            NODE
+            )"
+            echo "$usage_decision"
+            case "$usage_decision" in
+              *"Decision: allow"*) ;;
+              *) exit 0 ;;
+            esac
 
             exec pi --no-session -p '/session-drain:run'
           '';
