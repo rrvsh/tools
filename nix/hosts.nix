@@ -381,19 +381,43 @@ in
                 home = "/var/lib/site";
               };
             };
-            systemd.services.site = {
-              description = "rrv.sh site";
-              wantedBy = [ "multi-user.target" ];
-              after = [ "network-online.target" ];
-              wants = [ "network-online.target" ];
-              serviceConfig = {
-                User = "site";
-                Group = "site";
-                ExecStart = "${cfg.packages.${pkgs.stdenv.hostPlatform.system}.site-deploy}/bin/site";
-                Restart = "always";
-                RestartSec = "5s";
-                StateDirectory = "site";
-                WorkingDirectory = "/var/lib/site";
+            systemd = {
+              services = {
+                site = {
+                  description = "rrv.sh site";
+                  wantedBy = [ "multi-user.target" ];
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                  serviceConfig = {
+                    User = "site";
+                    Group = "site";
+                    ExecStart = "${cfg.packages.${pkgs.stdenv.hostPlatform.system}.site-deploy}/bin/site";
+                    Restart = "always";
+                    RestartSec = "5s";
+                    StateDirectory = "site";
+                    WorkingDirectory = "/var/lib/site";
+                  };
+                };
+                site-content-refresh = {
+                  description = "Refresh rrv.sh site content";
+                  after = [ "network-online.target" ];
+                  wants = [ "network-online.target" ];
+                  serviceConfig = {
+                    Type = "oneshot";
+                    ExecStart = "${
+                      cfg.packages.${pkgs.stdenv.hostPlatform.system}.site-content-refresh
+                    }/bin/site-content-refresh";
+                  };
+                };
+              };
+              timers.site-content-refresh = {
+                description = "Refresh rrv.sh site content periodically";
+                wantedBy = [ "timers.target" ];
+                timerConfig = {
+                  OnBootSec = "2min";
+                  OnUnitActiveSec = "10min";
+                  RandomizedDelaySec = "1min";
+                };
               };
             };
           }
