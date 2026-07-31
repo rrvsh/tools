@@ -91,7 +91,10 @@ in
           ];
           settings = {
             lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
-            extensions = [ (root + "/pi/extensions/hostname-context.ts") ];
+            extensions = [
+              (root + "/pi/extensions/hostname-context.ts")
+              (root + "/pi/extensions/system-prompt-viewer.ts")
+            ];
             packages = [
               # Keep this pinned with the agent-browser flake input: pi-agent-browser-native
               # tracks specific agent-browser CLI versions in its command surface and result parsing.
