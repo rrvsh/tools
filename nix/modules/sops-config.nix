@@ -2,10 +2,17 @@
 let
   mkSopsConfig =
     sopsModule:
-    { config, primaryUser, ... }:
     {
-      imports = [ sopsModule ];
-      sops.age.sshKeyPaths = [ "${config.users.users.${primaryUser.name}.home}/.ssh/id_ed25519" ];
+      config,
+      lib,
+      primaryUser,
+      ...
+    }:
+    {
+      imports = lib.optional (primaryUser != null) sopsModule;
+      config = lib.mkIf (primaryUser != null) {
+        sops.age.sshKeyPaths = [ "${config.users.users.${primaryUser.name}.home}/.ssh/id_ed25519" ];
+      };
     };
 in
 {

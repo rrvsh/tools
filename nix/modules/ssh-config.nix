@@ -21,12 +21,14 @@ in
   };
 
   config.flake.modules.nixos.ssh-config =
-    { primaryUser, ... }:
+    { lib, primaryUser, ... }:
     {
       services.openssh = {
         enable = true;
         inherit settings;
       };
-      users.users.root.openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      users.users.root.openssh.authorizedKeys.keys = lib.mkIf (
+        primaryUser != null
+      ) primaryUser.sshAuthorizedKeys;
     };
 }

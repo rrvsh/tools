@@ -10,25 +10,28 @@ let
                 type = lib.types.str;
               };
               primaryUser = lib.mkOption {
-                type = lib.types.submodule {
-                  options = {
-                    name = lib.mkOption { type = lib.types.str; };
-                    fullName = lib.mkOption { type = lib.types.str; };
-                    email = lib.mkOption { type = lib.types.str; };
-                    gitDefaultBranch = lib.mkOption {
-                      type = lib.types.str;
-                      default = "main";
+                type = lib.types.nullOr (
+                  lib.types.submodule {
+                    options = {
+                      name = lib.mkOption { type = lib.types.str; };
+                      fullName = lib.mkOption { type = lib.types.str; };
+                      email = lib.mkOption { type = lib.types.str; };
+                      gitDefaultBranch = lib.mkOption {
+                        type = lib.types.str;
+                        default = "main";
+                      };
+                      sshAuthorizedKeys = lib.mkOption {
+                        type = lib.types.listOf lib.types.str;
+                        default = [ ];
+                      };
+                      uid = lib.mkOption {
+                        type = lib.types.nullOr lib.types.int;
+                        default = null;
+                      };
                     };
-                    sshAuthorizedKeys = lib.mkOption {
-                      type = lib.types.listOf lib.types.str;
-                      default = [ ];
-                    };
-                    uid = lib.mkOption {
-                      type = lib.types.nullOr lib.types.int;
-                      default = null;
-                    };
-                  };
-                };
+                  }
+                );
+                default = null;
               };
               profiles = lib.mkOption {
                 type = lib.types.listOf lib.types.str;
