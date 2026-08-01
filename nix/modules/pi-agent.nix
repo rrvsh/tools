@@ -145,12 +145,10 @@ in
             sessionDrainRun
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
-          file = {
-            ".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
-            # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
-            ".pi/agent/APPEND_SYSTEM.md".source =
-              config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
-          };
+          file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
+          # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
+          file.".pi/agent/APPEND_SYSTEM.md".source =
+            config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
         };
         systemd.user.services.pi-session-drain = {
           Unit.Description = "Drain Pi sessions into agent memory";
@@ -182,10 +180,6 @@ in
           ];
           settings = {
             lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
-            extensions = [
-              (root + "/pi/extensions/hostname-context.ts")
-              (root + "/pi/extensions/system-prompt-viewer.ts")
-            ];
             packages = [
               # Keep this pinned with the agent-browser flake input: pi-agent-browser-native
               # tracks specific agent-browser CLI versions in its command surface and result parsing.
@@ -198,69 +192,15 @@ in
               slopchop.passthru.packagePath
               sessionDrain.passthru.packagePath
             ];
+            extensions = [
+              (root + "/pi/extensions/hostname-context.ts")
+              (root + "/pi/extensions/system-prompt-viewer.ts")
+            ];
           };
           context = ''
             ## Writing rules
 
             Use Orwell's rules and ASD-STE100 Simplified Technical English by default.
-
-            ### Plans
-
-            When writing plans:
-
-            - Number plan sections and list items to make review easier.
-            - Use the imperative mood.
-            - Write short, ordered steps.
-            - Include only information needed for the next action.
-            - Omit old context, rejected options, and negative history unless they change the next action.
-            - Omit code, commands, examples, and implementation details unless the user asks for them or they are needed for the next action.
-            - Ask one focused question when the plan needs a decision.
-            - Confirm before risky, broad, destructive, or persistent changes.
-            - Push back when the request is unclear, premature, over-structured, or inconsistent.
-
-            ### Tool use
-
-            - Use native Pi tools when possible.
-            - Use `read` to read files.
-            - Use `edit` for file changes.
-            - Use `write` only for new files or full rewrites.
-            - Use `bash` for shell commands.
-            - Use scripts only when native tools are not sufficient.
-
-            #### Web and browser tools
-
-            - For web content, use `web_search` or `fetch_content` first.
-            - Use `agent_browser` for login, account state, dynamic page state, or browser actions.
-            - Do not run `agent-browser` through `bash`.
-            - Treat browser snapshot refs as stale after a rerender.
-            - Use `--headed` only when the browser task needs the user to act.
-
-            #### Missing tools
-
-            - If a command or binary is missing, try comma first: `, <command> [args...]`.
-              - For example, use `, python3 ...` for Python.
-              - If the command needs other packages on `PATH`, use `nix-shell -p <packages> --run '<command> ...'`.
-            - If comma fails because multiple packages provide the command and it needs a TTY:
-              - Inspect candidates with `, --print-packages <command>`.
-              - Use the correct package with a full flake ref, for example: `nix shell github:NixOS/nixpkgs/nixos-unstable#<package> -c <command> ...`.
-            - Do not use indirect refs such as `nixpkgs#<package>`.
-            - Prefer a flake-backed project dev shell for less temporary work.
-
-            ### Home directory map
-
-            - `~/Agents` - agent-owned work.
-              - `~/Agents/artifacts` - evidence, exports, audits, and browser artifacts.
-              - `~/Agents/research` - agent-owned research.
-            - `~/Archive` - inactive material and backups.
-            - `~/Documents` - documents and records.
-            - `~/Downloads` - downloads.
-            - `~/Garden` - human-owned notes.
-              - `~/Garden/logs` - daily and monthly notes.
-            - `~/Git` - git repositories and code workspaces.
-              - `~/Git/tools` - source of truth for all machine, Nix, and agent configuration.
-            - `~/Music` - audio and music.
-            - `~/Pictures` - images and screenshots.
-            - `~/Videos` - videos and screen recordings.
 
             ### Exceptions
 
@@ -320,6 +260,64 @@ in
             - Do not use `should` for required actions.
             - Use `must` for requirements.
             - Use an imperative verb for commands.
+
+            ## Plans
+
+            When writing plans:
+
+            - Number plan sections and list items to make review easier.
+            - Use the imperative mood.
+            - Write short, ordered steps.
+            - Include only information needed for the next action.
+            - Omit old context, rejected options, and negative history unless they change the next action.
+            - Omit code, commands, examples, and implementation details unless the user asks for them or they are needed for the next action.
+            - Ask one focused question when the plan needs a decision.
+            - Confirm before risky, broad, destructive, or persistent changes.
+            - Push back when the request is unclear, premature, over-structured, or inconsistent.
+
+            ## Tool use
+
+            - Use native Pi tools when possible.
+            - Use `read` to read files.
+            - Use `edit` for file changes.
+            - Use `write` only for new files or full rewrites.
+            - Use `bash` for shell commands.
+            - Use scripts only when native tools are not sufficient.
+
+            ### Web and browser tools
+
+            - For web content, use `web_search` or `fetch_content` first.
+            - Use `agent_browser` for login, account state, dynamic page state, or browser actions.
+            - Do not run `agent-browser` through `bash`.
+            - Treat browser snapshot refs as stale after a rerender.
+            - Use `--headed` only when the browser task needs the user to act.
+
+            ### Missing tools
+
+            - If a command or binary is missing, try comma first: `, <command> [args...]`.
+              - For example, use `, python3 ...` for Python.
+              - If the command needs other packages on `PATH`, use `nix-shell -p <packages> --run '<command> ...'`.
+            - If comma fails because multiple packages provide the command and it needs a TTY:
+              - Inspect candidates with `, --print-packages <command>`.
+              - Use the correct package with a full flake ref, for example: `nix shell github:NixOS/nixpkgs/nixos-unstable#<package> -c <command> ...`.
+            - Do not use indirect refs such as `nixpkgs#<package>`.
+            - Prefer a flake-backed project dev shell for less temporary work.
+
+            ## Home directory map
+
+            - `~/Agents` - agent-owned work.
+              - `~/Agents/artifacts` - evidence, exports, audits, and browser artifacts.
+              - `~/Agents/research` - agent-owned research.
+            - `~/Archive` - inactive material and backups.
+            - `~/Documents` - documents and records.
+            - `~/Downloads` - downloads.
+            - `~/Garden` - human-owned notes.
+              - `~/Garden/logs` - daily and monthly notes.
+            - `~/Git` - git repositories and code workspaces.
+              - `~/Git/tools` - source of truth for all machine, Nix, and agent configuration.
+            - `~/Music` - audio and music.
+            - `~/Pictures` - images and screenshots.
+            - `~/Videos` - videos and screen recordings.
           '';
         };
       };
