@@ -26,7 +26,8 @@ in
           name = "pi-session-drain-run";
           runtimeInputs = [
             piPackage
-            pkgs.nodejs_22
+            pkgs.curl
+            pkgs.jq
           ];
           text = ''
             export PI_OFFLINE=1
@@ -38,91 +39,55 @@ in
             export PI_SESSION_DRAIN_TIMEOUT_MS=''${PI_SESSION_DRAIN_TIMEOUT_MS:-7200000}
             export PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT=''${PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT:-50}
 
-            usage_decision="$(node <<'NODE'
-            const fs = require("node:fs");
-            const https = require("node:https");
-            const os = require("node:os");
-            const path = require("node:path");
-            const threshold = Number(process.env.PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT || "50");
-            const authPath = path.join(os.homedir(), ".pi", "agent", "auth.json");
-            function decide(decision, message) {
-              console.log("Codex usage gate: " + message);
-              console.log("Decision: " + decision);
+            decision=skip
+            decide() {
+              decision="$1"
+              echo "Codex usage gate: $2"
+              echo "Decision: $decision"
             }
-            function getUsage(accessToken) {
-              return new Promise((resolve, reject) => {
-                const req = https.request("https://chatgpt.com/backend-api/wham/usage", {
-                  headers: {
-                    accept: "application/json",
-                    authorization: "Bearer " + accessToken,
-                  },
-                }, (res) => {
-                  let body = "";
-                  res.on("data", (chunk) => {
-                    body += chunk;
-                    if (body.length > 1000000) req.destroy(new Error("usage response too large"));
-                  });
-                  res.on("end", () => resolve({ statusCode: res.statusCode, body }));
-                });
-                req.on("error", reject);
-                req.setTimeout(20000, () => req.destroy(new Error("usage request timed out")));
-                req.end();
-              });
-            }
-            (async () => {
-              if (!Number.isFinite(threshold) || threshold <= 0) {
-                decide("allow", "disabled by threshold " + threshold);
-                return;
-              }
-              let auth;
-              try {
-                auth = JSON.parse(fs.readFileSync(authPath, "utf8"))["openai-codex"];
-              } catch (error) {
-                decide("skip", "could not read Pi OpenAI Codex OAuth state");
-                return;
-              }
-              if (!auth || auth.type !== "oauth" || typeof auth.access !== "string") {
-                decide("skip", "Pi OpenAI Codex OAuth state is missing");
-                return;
-              }
-              if (typeof auth.expires === "number" && auth.expires <= Date.now()) {
-                decide("skip", "Pi OpenAI Codex OAuth token is expired");
-                return;
-              }
-              let response;
-              try {
-                response = await getUsage(auth.access);
-              } catch (error) {
-                decide("skip", "usage request failed: " + error.message);
-                return;
-              }
-              if (response.statusCode !== 200) {
-                decide("skip", "usage request returned HTTP " + response.statusCode);
-                return;
-              }
-              let usage;
-              try {
-                usage = JSON.parse(response.body);
-              } catch (error) {
-                decide("skip", "usage response was not valid JSON");
-                return;
-              }
-              const used = usage && usage.rate_limit && usage.rate_limit.primary_window && usage.rate_limit.primary_window.used_percent;
-              if (typeof used !== "number") {
-                decide("skip", "usage response did not include primary used_percent");
-                return;
-              }
-              const remaining = Math.max(0, 100 - used);
-              const suffix = used + "% used, " + remaining + "% remaining, threshold " + threshold + "%";
-              decide(remaining >= threshold ? "allow" : "skip", suffix);
-            })().catch((error) => decide("skip", "usage gate crashed: " + error.message));
-            NODE
-            )"
-            echo "$usage_decision"
-            case "$usage_decision" in
-              *"Decision: allow"*) ;;
-              *) exit 0 ;;
-            esac
+
+            threshold_raw="$PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT"
+            threshold="$(jq -nr --arg threshold "$threshold_raw" '$threshold | tonumber? // empty')"
+            if [ -z "$threshold" ] || [ "$(jq -nr --argjson threshold "$threshold" '$threshold <= 0')" = true ]; then
+              decide allow "disabled by threshold $threshold_raw"
+            else
+              auth_path="$HOME/.pi/agent/auth.json"
+              auth="$(jq -cer '."openai-codex"' "$auth_path" 2>/dev/null || true)"
+              if [ -z "$auth" ]; then
+                decide skip "could not read Pi OpenAI Codex OAuth state"
+              elif [ "$(jq -nr --argjson auth "$auth" '$auth.type == "oauth" and ($auth.access | type == "string")')" != true ]; then
+                decide skip "Pi OpenAI Codex OAuth state is missing"
+              elif [ "$(jq -nr --argjson auth "$auth" '$auth.expires | type == "number" and . <= (now * 1000)')" = true ]; then
+                decide skip "Pi OpenAI Codex OAuth token is expired"
+              else
+                response_file="$(mktemp)"
+                trap 'rm -f "$response_file"' EXIT
+                access="$(jq -nr --argjson auth "$auth" '$auth.access')"
+                status="$(curl --silent --show-error --max-time 20 --output "$response_file" --write-out '%{http_code}' \
+                  --header 'accept: application/json' \
+                  --header "authorization: Bearer $access" \
+                  https://chatgpt.com/backend-api/wham/usage 2>/dev/null || true)"
+                if [ -z "$status" ]; then
+                  decide skip "usage request failed"
+                elif [ "$status" != 200 ]; then
+                  decide skip "usage request returned HTTP $status"
+                else
+                  used="$(jq -er '.rate_limit.primary_window.used_percent | numbers' "$response_file" 2>/dev/null || true)"
+                  if [ -z "$used" ]; then
+                    decide skip "usage response did not include primary used_percent"
+                  else
+                    remaining="$(jq -nr --argjson used "$used" '([0, 100 - $used] | max)')"
+                    message="$used% used, $remaining% remaining, threshold $threshold%"
+                    if [ "$(jq -nr --argjson remaining "$remaining" --argjson threshold "$threshold" '$remaining >= $threshold')" = true ]; then
+                      decide allow "$message"
+                    else
+                      decide skip "$message"
+                    fi
+                  fi
+                fi
+              fi
+            fi
+            [ "$decision" = allow ] || exit 0
 
             exec pi --no-session -p '/session-drain:run'
           '';
