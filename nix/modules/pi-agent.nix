@@ -38,6 +38,7 @@ in
             export PI_SESSION_DRAIN_CHUNK_CONCURRENCY=''${PI_SESSION_DRAIN_CHUNK_CONCURRENCY:-4}
             export PI_SESSION_DRAIN_TIMEOUT_MS=''${PI_SESSION_DRAIN_TIMEOUT_MS:-7200000}
             export PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT=''${PI_SESSION_DRAIN_MIN_CODEX_REMAINING_PERCENT:-50}
+            export PI_SESSION_DRAIN_MODEL=''${PI_SESSION_DRAIN_MODEL:-openai-codex/gpt-5.6-luna}
 
             decision=skip
             decide() {
@@ -89,7 +90,7 @@ in
             fi
             [ "$decision" = allow ] || exit 0
 
-            exec pi --no-session -p '/session-drain:run'
+            exec pi --no-session --model "$PI_SESSION_DRAIN_MODEL" -p '/session-drain:run'
           '';
         };
         # NixOS cannot run agent-browser's downloaded generic Chrome, so point the
