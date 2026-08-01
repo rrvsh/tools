@@ -61,6 +61,7 @@ in
           home.packages = with pkgs; [
             mixxx
             libnotify
+            wl-clipboard
             activitywatch
             aw-watcher-window-wayland
           ];
