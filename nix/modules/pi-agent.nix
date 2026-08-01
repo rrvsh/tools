@@ -230,14 +230,13 @@ in
 
             When writing plans:
 
-            - Number plan sections and list items to make review easier.
+            - Before each response, if any inspection, reading, and research are required, do it first instead of making it a plan step.
             - Use the imperative mood.
-            - Write short, ordered steps.
-            - Include only information needed for the next action.
-            - Omit old context, rejected options, and negative history unless they change the next action.
-            - Omit code, commands, examples, and implementation details unless the user asks for them or they are needed for the next action.
-            - Ask one focused question when the plan needs a decision.
-            - Confirm before risky, broad, destructive, or persistent changes.
+            - Do not include sections or headers.
+            - Write short, ordered steps as a nested list.
+            - Number list items to make review easier.
+            - Omit old context and rejected options.
+            - Omit code, commands, examples, and implementation details.
             - Push back when the request is unclear, premature, over-structured, or inconsistent.
 
             ## Tool use
