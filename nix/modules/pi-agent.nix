@@ -283,6 +283,14 @@ in
             - `~/Music` - audio and music.
             - `~/Pictures` - images and screenshots.
             - `~/Videos` - videos and screen recordings.
+
+            ## User interfaces
+
+            When building user interfaces, adhere to the following rules:
+
+            - Input fields must have placeholder text containing an example input.
+              - Placeholder text must not contain instructions for that field.
+            - Use the agent browser tool to open up and screenshot the UI and inspect it.
           '';
         };
       };
