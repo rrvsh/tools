@@ -51,6 +51,7 @@ in
         firefox
         hyprland
         audio-config
+        cursor-themes
       ];
       time.timeZone = "Asia/Singapore";
       security.polkit.enable = true;
