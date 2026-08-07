@@ -22,7 +22,6 @@ in
             glib
             gsettings-desktop-schemas
             hyprland
-            libnotify
             gnused
           ];
           text = ''
@@ -84,7 +83,7 @@ in
               theme=$1
               size=''${2:-$default_size}
               directory=$(theme_directory "$theme")
-              [ -n "$directory" ] || { notify-send "Cursor theme" "Theme not found: $theme"; exit 1; }
+              [ -n "$directory" ] || { echo "cursor theme not found: $theme" >&2; exit 1; }
               hyprctl setcursor "$theme" "$size" >/dev/null
               # Hyprland changes its compositor cursor immediately. GSettings
               # covers GTK clients, which do not all follow compositor state.
@@ -99,7 +98,6 @@ in
                 echo "$theme"
                 echo "$size"
               } > "$state_file"
-              notify-send "Cursor theme" "$(theme_display_name "$directory")"
             }
 
             restore_theme() {
