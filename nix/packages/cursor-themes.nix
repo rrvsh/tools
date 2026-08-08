@@ -6,7 +6,6 @@ in
   perSystem =
     { pkgs, ... }:
     let
-      cursorSource = root + /nix/assets/cursors;
       themeIds = [
         "cursors-extended"
         "pixel-cursors"
@@ -65,10 +64,12 @@ in
         crosshair = [ "crosshair" ];
         shift = [ "dnd-move" ];
       };
-      cursorPackage = pkgs.stdenvNoCC.mkDerivation {
+    in
+    {
+      packages.pixel-cursor-themes = pkgs.stdenvNoCC.mkDerivation {
         pname = "pixel-cursor-themes";
         version = "0.1.0";
-        src = cursorSource;
+        src = root + /assets/cursors;
         nativeBuildInputs = [
           pkgs.hyprcursor
           pkgs.xcur2png
@@ -144,8 +145,5 @@ in
                     runHook postInstall
         '';
       };
-    in
-    {
-      packages.pixel-cursor-themes = cursorPackage;
     };
 }

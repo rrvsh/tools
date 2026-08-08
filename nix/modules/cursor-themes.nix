@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, ... }:
 let
   cfg = config.flake;
 in
@@ -11,6 +11,12 @@ in
       { config, pkgs, ... }:
       let
         cursorPackage = cfg.packages.${pkgs.stdenv.hostPlatform.system}.pixel-cursor-themes;
+        themeIds = [
+          "cursors-extended"
+          "pixel-cursors"
+          "pixel-cursor-plus-plus"
+          "windows-98-cursors"
+        ];
         cursorControl = pkgs.writeShellApplication {
           name = "cursorctl";
           runtimeInputs = with pkgs; [
@@ -25,16 +31,11 @@ in
           text = ''
             set -eu
 
-            # Themes are read directly from the vendored pixel-cursor-themes
-            # package in the Nix store. There is no separate mutable cursor
-            # directory to keep in sync; cursorctl is the single theme catalog.
-            builtin_theme_path=${lib.escapeShellArg "${cursorPackage}/share/icons"}
             state_home="''${XDG_STATE_HOME:-$HOME/.local/state}"
             state_file="$state_home/cursor-theme"
             default_size=32
 
             theme_paths() {
-              echo "$builtin_theme_path"
               echo "''${XDG_DATA_HOME:-$HOME/.local/share}/icons"
               echo "$HOME/.icons"
               if [ -n "''${XCURSOR_PATH:-}" ]; then
@@ -61,7 +62,7 @@ in
             list_themes() {
               theme_paths | while IFS= read -r base; do
                 [ -d "$base" ] || continue
-                find "$base" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | while IFS= read -r directory; do
+                find -L "$base" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | while IFS= read -r directory; do
                   [ -d "$directory/cursors" ] || continue
                   [ -d "$directory/hyprcursors" ] || continue
                   id=$(basename "$directory")
@@ -139,12 +140,21 @@ in
       {
         home = {
           # cursorControl must be on PATH so the desktop actions
-          # (`Exec=cursorctl set ...`) can invoke it by name. The theme package
-          # is not needed in home.packages: pointerCursor installs the active
-          # theme and cursorctl reads the full catalog from the store.
+          # (`Exec=cursorctl set ...`) can invoke it by name.
           packages = [
             cursorControl
           ];
+          # Symlink each non-active theme from the package into the canonical
+          # search path XDG_DATA_HOME/icons (here ~/.local/share/icons). cursorctl
+          # finds themes by searching that path, so no store path is baked into it.
+          # pointerCursor installs the active theme (pixel-cursors) itself, so that
+          # one is intentionally not listed here to avoid a managed-file clash.
+          file = builtins.listToAttrs (
+            map (theme: {
+              name = ".local/share/icons/${theme}";
+              value.source = "${cursorPackage}/share/icons/${theme}";
+            }) (builtins.filter (t: t != "pixel-cursors") themeIds)
+          );
           pointerCursor = {
             enable = true;
             package = cursorPackage;
