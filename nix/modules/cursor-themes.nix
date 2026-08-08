@@ -1,14 +1,12 @@
 { config, lib, ... }:
 let
   cfg = config.flake;
-  osModule = {
-    home-manager.sharedModules = [ cfg.modules.homeManager.cursor-themes ];
-  };
 in
 {
   config.flake.modules = {
-    darwin.cursor-themes = { };
-    nixos.cursor-themes = osModule;
+    nixos.cursor-themes = {
+      home-manager.sharedModules = [ cfg.modules.homeManager.cursor-themes ];
+    };
     homeManager.cursor-themes =
       { config, pkgs, ... }:
       let
@@ -27,6 +25,9 @@ in
           text = ''
             set -eu
 
+            # Themes are read directly from the vendored pixel-cursor-themes
+            # package in the Nix store. There is no separate mutable cursor
+            # directory to keep in sync; cursorctl is the single theme catalog.
             builtin_theme_path=${lib.escapeShellArg "${cursorPackage}/share/icons"}
             state_home="''${XDG_STATE_HOME:-$HOME/.local/state}"
             state_file="$state_home/cursor-theme"
@@ -114,34 +115,32 @@ in
               apply_theme "$theme" "$size"
             }
 
-            desktop_entry() {
-              themes=$(list_themes)
-              actions="restore;"
-              while IFS='|' read -r id display; do
-                actions="$actions$id;"
-              done <<< "$themes"
-              echo '[Desktop Entry]'
-              echo 'Type=Application'
-              echo 'Name=Cursor Theme'
-              echo 'Comment=Choose the active cursor theme'
-              echo 'Exec=cursorctl restore'
-              echo "Actions=$actions"
-              echo '[Desktop Action restore]'
-              echo 'Name=Restore saved theme'
-              echo 'Exec=cursorctl restore'
-              while IFS='|' read -r id display; do
-                echo "[Desktop Action $id]"
-                echo "Name=$display"
-                echo "Exec=cursorctl set $id"
-                echo
-              done <<< "$themes"
-            }
-
             case ''${1:-restore} in
               list) list_themes ;;
               set) [ $# -ge 2 ] || { echo 'usage: cursorctl set THEME [SIZE]' >&2; exit 2; }; apply_theme "$2" "''${3:-$default_size}" ;;
               restore) restore_theme ;;
-              desktop-entry) desktop_entry ;;
+              desktop-entry)
+                themes=$(list_themes)
+                actions="restore;"
+                while IFS='|' read -r id display; do
+                  actions="$actions$id;"
+                done <<< "$themes"
+                echo '[Desktop Entry]'
+                echo 'Type=Application'
+                echo 'Name=Cursor Theme'
+                echo 'Comment=Choose the active cursor theme'
+                echo 'Exec=cursorctl restore'
+                echo "Actions=$actions"
+                echo '[Desktop Action restore]'
+                echo 'Name=Restore saved theme'
+                echo 'Exec=cursorctl restore'
+                while IFS='|' read -r id display; do
+                  echo "[Desktop Action $id]"
+                  echo "Name=$display"
+                  echo "Exec=cursorctl set $id"
+                  echo
+                done <<< "$themes"
+                ;;
               *) echo 'usage: cursorctl {list|set|restore|desktop-entry}' >&2; exit 2 ;;
             esac
           '';
@@ -149,8 +148,11 @@ in
       in
       {
         home = {
+          # cursorControl must be on PATH so the desktop actions
+          # (`Exec=cursorctl set ...`) can invoke it by name. The theme package
+          # is not needed in home.packages: pointerCursor installs the active
+          # theme and cursorctl reads the full catalog from the store.
           packages = [
-            cursorPackage
             cursorControl
           ];
           pointerCursor = {
