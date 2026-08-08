@@ -58,16 +58,6 @@ in
               return 1
             }
 
-            theme_display_name() {
-              directory=$1
-              name=$(sed -n 's/^Name=//p' "$directory/index.theme" 2>/dev/null | head -n 1 || true)
-              if [ -n "$name" ]; then
-                echo "$name"
-              else
-                basename "$directory"
-              fi
-            }
-
             list_themes() {
               theme_paths | while IFS= read -r base; do
                 [ -d "$base" ] || continue
@@ -75,7 +65,9 @@ in
                   [ -d "$directory/cursors" ] || continue
                   [ -d "$directory/hyprcursors" ] || continue
                   id=$(basename "$directory")
-                  echo "$id|$(theme_display_name "$directory")"
+                  name=$(sed -n 's/^Name=//p' "$directory/index.theme" 2>/dev/null | head -n 1 || true)
+                  [ -n "$name" ] || name=$id
+                  echo "$id|$name"
                 done
               done | awk -F '|' '!seen[$1]++'
             }
@@ -101,24 +93,22 @@ in
               } > "$state_file"
             }
 
-            restore_theme() {
-              theme=""; size=$default_size
-              if [ -r "$state_file" ]; then
-                IFS= read -r theme < "$state_file" || true
-                IFS= read -r size < <(sed -n '2p' "$state_file") || true
-              fi
-              [ -n "$theme" ] || theme=pixel-cursors
-              case "$size" in ""|*[!0-9]*) size=$default_size ;; esac
-              if ! theme_directory "$theme" >/dev/null; then
-                theme=pixel-cursors
-              fi
-              apply_theme "$theme" "$size"
-            }
-
             case ''${1:-restore} in
               list) list_themes ;;
               set) [ $# -ge 2 ] || { echo 'usage: cursorctl set THEME [SIZE]' >&2; exit 2; }; apply_theme "$2" "''${3:-$default_size}" ;;
-              restore) restore_theme ;;
+              restore)
+                theme=""; size=$default_size
+                if [ -r "$state_file" ]; then
+                  IFS= read -r theme < "$state_file" || true
+                  IFS= read -r size < <(sed -n '2p' "$state_file") || true
+                fi
+                [ -n "$theme" ] || theme=pixel-cursors
+                case "$size" in ""|*[!0-9]*) size=$default_size ;; esac
+                if ! theme_directory "$theme" >/dev/null; then
+                  theme=pixel-cursors
+                fi
+                apply_theme "$theme" "$size"
+                ;;
               desktop-entry)
                 themes=$(list_themes)
                 actions="restore;"
