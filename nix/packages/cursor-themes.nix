@@ -70,6 +70,9 @@ in
         pname = "pixel-cursor-themes";
         version = "0.1.0";
         src = root + /assets/cursors;
+        passthru = {
+          inherit themeIds;
+        };
         nativeBuildInputs = [
           pkgs.hyprcursor
           pkgs.xcur2png
