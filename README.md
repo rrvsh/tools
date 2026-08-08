@@ -74,3 +74,7 @@ Note: on this machine, unsetting from `boot.loader.systemd-boot.extraInstallComm
 - [NotAShelf](https://github.com/notashelf/nyx) for introducing me to the idea of monorepos and custom logic (read: over-engineering) for Nix flakes
 - [drupol/infra](https://not-a-number.io/2025/refactoring-my-infrastructure-as-code-configurations/) for introducing the dendritic pattern to me, and [mightyiam](https://discourse.nixos.org/t/pattern-every-file-is-a-flake-parts-module/61271) for pioneering it.
 - [Cross-compiling to ARM64 in GitHub Actions](https://thewagner.net/blog/2023/11/20/building-nix-packages-for-the-raspberry-pi-with-github-actions)
+- [fishstiz](https://github.com/fishstiz) for [Cursors Extended](https://github.com/fishstiz/cursors_extended), adapted here as a desktop cursor theme.
+- [Refri](https://modrinth.com/user/Refri) for [Pixel Cursors](https://modrinth.com/resourcepack/pixel-cursors), adapted here as a desktop cursor theme.
+- [kylon](https://modrinth.com/user/kylon) for [Pixel Cursor ++](https://modrinth.com/resourcepack/pixel-cursor++), and [Astropulse](https://astropulse.itch.io/) for the [Familiar Pixel Cursors](https://astropulse.itch.io/familiar-pixel-cursors) inspiration.
+- [NicSonic](https://modrinth.com/user/NicSonic) for [Windows 98 Cursors](https://modrinth.com/resourcepack/windows-98-cursors), adapted here as a desktop cursor theme.
