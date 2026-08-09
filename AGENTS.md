@@ -70,6 +70,8 @@ nix develop -c just rb
 
 Use atomic commits and conventional commits.
 
+Do not commit or push until the user explicitly approves the commit up front. If the user says the commit is allowed, you may commit as instructed.
+
 Commit syntax: `<type>(<concern>): <summary>`. The concern should be either a file or a concern, such as `AGENTS.md`, `flake.lock`, `nix`, `hyprland`, or `nemesis`.
 
 Common commit types:
