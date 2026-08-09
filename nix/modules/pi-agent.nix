@@ -241,12 +241,14 @@ in
 
             ## Tool use
 
-            - Use native Pi tools when possible.
-            - Use `read` to read files.
-            - Use `edit` for file changes.
-            - Use `write` only for new files or full rewrites.
-            - Use `bash` for shell commands.
-            - Use scripts only when native tools are not sufficient.
+            By default, use `read`, `edit`, and `write` to read and change text files.
+            Use a CLI tool only when a native tool cannot do the job.
+
+            Use a CLI tool for cross-file search, regex edits, live output, binary content, and appending.
+            Use `bash` to run commands, tests, and builds.
+
+            Do not use `cat`, `sed`, `head`, or `tail` as a substitute for `read`.
+            Do not use `sed -i` or heredoc appends as a substitute for `edit`.
 
             ### Web and browser tools
 
@@ -290,6 +292,13 @@ in
             - Input fields must have placeholder text containing an example input.
               - Placeholder text must not contain instructions for that field.
             - Use the agent browser tool to open up and screenshot the UI and inspect it.
+
+            ## Writing code
+
+            When writing code or editing files, adhere to the following rules:
+
+            - Do not use single-use helpers. Only apply DRY when a value is reused.
+              - DRY is used when a value should be deduplicated for ease of reference or change.
           '';
         };
       };
