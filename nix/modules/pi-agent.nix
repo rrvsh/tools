@@ -157,7 +157,7 @@ in
               sessionDrain.passthru.packagePath
             ];
             extensions = [
-              (root + "/pi/extensions/default-model.ts")
+              (root + "/pi/extensions/persisted-model.ts")
               (root + "/pi/extensions/hostname-context.ts")
               (root + "/pi/extensions/system-prompt-viewer.ts")
             ];
