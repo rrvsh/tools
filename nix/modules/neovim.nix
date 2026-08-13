@@ -26,6 +26,14 @@ in
             gitsigns-nvim
             mini-nvim
             nvim-lspconfig
+            nvim-ts-autotag
+            (nvim-treesitter.withPlugins (p: [
+              p.tree-sitter-html
+              p.tree-sitter-css
+              p.tree-sitter-javascript
+              p.tree-sitter-typescript
+              p.tree-sitter-json
+            ]))
             plenary-nvim
             which-key-nvim
             yazi-nvim
@@ -35,13 +43,16 @@ in
             clippy
             lua-language-server
             nil
+            oxfmt
             pyright
             ruff
             rust-analyzer
             rustc
             rustfmt
             stylua
+            typescript-language-server
             unzip
+            vscode-langservers-extracted
           ];
         };
       };

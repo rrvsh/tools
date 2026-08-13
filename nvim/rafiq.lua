@@ -3,7 +3,9 @@
 -- PLUGINS
 
 require("mini.pick").setup()
+require("mini.pairs").setup()
 require("fidget").setup()
+require("nvim-ts-autotag").setup()
 require("fff").setup()
 local yazi = require("yazi")
 vim.g.loaded_netrwPlugin = 1
@@ -123,8 +125,20 @@ end, { desc = "FFF: Live Grep" })
 vim.keymap.set("n", "<leader>la", function()
 	vim.lsp.buf.code_action()
 end, { desc = "Code Actions" })
+-- Format with oxfmt only for web files (JS/TS/CSS/HTML/JSON). oxfmt is
+-- Prettier-compatible; ts_ls, html, cssls, and jsonls are not and would break
+-- `prettier --check` in CI. For other files, fall back to normal formatting.
 vim.keymap.set("n", "<leader>lf", function()
-	vim.lsp.buf.format()
+	local has_oxfmt = #vim.lsp.get_clients({ bufnr = 0, name = "oxfmt" }) > 0
+	if has_oxfmt then
+		vim.lsp.buf.format({
+			filter = function(client)
+				return client.name == "oxfmt"
+			end,
+		})
+	else
+		vim.lsp.buf.format()
+	end
 end, { desc = "Format" })
 vim.keymap.set("n", "<leader>lgd", function()
 	vim.lsp.buf.definition()
@@ -204,3 +218,9 @@ vim.lsp.config("lua_ls", {
 		},
 	},
 })
+vim.lsp.enable("oxfmt")
+vim.lsp.config("oxfmt", { workspace_required = false })
+vim.lsp.enable("ts_ls")
+vim.lsp.enable("html")
+vim.lsp.enable("cssls")
+vim.lsp.enable("jsonls")
