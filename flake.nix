@@ -33,9 +33,11 @@
       url = "github:rrvsh/waybar_peek";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    hyprland = {
-      url = "github:hyprwm/Hyprland";
-      inputs.nixpkgs.follows = "nixpkgs";
+    hyprland.url = "github:hyprwm/Hyprland";
+    # Pin this hypr-dynamic-cursors to Hyprland input - it will break on mismatched revs.
+    hypr-dynamic-cursors = {
+      url = "github:VirtCode/hypr-dynamic-cursors";
+      inputs.hyprland.follows = "hyprland";
     };
     import-tree.url = "github:vic/import-tree";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
