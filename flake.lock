@@ -113,6 +113,21 @@
         "type": "github"
       }
     },
+    "crane": {
+      "locked": {
+        "lastModified": 1784564969,
+        "narHash": "sha256-TkTWNhJV/8Wk3czlbz4bwHZkFCaCHPsOy+oJe4PUiXg=",
+        "owner": "ipetkov",
+        "repo": "crane",
+        "rev": "7930f6c291de6f83c257839d434592aa085f290a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ipetkov",
+        "repo": "crane",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -1234,7 +1249,29 @@
         "pi-session-drain": "pi-session-drain",
         "pi-slopchop": "pi-slopchop",
         "sops-nix": "sops-nix",
+        "tuigreet": "tuigreet",
         "waybar-peek": "waybar-peek"
+      }
+    },
+    "rust-overlay": {
+      "inputs": {
+        "nixpkgs": [
+          "tuigreet",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784697913,
+        "narHash": "sha256-DK+AmC9SQ9hmOFNIMu1l05gJtsmKyYsfJnuFtt1TnAU=",
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "rev": "47759faaddf38fadaf172151ca9df8adae9c0b2e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oxalica",
+        "repo": "rust-overlay",
+        "type": "github"
       }
     },
     "sops-nix": {
@@ -1335,6 +1372,28 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "tuigreet": {
+      "inputs": {
+        "crane": "crane",
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "rust-overlay": "rust-overlay"
+      },
+      "locked": {
+        "lastModified": 1786609003,
+        "narHash": "sha256-HBEL2oEuQqJSKyuC2jXjXXMTk4jM8c5doDl7QZkr+5k=",
+        "owner": "tuigreet",
+        "repo": "tuigreet",
+        "rev": "8e377eb6516e4c36e513f84834a9b1bed3062a34",
+        "type": "github"
+      },
+      "original": {
+        "owner": "tuigreet",
+        "repo": "tuigreet",
         "type": "github"
       }
     },

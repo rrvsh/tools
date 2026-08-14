@@ -40,6 +40,10 @@
       inputs.hyprland.follows = "hyprland";
     };
     import-tree.url = "github:vic/import-tree";
+    tuigreet = {
+      url = "github:tuigreet/tuigreet";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";

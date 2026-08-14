@@ -42,7 +42,7 @@ in
       ];
     };
   config.flake.modules.nixos.profile-graphical =
-    { pkgs, ... }:
+    { config, pkgs, ... }:
     {
       imports = with cfg.modules.nixos; [
         waybar
@@ -52,7 +52,23 @@ in
         hyprland
         audio-config
         cursor-themes
+        greetd-tuigreet
       ];
+      services.tuigreet = {
+        enable = true;
+        settings = {
+          session.command = "${config.programs.hyprland.package}/bin/start-hyprland";
+          layout.widgets.status_bar = {
+            show_reset = false;
+            show_command = false;
+            show_session = false;
+            show_power = false;
+            show_background = false;
+            show_session_status = false;
+            show_caps_lock = false;
+          };
+        };
+      };
       time.timeZone = "Asia/Singapore";
       security.polkit.enable = true;
       programs.dconf.enable = true;
