@@ -58,7 +58,7 @@ clear-systemd-boot-entry-overrides:
 
 nice: format lint
 
-format: format-gha format-lua format-nix format-rs
+format: format-gha format-lua format-nix format-qml format-rs
 
 format-gha:
   zizmor . --gh-token $(gh auth token) --fix=all
@@ -69,10 +69,13 @@ format-lua:
 format-nix:
   treefmt
 
+format-qml:
+  qmlformat -i $(git ls-files '*.qml')
+
 format-rs:
   cargo fmt --manifest-path rs/Cargo.toml --all
 
-lint: lint-lua lint-nix lint-rs
+lint: lint-lua lint-nix lint-qml lint-rs
 
 lint-lua:
   luacheck $(git ls-files '*.lua')
@@ -82,6 +85,16 @@ lint-nix:
   statix check
   statix fix
   deadnix --edit
+
+lint-qml:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  IFS=: read -ra import_paths <<< "$QML_IMPORT_PATH"
+  import_args=()
+  for path in "${import_paths[@]}"; do
+    import_args+=(-I "$path")
+  done
+  qmllint "${import_args[@]}" $(git ls-files '*.qml')
 
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
@@ -94,7 +107,7 @@ test-nix:
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all
 
-check: check-gha check-lua check-nix check-rs test
+check: check-gha check-lua check-nix check-qml check-rs test
 
 check-gha:
   zizmor . --gh-token $(gh auth token)
@@ -106,6 +119,20 @@ check-nix:
   treefmt --ci
   statix check
   deadnix
+
+check-qml:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  temporary="$(mktemp)"
+  trap 'rm -f "$temporary"' EXIT
+  for file in $(git ls-files '*.qml'); do
+    qmlformat "$file" > "$temporary"
+    if ! cmp -s "$file" "$temporary"; then
+      diff -u "$file" "$temporary" || true
+      exit 1
+    fi
+  done
+  just lint-qml
 
 check-rs:
   cargo clippy --manifest-path rs/Cargo.toml --all

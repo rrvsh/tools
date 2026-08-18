@@ -45,7 +45,7 @@ in
     { config, pkgs, ... }:
     {
       imports = with cfg.modules.nixos; [
-        waybar
+        quickshell
         wofi
         ghostty
         firefox
