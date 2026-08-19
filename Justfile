@@ -21,6 +21,11 @@ deploy-rrv-sh:
   nix copy --no-check-sigs --to ssh-ng://root@rrv.sh ./result
   ssh root@rrv.sh "$(readlink -f result)/bin/switch-to-configuration switch"
 
+deploy-mercury:
+  nix build --accept-flake-config .#nixosConfigurations.mercury.config.system.build.toplevel
+  nix copy --no-check-sigs --to ssh-ng://rafiq@mercury ./result
+  ssh rafiq@mercury "sudo $(readlink -f result)/bin/switch-to-configuration switch"
+
 register-aenyrathia-deploy-key:
   #!/usr/bin/env bash
   set -euo pipefail

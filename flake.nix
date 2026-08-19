@@ -29,6 +29,11 @@
     flake-parts.url = "github:hercules-ci/flake-parts";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     home-manager.url = "github:nix-community/home-manager";
+    hermes-agent = {
+      url = "github:NousResearch/hermes-agent/4903993cdd9747a8a0e11d4022d88d1e20b33eb4";
+      inputs.home-manager.follows = "home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     hyprland.url = "github:hyprwm/Hyprland";
     # Pin this hypr-dynamic-cursors to Hyprland input - it will break on mismatched revs.
     hypr-dynamic-cursors = {

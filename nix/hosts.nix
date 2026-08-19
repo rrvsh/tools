@@ -141,39 +141,78 @@ in
         )
       ];
     };
+    mercury = {
+      hostPlatform = "x86_64-linux";
+      primaryUser = rafiq;
+      profiles = [ "development" ];
+      modules = [
+        cfg.modules.nixos.user-primary
+        cfg.modules.nixos.vultr-vps
+        cfg.modules.nixos.hermes-agent
+        (
+          { lib, ... }:
+          {
+            boot.initrd = {
+              availableKernelModules = [
+                "ata_piix"
+                "uhci_hcd"
+                "xen_blkfront"
+                "vmw_pvscsi"
+              ];
+              kernelModules = [ "nvme" ];
+            };
+            fileSystems = {
+              "/" = {
+                device = "/dev/disk/by-uuid/002fb038-d031-48e5-8f88-b5d14a4bac35";
+                fsType = "ext4";
+              };
+              "/boot/efi" = {
+                device = "/dev/disk/by-uuid/BB9B-6199";
+                fsType = "vfat";
+              };
+            };
+            networking.firewall = {
+              allowPing = false;
+              interfaces.tailscale0.allowedTCPPorts = [ 22 ];
+            };
+            nix.gc = {
+              automatic = true;
+              dates = "weekly";
+              options = "--delete-older-than 14d";
+            };
+            services = {
+              journald.extraConfig = "SystemMaxUse=512M";
+              openssh = {
+                openFirewall = lib.mkForce false;
+                settings.PermitRootLogin = lib.mkForce "no";
+              };
+              tailscale.authKeyFile = lib.mkForce null;
+            };
+            system.stateVersion = lib.mkForce "23.11";
+            zramSwap.enable = true;
+          }
+        )
+      ];
+    };
     orichalcum = {
       hostPlatform = "x86_64-linux";
       primaryUser = rafiq;
       modules = [
         cfg.modules.nixos.user-config
         cfg.modules.nixos.podman
+        cfg.modules.nixos.vultr-vps
         (
+          { pkgs, ... }:
           {
-            modulesPath,
-            pkgs,
-            ...
-          }:
-          {
-            imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
-            boot = {
-              initrd = {
-                availableKernelModules = [
-                  "ata_piix"
-                  "uhci_hcd"
-                  "xen_blkfront"
-                  "vmw_pvscsi"
-                ];
-                kernelModules = [ "nvme" ];
-                systemd.enable = false;
-              };
-              loader = {
-                efi.efiSysMountPoint = "/boot/efi";
-                grub = {
-                  efiSupport = true;
-                  efiInstallAsRemovable = true;
-                  device = "nodev";
-                };
-              };
+            boot.initrd = {
+              availableKernelModules = [
+                "ata_piix"
+                "uhci_hcd"
+                "xen_blkfront"
+                "vmw_pvscsi"
+              ];
+              kernelModules = [ "nvme" ];
+              systemd.enable = false;
             };
             fileSystems = {
               "/" = {
@@ -309,34 +348,25 @@ in
       primaryUser = rafiq;
       modules = [
         cfg.modules.nixos.user-config
+        cfg.modules.nixos.vultr-vps
         (
           {
             config,
             lib,
             pkgs,
-            modulesPath,
             ...
           }:
           {
-            imports = [ (modulesPath + "/profiles/qemu-guest.nix") ];
             hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
             boot = {
               kernelParams = [
                 "console=ttyS1,115200n8"
                 "console=tty0"
               ];
-              # Vultr boots reliably from the UEFI fallback path, so use GRUB's removable EFI install
-              # instead of relying on mutable EFI NVRAM entries like a local workstation can.
               loader = {
-                efi = {
-                  canTouchEfiVariables = false;
-                  efiSysMountPoint = "/boot/efi";
-                };
+                efi.canTouchEfiVariables = false;
                 grub = {
                   enable = true;
-                  device = "nodev";
-                  efiSupport = true;
-                  efiInstallAsRemovable = true;
                   useOSProber = false;
                 };
               };
