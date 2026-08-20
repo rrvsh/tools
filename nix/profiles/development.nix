@@ -6,6 +6,7 @@ in
   config.flake.modules = {
     darwin.profile-development = {
       imports = with cfg.modules.darwin; [
+        beads
         passwordless-sudo
         sops-config
         syncthing
@@ -38,6 +39,7 @@ in
     };
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
+        beads
         passwordless-sudo
         sops-config
         syncthing
