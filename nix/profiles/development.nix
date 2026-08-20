@@ -1,8 +1,4 @@
-{
-  config,
-  lib,
-  ...
-}:
+{ config, ... }:
 let
   cfg = config.flake;
 in
@@ -12,6 +8,7 @@ in
       imports = with cfg.modules.darwin; [
         passwordless-sudo
         sops-config
+        syncthing
         tailscale-config
         neovim
         nix-index-comma
@@ -43,6 +40,7 @@ in
       imports = with cfg.modules.nixos; [
         passwordless-sudo
         sops-config
+        syncthing
         tailscale-config
         neovim
         nix-index-comma
@@ -75,31 +73,106 @@ in
       ];
     };
     homeManager.profile-development =
-      { pkgs, ... }:
       {
-        home.packages = with pkgs; [
-          ddgr
-          gh
-          git-lfs
-          ripgrep
+        config,
+        hostName,
+        lib,
+        pkgs,
+        ...
+      }:
+      let
+        syncthingDevices = {
+          mercury = {
+            id = "AXYVAEZ-LWIJDVN-6C2YABB-GI3M3QS-E6ZSI4D-ZBCYWD5-CD5MPS5-H2ZBAQG";
+            addresses = [ "tcp://100.127.209.56:22000" ];
+          };
+          nemesis = {
+            id = "4WDU7B4-WFIUQXA-AQZ5ZXH-XAJ5F22-RZ6OQGO-NJVCMV3-I3BRRHW-XG4PXQM";
+            addresses = [ "tcp://100.98.114.23:22000" ];
+          };
+        };
+        remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
+        artifactExtensions = [
+          "csv"
+          "html"
+          "json"
+          "log"
+          "md"
+          "svg"
+          "toml"
+          "txt"
+          "xml"
+          "yaml"
+          "yml"
         ];
-        home.shellAliases = {
-          cd = "echo \"Please use z\"";
-          gc = "git commit";
-          gcam = "git commit -am";
-          gcamend = "git commit -a --amend --no-edit";
-          gcend = "git commit --amend --no-edit";
-          gco = "git checkout";
-          gd = "git diff";
-          gdh = "git diff HEAD";
-          gdm = "git diff $(git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-)";
-          gds = "git diff --staged";
-          grc = "git rebase --continue";
-          gs = "git status";
-          gu = "git push";
-          gy = "git pull";
-          v = "$EDITOR";
-          e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
+        agentsIgnorePatterns = [
+          "/.session-drain/"
+          "/.session-drain/**"
+          "/research/lumen/"
+          "/research/lumen/**"
+          "/artifacts/sessions/"
+          "/artifacts/sessions/**"
+          "/artifacts/tachyon-codex-static-spike*.html"
+          "/artifacts/codex-device-helper*"
+          "!/artifacts/"
+          "!/artifacts/**/"
+        ]
+        ++ lib.concatMap (extension: [
+          "!/artifacts/*.${extension}"
+          "!/artifacts/**/*.${extension}"
+        ]) artifactExtensions
+        ++ [ "/artifacts/**" ];
+      in
+      {
+        home = {
+          activation.agentsStignore = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run rm -f ${config.home.homeDirectory}/Agents/.stignore
+            run ${pkgs.coreutils}/bin/install -Dm0644 ${
+              pkgs.writeText "agents-stignore" (lib.concatStringsSep "\n" agentsIgnorePatterns + "\n")
+            } ${config.home.homeDirectory}/Agents/.stignore
+          '';
+          packages = with pkgs; [
+            ddgr
+            gh
+            git-lfs
+            ripgrep
+          ];
+          shellAliases = {
+            cd = "echo \"Please use z\"";
+            gc = "git commit";
+            gcam = "git commit -am";
+            gcamend = "git commit -a --amend --no-edit";
+            gcend = "git commit --amend --no-edit";
+            gco = "git checkout";
+            gd = "git diff";
+            gdh = "git diff HEAD";
+            gdm = "git diff $(git rev-parse --abbrev-ref origin/HEAD | cut -d'/' -f2-)";
+            gds = "git diff --staged";
+            grc = "git rebase --continue";
+            gs = "git status";
+            gu = "git push";
+            gy = "git pull";
+            v = "$EDITOR";
+            e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
+          };
+        };
+        services.syncthing.settings = {
+          devices = remoteSyncthingDevices;
+          folders.agents = {
+            path = "${config.home.homeDirectory}/Agents";
+            id = "agents";
+            label = "Agents";
+            type = "sendreceive";
+            devices = builtins.attrNames remoteSyncthingDevices;
+            maxConflicts = 20;
+            versioning = {
+              type = "staggered";
+              params = {
+                cleanInterval = "3600";
+                maxAge = "2592000";
+              };
+            };
+          };
         };
         programs = {
           fish = {
