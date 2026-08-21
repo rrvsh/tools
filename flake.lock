@@ -1266,6 +1266,29 @@
         "type": "github"
       }
     },
+    "pi-marginalia": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1787277818,
+        "narHash": "sha256-EWg+zBMTpCpndEcUIvag1JSQKCmnqk5XWLgQcNBp/o4=",
+        "owner": "rrvsh",
+        "repo": "pi-marginalia",
+        "rev": "189b41ff36b9df724430895f9ed881032590800e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "repo": "pi-marginalia",
+        "type": "github"
+      }
+    },
     "pi-session-drain": {
       "inputs": {
         "flake-parts": "flake-parts_8",
@@ -1404,6 +1427,7 @@
         "nixpkgs-master": "nixpkgs-master",
         "pi": "pi",
         "pi-claude-bridge": "pi-claude-bridge",
+        "pi-marginalia": "pi-marginalia",
         "pi-session-drain": "pi-session-drain",
         "pi-slopchop": "pi-slopchop",
         "sops-nix": "sops-nix",

@@ -19,6 +19,7 @@ in
       let
         system = pkgs.stdenv.hostPlatform.system;
         agentBrowser = inputs.agent-browser.packages.${system}.agent-browser;
+        marginalia = inputs.pi-marginalia.packages.${system}.pi-marginalia;
         slopchop = inputs.pi-slopchop.packages.${system}.pi-slopchop;
         sessionDrain = inputs.pi-session-drain.packages.${system}.pi-session-drain;
         piPackage = inputs.pi.packages.${system}.pi-coding-agent;
@@ -153,6 +154,7 @@ in
               "npm:pi-subagents"
               "npm:pi-web-access"
               "npm:pi-context-breadcrumbs"
+              marginalia.passthru.packagePath
               slopchop.passthru.packagePath
               sessionDrain.passthru.packagePath
             ];

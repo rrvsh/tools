@@ -81,6 +81,11 @@
       url = "github:rrvsh/pi-slopchop-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    pi-marginalia = {
+      url = "github:rrvsh/pi-marginalia";
+      inputs.flake-parts.follows = "flake-parts";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pi-session-drain = {
       url = "github:rrvsh/pi-session-drain/prime";
       inputs.nixpkgs.follows = "nixpkgs";
