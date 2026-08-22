@@ -16,6 +16,10 @@ in
         model = "deepseek/deepseek-v4-flash-0731";
         provider = "openrouter";
       };
+      delegationModel = {
+        model = "gpt-5.6-luna";
+        provider = "openai-codex";
+      };
       beadsPackage = inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default;
       hardening = {
         AmbientCapabilities = "";
@@ -90,7 +94,7 @@ in
                 provider = "openrouter";
               };
             };
-          delegation = cheapModel;
+          delegation = delegationModel;
           memory.write_approval = true;
           skills.write_approval = true;
           cron = {
