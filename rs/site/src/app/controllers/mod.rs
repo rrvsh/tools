@@ -1,7 +1,6 @@
 mod article;
 mod index;
 mod pages;
-mod reader;
 
 use crate::app::state::AppState;
 use axum::routing::get;
@@ -17,10 +16,8 @@ pub fn build_router(state: Arc<AppState>, content_dir: &str, static_dir: &str) -
         .nest_service("/static", ServeDir::new(static_dir))
         .nest_service("/assets", ServeDir::new(assets_dir))
         .route("/", get(index::get))
-        .route("/work", get(pages::work))
         .route("/posts", get(pages::posts))
         .route("/about", get(pages::about))
-        .route("/reader", get(reader::get))
         .route("/{year}/{month}/{day}/{slug}", get(article::get))
         .with_state(state)
 }
@@ -62,12 +59,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();
         String::from_utf8(body.to_vec()).unwrap()
-    }
-
-    #[tokio::test]
-    async fn work_page_returns_its_heading() {
-        let body = response_body(state_with_posts(), "/work").await;
-        assert!(body.contains("<h1>work</h1>"));
     }
 
     #[tokio::test]
