@@ -1,30 +1,50 @@
+use crate::app::state::AppState;
+use crate::app::views::MonthGroup;
 use askama::Template;
 use axum::{
+    extract::State,
     http::StatusCode,
     response::{Html, IntoResponse, Response},
 };
+use std::sync::Arc;
 
 #[derive(Template)]
 #[template(path = "page.html")]
-struct PageTemplate {
+struct WorkTemplate {
     heading: &'static str,
 }
 
-fn render(heading: &'static str) -> Result<Response, StatusCode> {
-    PageTemplate { heading }.render().map_or_else(
+#[derive(Template)]
+#[template(path = "about.html")]
+struct AboutTemplate;
+
+#[derive(Template)]
+#[template(path = "posts.html")]
+struct PostsTemplate {
+    months: Vec<MonthGroup>,
+}
+
+pub async fn work() -> Result<Response, StatusCode> {
+    WorkTemplate { heading: "work" }.render().map_or_else(
         |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
         |rendered| Ok(Html(rendered).into_response()),
     )
 }
 
-pub async fn work() -> Result<Response, StatusCode> {
-    render("work")
-}
-
-pub async fn posts() -> Result<Response, StatusCode> {
-    render("posts")
+pub async fn posts(State(state): State<Arc<AppState>>) -> Result<Response, StatusCode> {
+    PostsTemplate {
+        months: state.months.clone(),
+    }
+    .render()
+    .map_or_else(
+        |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
+        |rendered| Ok(Html(rendered).into_response()),
+    )
 }
 
 pub async fn about() -> Result<Response, StatusCode> {
-    render("about")
+    AboutTemplate.render().map_or_else(
+        |_| Err(StatusCode::INTERNAL_SERVER_ERROR),
+        |rendered| Ok(Html(rendered).into_response()),
+    )
 }

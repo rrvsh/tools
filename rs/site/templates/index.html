@@ -1,19 +1,9 @@
 {% extends "base.html" %} {% block content %}
 <div class="content">
   <h1>rafiq's weblog</h1>
-  <p>hi! i'm rafiq (@rrvsh on various platforms), and i'm a 25 year old software engineer. i've been tinkering and coding since I was 14, and plan to never stop. this website showcases some of my work, though you can find the rest on <a href="https://github.com/rrvsh">GitHub</a>.</p>
-  <h2>my work</h2>
-  <h3>tools</h3>
-  <p><a href="/reader">epub reader</a> - a browser-local reader with progress and bookmarks.</p>
-  <h3>prose</h3>
-  <p>a collection of my writing, sorted by month.</p>
-  {% for month in months %}
-  <h4>{{ month.label }}</h4>
   <ul>
-    {% for article in month.articles %}
-    <li><a href="{{ article.url }}">{{ article.title }}</a></li>
-    {% endfor %}
+    <li><a href="/about">about</a></li>
+    <li><a href="/posts">posts</a></li>
   </ul>
-  {% endfor %}
 </div>
 {% endblock %}
