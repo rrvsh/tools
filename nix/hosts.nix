@@ -440,14 +440,10 @@ in
                   };
                 };
               };
-              timers.site-content-refresh = {
-                description = "Refresh rrv.sh site content periodically";
-                wantedBy = [ "timers.target" ];
-                timerConfig = {
-                  OnBootSec = "2min";
-                  OnUnitActiveSec = "10min";
-                  RandomizedDelaySec = "1min";
-                };
+              paths.site-content-refresh = {
+                description = "Watch for rrv.sh site content refresh requests";
+                wantedBy = [ "multi-user.target" ];
+                pathConfig.PathChanged = "/var/lib/site/.content-refresh-request";
               };
             };
           }
