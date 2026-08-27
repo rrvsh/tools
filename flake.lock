@@ -1276,11 +1276,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787277818,
-        "narHash": "sha256-EWg+zBMTpCpndEcUIvag1JSQKCmnqk5XWLgQcNBp/o4=",
+        "lastModified": 1787800932,
+        "narHash": "sha256-tps5dBJp7PZHmKd54QsXbKZJ7xp0rywM1t6EeZNZ03U=",
         "owner": "rrvsh",
         "repo": "pi-marginalia",
-        "rev": "189b41ff36b9df724430895f9ed881032590800e",
+        "rev": "ebe8588f312a6c55726f450b5b8a8746efbacd86",
         "type": "github"
       },
       "original": {
