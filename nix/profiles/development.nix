@@ -84,6 +84,10 @@ in
       }:
       let
         syncthingDevices = {
+          alpha = {
+            id = "SWMTPZZ-NIU7DVO-W6D5TNN-5ET4XCC-D3CE2JF-KNABVQO-MTW37ZD-TUD4SQZ";
+            addresses = [ "tcp://100.103.246.12:22000" ];
+          };
           mercury = {
             id = "AXYVAEZ-LWIJDVN-6C2YABB-GI3M3QS-E6ZSI4D-ZBCYWD5-CD5MPS5-H2ZBAQG";
             addresses = [ "tcp://100.127.209.56:22000" ];
