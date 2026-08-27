@@ -39,7 +39,7 @@ For behavior-preserving refactors, compare the affected system derivation before
 
 #### Multi-host rebuild validation
 
-Only run multi-host rebuild validation if the user explicitly asks for it. Host remotes are configured for peer-to-peer pulls: on `alpha`, the `nemesis` remote points to `nemesis:~/1_repos/tools`; on `nemesis`, the `alpha` remote points to `alpha:~/1_repos/tools`. When validating a change on multiple hosts:
+Only run multi-host rebuild validation if the user explicitly asks for it. Host remotes are configured for peer-to-peer pulls: on `alpha`, the `nemesis` remote points to `nemesis:~/Git/tools`; on `nemesis`, the `alpha` remote points to `alpha:~/Git/tools`. When validating a change on multiple hosts:
 
 1. Rebuild the current host first:
 
