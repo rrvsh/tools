@@ -82,8 +82,10 @@ in
     {
       packages = {
         site-bin = siteBin;
-        site-content-refresh = siteContentRefresh;
         site-deploy = siteDeploy;
+      }
+      // pkgs.lib.optionalAttrs pkgs.stdenv.isLinux {
+        site-content-refresh = siteContentRefresh;
       };
     };
 }
