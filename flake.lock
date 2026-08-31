@@ -1319,11 +1319,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1784245505,
-        "narHash": "sha256-5K4uZXtofUupjIoZPmD3ssRCvoEgkAYRVgI4+BEW4NE=",
+        "lastModified": 1788161475,
+        "narHash": "sha256-OlgaxsLE3QfMax3B70ZLVIBl54eY6lRax0PAedQnXj4=",
         "owner": "rrvsh",
         "repo": "pi-slopchop-nix",
-        "rev": "b920e25b619cc0b41071119e386f7d31e8f49273",
+        "rev": "794990f006fa45e5e99df4745852826996ff2d98",
         "type": "github"
       },
       "original": {
