@@ -95,6 +95,7 @@ in
               };
             };
           delegation = delegationModel;
+          approvals.mode = "smart";
           memory.write_approval = true;
           skills.write_approval = true;
           cron = {
