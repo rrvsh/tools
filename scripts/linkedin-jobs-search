@@ -1,0 +1,422 @@
+#!/usr/bin/env python3
+"""Build LinkedIn Jobs search URLs and optionally fetch visible result cards."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+from pathlib import Path
+from urllib.parse import urlencode, quote
+from urllib.request import Request, urlopen
+
+BASE_URL = "https://www.linkedin.com/jobs/search/"
+DEFAULT_STATE = "/home/rafiq/.agent-browser/state/agent.json"
+
+SORT = {"recent": "DD", "relevant": "R"}
+POSTED = {"hour": "r3600", "24h": "r86400", "week": "r604800", "month": "r2592000"}
+WORKPLACE = {"onsite": "1", "on-site": "1", "remote": "2", "hybrid": "3"}
+EXPERIENCE = {
+    "internship": "1",
+    "entry": "2",
+    "entry-level": "2",
+    "associate": "3",
+    "mid-senior": "4",
+    "mid": "4",
+    "senior": "4",
+    "director": "5",
+    "executive": "6",
+}
+JOB_TYPE = {
+    "full-time": "F",
+    "fulltime": "F",
+    "part-time": "P",
+    "parttime": "P",
+    "contract": "C",
+    "temporary": "T",
+    "volunteer": "V",
+    "internship": "I",
+    "other": "O",
+}
+SALARY = {
+    "40000": "1",
+    "40k": "1",
+    "60000": "2",
+    "60k": "2",
+    "80000": "3",
+    "80k": "3",
+    "100000": "4",
+    "100k": "4",
+    "120000": "5",
+    "120k": "5",
+    "140000": "6",
+    "140k": "6",
+    "160000": "7",
+    "160k": "7",
+    "180000": "8",
+    "180k": "8",
+    "200000": "9",
+    "200k": "9",
+}
+
+
+def split_values(values: list[str] | None) -> list[str]:
+    if not values:
+        return []
+    result: list[str] = []
+    for value in values:
+        result.extend(part.strip() for part in value.split(",") if part.strip())
+    return result
+
+
+def map_values(flag: str, raw: list[str], mapping: dict[str, str]) -> str:
+    mapped: list[str] = []
+    for value in raw:
+        key = value.lower()
+        if key not in mapping:
+            choices = ", ".join(sorted(mapping))
+            raise SystemExit(f"unknown {flag} value {value!r}; choices: {choices}")
+        mapped.append(mapping[key])
+    return ",".join(dict.fromkeys(mapped))
+
+
+def typeahead(kind: str, query: str) -> dict[str, str] | None:
+    if kind == "company":
+        url = f"https://www.linkedin.com/jobs-guest/api/typeaheadHits?typeaheadType=COMPANY&query={quote(query)}"
+    elif kind == "city":
+        url = f"https://www.linkedin.com/jobs-guest/api/typeaheadHits?origin=jserp&typeaheadType=GEO&geoTypes=POPULATED_PLACE&query={quote(query)}"
+    else:
+        raise ValueError(kind)
+    request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+    with urlopen(request, timeout=15) as response:
+        data = json.loads(response.read().decode())
+    return data[0] if data else None
+
+
+def parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(description="Build/fetch a LinkedIn Jobs search")
+    p.add_argument("--keywords", help="classic LinkedIn keyword query")
+    p.add_argument("--location", help="classic LinkedIn location query")
+    p.add_argument("--sort", choices=sorted(SORT), help="result order")
+    p.add_argument("--posted", choices=sorted(POSTED), help="date posted filter")
+    p.add_argument("--workplace", action="append", help="comma/repeat: onsite, remote, hybrid")
+    p.add_argument("--experience", action="append", help="comma/repeat: internship, entry, associate, mid-senior, director, executive")
+    p.add_argument("--job-type", action="append", help="comma/repeat: full-time, part-time, contract, temporary, volunteer, internship, other")
+    p.add_argument("--linkedin-apply", action="store_true", help="LinkedIn Apply only")
+    p.add_argument("--under-10", action="store_true", help="Under 10 applicants")
+    p.add_argument("--in-network", action="store_true", help="In your network")
+    p.add_argument("--salary", help="minimum salary bucket: 40000..200000 or 40k..200k")
+    p.add_argument("--company", action="append", help="company name to resolve to LinkedIn f_C id")
+    p.add_argument("--city", action="append", help="city/place name to resolve to LinkedIn f_PP geo id")
+    p.add_argument("--fetch", action="store_true", help="open the search with Playwright and extract job cards")
+    p.add_argument("--details", action="store_true", help="with --fetch, open each job in the search detail pane and extract details")
+    p.add_argument("--state", default=DEFAULT_STATE, help="Playwright storage state JSON")
+    p.add_argument("--limit", type=int, default=25, help="max visible cards to return in --fetch mode")
+    p.add_argument("--timeout-ms", type=int, default=30000, help="browser navigation timeout")
+    p.add_argument("--browser-executable", default=os.environ.get("LINKEDIN_JOBS_CHROMIUM"), help="Chromium executable path")
+    p.add_argument("--format", choices=["json", "url"], default="json")
+    return p
+
+
+def build(args: argparse.Namespace) -> tuple[dict[str, str], list[dict[str, str]]]:
+    params: dict[str, str] = {}
+    warnings: list[dict[str, str]] = []
+
+    if args.keywords:
+        params["keywords"] = args.keywords
+    if args.location:
+        params["location"] = args.location
+    if args.sort:
+        params["sortBy"] = SORT[args.sort]
+    if args.posted:
+        params["f_TPR"] = POSTED[args.posted]
+
+    if workplace := split_values(args.workplace):
+        params["f_WT"] = map_values("--workplace", workplace, WORKPLACE)
+    if experience := split_values(args.experience):
+        params["f_E"] = map_values("--experience", experience, EXPERIENCE)
+    if job_type := split_values(args.job_type):
+        params["f_JT"] = map_values("--job-type", job_type, JOB_TYPE)
+
+    if args.linkedin_apply:
+        params["f_AL"] = "true"
+    if args.under_10:
+        params["f_EA"] = "true"
+    if args.in_network:
+        params["f_JIYN"] = "true"
+
+    if args.salary:
+        key = args.salary.lower().replace("_", "").replace(",", "")
+        if key not in SALARY:
+            choices = ", ".join(["40000", "60000", "80000", "100000", "120000", "140000", "160000", "180000", "200000"])
+            raise SystemExit(f"unknown --salary value {args.salary!r}; choices: {choices}")
+        params["f_SB2"] = SALARY[key]
+
+    company_ids: list[str] = []
+    for company in args.company or []:
+        try:
+            hit = typeahead("company", company)
+        except Exception as exc:  # noqa: BLE001 - report and keep building the rest of the URL
+            warnings.append({"flag": "--company", "value": company, "status": f"resolution failed: {exc}"})
+            continue
+        if not hit:
+            warnings.append({"flag": "--company", "value": company, "status": "no typeahead match"})
+            continue
+        company_ids.append(hit["id"])
+        warnings.append({"flag": "--company", "value": company, "status": "resolved", "id": hit["id"], "displayName": hit.get("displayName", "")})
+    if company_ids:
+        params["f_C"] = ",".join(dict.fromkeys(company_ids))
+
+    city_ids: list[str] = []
+    for city in args.city or []:
+        try:
+            hit = typeahead("city", city)
+        except Exception as exc:  # noqa: BLE001 - report and keep building the rest of the URL
+            warnings.append({"flag": "--city", "value": city, "status": f"resolution failed: {exc}"})
+            continue
+        if not hit:
+            warnings.append({"flag": "--city", "value": city, "status": "no typeahead match"})
+            continue
+        city_ids.append(hit["id"])
+        warnings.append({"flag": "--city", "value": city, "status": "resolved", "id": hit["id"], "displayName": hit.get("displayName", "")})
+    if city_ids:
+        params["f_PP"] = ",".join(dict.fromkeys(city_ids))
+
+    return params, warnings
+
+
+def ensure_authenticated(page) -> None:
+    auth = page.evaluate(
+        r"""() => ({
+          url: location.href,
+          hasPassword: !!document.querySelector('input[type="password"]'),
+          bodyText: document.body.innerText.slice(0, 1000)
+        })"""
+    )
+    if auth["hasPassword"] or "/login" in auth["url"]:
+        raise SystemExit("AUTH_REQUIRED")
+
+
+def fetch_jobs(url: str, params: dict[str, str], args: argparse.Namespace) -> dict[str, object]:
+    try:
+        from playwright.sync_api import TimeoutError as PlaywrightTimeoutError
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        raise SystemExit("--fetch requires the packaged Playwright environment") from exc
+
+    state = str(Path(args.state).expanduser())
+    if not Path(state).exists():
+        raise SystemExit(f"state file not found: {state}")
+
+    with sync_playwright() as pw:
+        launch_args: dict[str, object] = {"headless": True}
+        if args.browser_executable:
+            launch_args["executable_path"] = args.browser_executable
+        browser = pw.chromium.launch(**launch_args)
+        try:
+            context = browser.new_context(storage_state=state)
+            page = context.new_page()
+            page.set_default_timeout(args.timeout_ms)
+            page.goto(url, wait_until="domcontentloaded", timeout=args.timeout_ms)
+            try:
+                page.wait_for_selector('li[data-occludable-job-id], input[type="password"]', timeout=args.timeout_ms)
+            except PlaywrightTimeoutError:
+                pass
+
+            ensure_authenticated(page)
+
+            seen: dict[str, dict[str, object]] = {}
+            stale_rounds = 0
+            scroll_round = 0
+            while len(seen) < args.limit and stale_rounds < 8:
+                cards = page.evaluate(
+                    r"""() => {
+                      const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+                      const out = [];
+                      for (const li of document.querySelectorAll('li[data-occludable-job-id]')) {
+                        const lines = (li.innerText || '').split('\n').map(x => x.trim()).filter(Boolean);
+                        if (!lines.length) continue;
+                        const jobId = li.getAttribute('data-occludable-job-id');
+                        const link = li.querySelector('a[href*="/jobs/view/"]');
+                        const title = lines[0] || '';
+                        let i = 1;
+                        if (lines[i] && (lines[i] === title || lines[i].startsWith(`${title} with verification`))) i++;
+                        const company = lines[i++] || '';
+                        const locationText = lines[i++] || '';
+                        out.push({
+                          jobId,
+                          href: link ? link.href : null,
+                          title,
+                          company,
+                          location: locationText,
+                          metadata: lines.slice(i),
+                          lines,
+                          rawText: norm(li.innerText),
+                        });
+                      }
+                      return out;
+                    }"""
+                )
+                before = len(seen)
+                for card in cards:
+                    job_id = card.get("jobId")
+                    if job_id and job_id not in seen:
+                        seen[job_id] = card
+                        if len(seen) >= args.limit:
+                            break
+                if len(seen) == before:
+                    stale_rounds += 1
+                else:
+                    stale_rounds = 0
+
+                if len(seen) >= args.limit:
+                    break
+
+                scrolled = page.evaluate(
+                    r"""() => {
+                      const first = document.querySelector('li[data-occludable-job-id]');
+                      let el = first;
+                      while (el && el !== document.body) {
+                        if (el.scrollHeight > el.clientHeight + 50) {
+                          const before = el.scrollTop;
+                          el.scrollTop = Math.min(el.scrollTop + Math.floor(el.clientHeight * 0.85), el.scrollHeight);
+                          return el.scrollTop !== before;
+                        }
+                        el = el.parentElement;
+                      }
+                      const before = window.scrollY;
+                      window.scrollBy(0, Math.floor(window.innerHeight * 0.85));
+                      return window.scrollY !== before;
+                    }"""
+                )
+                scroll_round += 1
+                page.wait_for_timeout(900)
+
+                if not scrolled and stale_rounds >= 2:
+                    next_clicked = page.evaluate(
+                        r"""() => {
+                          const buttons = [...document.querySelectorAll('button')];
+                          const next = buttons.find(b => /next/i.test(b.innerText || b.getAttribute('aria-label') || '') && !b.disabled);
+                          if (!next) return false;
+                          next.click();
+                          return true;
+                        }"""
+                    )
+                    if next_clicked:
+                        page.wait_for_timeout(2000)
+                        stale_rounds = 0
+                    else:
+                        break
+
+            final_url = page.url
+            title = page.title()
+            jobs = list(seen.values())[: args.limit]
+
+            if args.details:
+                for job in jobs:
+                    job_id = job.get("jobId")
+                    if not job_id:
+                        continue
+                    detail_params = dict(params)
+                    detail_params["currentJobId"] = str(job_id)
+                    detail_url = BASE_URL + "?" + urlencode(detail_params)
+                    page.goto(detail_url, wait_until="domcontentloaded", timeout=args.timeout_ms)
+                    try:
+                        page.wait_for_selector('h1, input[type="password"]', timeout=args.timeout_ms)
+                    except PlaywrightTimeoutError:
+                        pass
+                    page.wait_for_timeout(1200)
+                    ensure_authenticated(page)
+                    job["detail"] = page.evaluate(
+                        r"""(jobId) => {
+                          const norm = s => (s || '').replace(/\s+/g, ' ').trim();
+                          const h1 = document.querySelector('h1');
+                          const descriptionEl = document.querySelector('#job-details, .jobs-description');
+                          const candidates = [];
+                          if (h1) {
+                            let el = h1.parentElement;
+                            while (el && el !== document.body) {
+                              const text = el.innerText || '';
+                              if (text.includes('About the job') && /Apply|Save/.test(text)) candidates.push(el);
+                              el = el.parentElement;
+                            }
+                          }
+                          const detailRoot = candidates.sort((a, b) => a.innerText.length - b.innerText.length)[0]
+                            || descriptionEl?.closest('section, div')
+                            || document.querySelector('.jobs-search__job-details')
+                            || document.querySelector('main')
+                            || document.body;
+                          const lines = (detailRoot.innerText || '').split('\n').map(x => x.trim()).filter(Boolean);
+                          const rawText = lines.join('\n');
+                          const apply = [...detailRoot.querySelectorAll('button,a')]
+                            .filter(el => /Apply|company website/i.test(el.innerText || el.getAttribute('aria-label') || ''))
+                            .map(el => ({
+                              tag: el.tagName,
+                              text: norm(el.innerText),
+                              aria: el.getAttribute('aria-label'),
+                              href: el.href || el.getAttribute('href'),
+                              jobId: el.getAttribute('data-job-id')
+                            }))[0] || null;
+                          const companyLink = [...detailRoot.querySelectorAll('a[href*="/company/"]')]
+                            .map(a => ({text: norm(a.innerText), href: a.href}))
+                            .find(a => a.text) || null;
+                          const aboutIndex = lines.findIndex(x => x === 'About the job');
+                          const stopLabels = ['See how you compare', 'Applicants for this job', 'Exclusive Job Seeker Insights', 'About the company', 'Show more Premium insights'];
+                          let description = norm(descriptionEl?.innerText || '').replace(/^About the job\s*/i, '');
+                          if (!description && aboutIndex >= 0) {
+                            let end = lines.length;
+                            for (const label of stopLabels) {
+                              const idx = lines.findIndex((x, i) => i > aboutIndex && x.startsWith(label));
+                              if (idx >= 0 && idx < end) end = idx;
+                            }
+                            description = lines.slice(aboutIndex + 1, end).join('\n').trim();
+                          }
+                          const applyType = apply?.aria?.includes('company website') ? 'external'
+                            : apply?.aria?.includes('LinkedIn Apply') ? 'linkedin_apply'
+                            : apply ? 'unknown' : null;
+                          const title = norm(h1?.innerText || '');
+                          const locationLine = lines.find(x => /\b(applicant|clicked apply|ago|Reposted)\b/i.test(x) && /·/.test(x)) || null;
+                          return {
+                            jobId,
+                            url: location.href,
+                            pageTitle: document.title,
+                            title: title || null,
+                            company: companyLink?.text || lines[0] || null,
+                            companyUrl: companyLink?.href || null,
+                            locationLine,
+                            workplace: lines.find(x => ['Remote', 'Hybrid', 'On-site'].includes(x)) || null,
+                            jobType: lines.find(x => ['Full-time', 'Part-time', 'Contract', 'Temporary', 'Volunteer', 'Internship'].includes(x)) || null,
+                            apply: apply ? {...apply, type: applyType} : null,
+                            description,
+                            rawText: rawText.slice(0, 20000),
+                            lines: lines.slice(0, 100)
+                          };
+                        }""",
+                        job_id,
+                    )
+
+            return {"state": state, "finalUrl": final_url, "title": title, "jobs": jobs, "count": len(jobs), "scrollRounds": scroll_round}
+        finally:
+            browser.close()
+
+def main() -> int:
+    args = parser().parse_args()
+    params, warnings = build(args)
+    url = BASE_URL + ("?" + urlencode(params) if params else "")
+
+    if args.fetch:
+        result = {"url": url, "params": params, "warnings": warnings}
+        result.update(fetch_jobs(url, params, args))
+        print(json.dumps(result, indent=2, sort_keys=True))
+    elif args.format == "url":
+        print(url)
+        if warnings:
+            print(json.dumps({"warnings": warnings}, indent=2), file=sys.stderr)
+    else:
+        print(json.dumps({"url": url, "params": params, "warnings": warnings}, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
