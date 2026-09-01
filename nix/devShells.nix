@@ -76,6 +76,7 @@
               age
               bacon
               nh
+              python3
               ssh-to-age
             ]);
           shellHook = rustShellHook + qmlShellHook;

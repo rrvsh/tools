@@ -67,6 +67,10 @@ sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-* /sys/firm
 
 Note: on this machine, unsetting from `boot.loader.systemd-boot.extraInstallCommands` did not persist (the variable reappeared by end of switch). The reliable approach here is to unset it after `nh os switch` completes (wired into `Justfile` `rb`).
 
+## PR stack reconciliation
+
+Use the Nix-packaged `pr-stack-reconcile` command for an exact-SHA, temporary-worktree pull request reconciliation. See [`docs/pr-stack-reconcile.md`](docs/pr-stack-reconcile.md).
+
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
