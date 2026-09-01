@@ -1,0 +1,46 @@
+{
+  "clean-peer": {
+    "hostname": "alpha",
+    "platform": {
+      "kernel": "Darwin",
+      "machine": "arm64"
+    },
+    "repo": {
+      "path": "/Users/rafiq/Git/tools",
+      "remotes": {
+        "nemesis": "nemesis:~/Git/tools",
+        "origin": "git@github.com:rrvsh/tools"
+      }
+    }
+  },
+  "branch-mismatch": {
+    "repo": {
+      "branch": "prime"
+    }
+  },
+  "dirty-untracked": {
+    "repo": {
+      "tracked_changes": ["Justfile"],
+      "untracked": ["nix/modules/new-source.nix", "notes.txt"],
+      "untracked_nix_sources": ["nix/modules/new-source.nix"]
+    }
+  },
+  "missing-peer": {
+    "hostname": null,
+    "reachable": false,
+    "error": "ssh: connect to host alpha: No route to host",
+    "__replace__": true
+  },
+  "wrong-host": {
+    "hostname": "auto"
+  },
+  "tool-shadowing": {
+    "tools": {
+      "nix": {
+        "invoked_path": "/tmp/bin/nix",
+        "resolved_path": "/tmp/bin/nix",
+        "trusted": false
+      }
+    }
+  }
+}

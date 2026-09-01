@@ -1,0 +1,49 @@
+{
+  "hostname": "nemesis",
+  "platform": {
+    "kernel": "Linux",
+    "machine": "x86_64"
+  },
+  "reachable": true,
+  "repo": {
+    "path": "/home/rafiq/Git/tools",
+    "branch": "feat/host-preflight",
+    "sha": "0123456789abcdef0123456789abcdef01234567",
+    "origin": "git@github.com:rrvsh/tools",
+    "remotes": {
+      "alpha": "alpha:~/Git/tools",
+      "origin": "git@github.com:rrvsh/tools"
+    },
+    "tracked_changes": [],
+    "untracked": [],
+    "untracked_nix_sources": [],
+    "worktrees": [
+      {
+        "branch": "feat/host-preflight",
+        "head": "0123456789abcdef0123456789abcdef01234567",
+        "worktree": "/home/rafiq/Git/tools"
+      }
+    ]
+  },
+  "configurations": {
+    "darwin": ["alpha", "auto"],
+    "nixos": ["hermes", "mercury", "nemesis", "orichalcum"]
+  },
+  "tools": {
+    "git": {
+      "invoked_path": "/run/current-system/sw/bin/git",
+      "resolved_path": "/nix/store/mock-git/bin/git",
+      "trusted": true
+    },
+    "nix": {
+      "invoked_path": "/run/current-system/sw/bin/nix",
+      "resolved_path": "/nix/store/mock-nix/bin/nix",
+      "trusted": true
+    },
+    "ssh": {
+      "invoked_path": "/run/current-system/sw/bin/ssh",
+      "resolved_path": "/nix/store/mock-ssh/bin/ssh",
+      "trusted": true
+    }
+  }
+}

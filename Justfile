@@ -10,6 +10,23 @@ run-docker:
   docker load -i $(nix build --accept-flake-config .#packages.aarch64-linux.site-image --print-out-paths)
   docker run --rm -e PORT=8080 -p 8080:8080 site:latest
 
+host-preflight target expected_branch expected_sha="" configuration="" output="human":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  args=(preflight --target {{quote(target)}} --expected-branch {{quote(expected_branch)}})
+  if [ -n {{quote(expected_sha)}} ]; then args+=(--expected-sha {{quote(expected_sha)}}); fi
+  if [ -n {{quote(configuration)}} ]; then args+=(--configuration {{quote(configuration)}}); fi
+  if [ {{quote(output)}} = json ]; then args+=(--json); fi
+  python3 scripts/host-preflight "${args[@]}"
+
+peer-plan target expected_branch expected_sha="" configuration="":
+  #!/usr/bin/env bash
+  set -euo pipefail
+  args=(peer-plan --target {{quote(target)}} --expected-branch {{quote(expected_branch)}})
+  if [ -n {{quote(expected_sha)}} ]; then args+=(--expected-sha {{quote(expected_sha)}}); fi
+  if [ -n {{quote(configuration)}} ]; then args+=(--configuration {{quote(configuration)}}); fi
+  python3 scripts/host-preflight "${args[@]}"
+
 rb:
   just format-nix
   just lint-nix
@@ -104,7 +121,11 @@ lint-qml:
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
-test: test-nix test-rs
+test: test-host-preflight test-nix test-rs
+
+test-host-preflight:
+  python3 -B -m unittest discover -s tests/host-preflight -p 'test_*.py'
+  ruff check scripts/host-preflight tests/host-preflight
 
 test-nix:
   if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi

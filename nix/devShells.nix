@@ -14,6 +14,8 @@
       nixTools = with pkgs; [
         deadnix
         nixfmt-tree
+        python3
+        ruff
         statix
       ];
       rustTools = with pkgs; [

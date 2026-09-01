@@ -58,6 +58,10 @@ nix develop -c just rb
 
 Do not pull a different branch into the other host's current branch. For example, if the other host is on `prime`, do not pull `atomic` into it unless explicitly intended.
 
+Run `just host-preflight <target-host> <expected-branch>` before an approved host check, rebuild, switch, or deploy. Use the optional expected SHA and configuration arguments when the approval names them. Use `output=json` for stable JSON. The preflight is read-only and refuses unsafe state. `just peer-plan` prints follow-up commands but never runs them.
+
+A passing preflight does not approve a pull, rebuild, switch, or deploy. Get separate approval for each mutation. After activation, verify the active generation and affected runtime. On Auto, use an interactive session for CyberArk sudo and GUI-keychain access.
+
 Applying a staged patch remotely before commit is okay for affected-host verification. After commit, prefer `git pull <current-host> <branch>` for host-to-host syncing; only hard reset when history was rewritten or a hard sync is explicitly needed:
 
 ```sh

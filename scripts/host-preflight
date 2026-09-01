@@ -1,0 +1,467 @@
+#!/usr/bin/env python3
+"""Read-only checks and command plans for tools repository hosts."""
+
+from __future__ import annotations
+
+import argparse
+import base64
+import json
+import os
+import re
+import shlex
+import shutil
+import socket
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+SCHEMA_VERSION = 1
+TRUSTED_TOOL_ROOTS = (
+    "/nix/store/",
+    "/run/current-system/sw/",
+    "/etc/profiles/per-user/",
+    "/nix/var/nix/profiles/",
+    "/usr/bin/",
+    "/bin/",
+    "/opt/homebrew/bin/",
+    "/opt/homebrew/Cellar/",
+)
+ACTIVATION_REMINDER = (
+    "A successful build does not prove that the built configuration is active. "
+    "Verify activation and the affected runtime separately after an approved switch or deploy."
+)
+
+
+def run(command: list[str], cwd: Path) -> str:
+    result = subprocess.run(
+        command,
+        cwd=cwd,
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env={**os.environ, "LC_ALL": "C"},
+    )
+    return result.stdout.rstrip("\n")
+
+
+def git(repo: Path, *arguments: str) -> str:
+    return run(["git", *arguments], repo)
+
+
+def parse_status(raw_status: str) -> tuple[list[str], list[str]]:
+    tracked: list[str] = []
+    untracked: list[str] = []
+    entries = raw_status.split("\0")
+    index = 0
+    while index < len(entries):
+        entry = entries[index]
+        index += 1
+        if not entry:
+            continue
+        state = entry[:2]
+        path = entry[3:]
+        if state == "??":
+            untracked.append(path)
+        else:
+            tracked.append(path)
+            if "R" in state or "C" in state:
+                index += 1
+    return sorted(tracked), sorted(untracked)
+
+
+def parse_worktrees(raw_worktrees: str) -> list[dict[str, str]]:
+    worktrees: list[dict[str, str]] = []
+    for block in raw_worktrees.strip().split("\n\n"):
+        if not block:
+            continue
+        values: dict[str, str] = {}
+        for line in block.splitlines():
+            key, _, value = line.partition(" ")
+            if key in {"worktree", "HEAD", "branch"}:
+                values[key.lower()] = value.removeprefix("refs/heads/")
+        worktrees.append(values)
+    return sorted(worktrees, key=lambda item: item.get("worktree", ""))
+
+
+def configurations_from_source(source: str) -> dict[str, list[str]]:
+    starts = list(re.finditer(r"^  config\.flake\.hosts\.(darwin|nixos) = \{$", source, re.MULTILINE))
+    configurations: dict[str, list[str]] = {"darwin": [], "nixos": []}
+    for index, match in enumerate(starts):
+        end = starts[index + 1].start() if index + 1 < len(starts) else len(source)
+        section = source[match.end() : end]
+        names = re.findall(r"^    ([A-Za-z0-9_-]+) = \{$", section, re.MULTILINE)
+        configurations[match.group(1)] = sorted(names)
+    return configurations
+
+
+def discover_configurations(repo: Path) -> dict[str, list[str]]:
+    return configurations_from_source((repo / "nix/hosts.nix").read_text())
+
+
+def trusted_tool(invoked: str | None, resolved: str | None) -> bool:
+    return bool(
+        invoked
+        and resolved
+        and invoked.startswith(TRUSTED_TOOL_ROOTS)
+        and resolved.startswith(TRUSTED_TOOL_ROOTS)
+    )
+
+
+def resolve_tools(repo: Path) -> dict[str, dict[str, Any]]:
+    tools: dict[str, dict[str, Any]] = {}
+    for name in ("git", "nix", "ssh"):
+        invoked = shutil.which(name)
+        resolved = str(Path(invoked).resolve()) if invoked else None
+        tools[name] = {
+            "invoked_path": invoked,
+            "resolved_path": resolved,
+            "trusted": trusted_tool(invoked, resolved),
+        }
+    return tools
+
+
+def collect_facts(repo: Path) -> dict[str, Any]:
+    repo = repo.resolve()
+    tracked, untracked = parse_status(git(repo, "status", "--porcelain=v1", "-z", "--untracked-files=all"))
+    remote_names = git(repo, "remote").splitlines()
+    remotes = {
+        name: git(repo, "remote", "get-url", name)
+        for name in sorted(remote_names)
+    }
+    system = run(["uname", "-s"], repo)
+    machine = run(["uname", "-m"], repo)
+    return {
+        "hostname": socket.gethostname().split(".", maxsplit=1)[0],
+        "platform": {"kernel": system, "machine": machine},
+        "reachable": True,
+        "repo": {
+            "path": str(repo),
+            "branch": git(repo, "branch", "--show-current"),
+            "sha": git(repo, "rev-parse", "HEAD"),
+            "origin": remotes.get("origin"),
+            "remotes": remotes,
+            "tracked_changes": tracked,
+            "untracked": untracked,
+            "untracked_nix_sources": sorted(
+                path for path in untracked if path.endswith(".nix") or path == "flake.lock"
+            ),
+            "worktrees": parse_worktrees(git(repo, "worktree", "list", "--porcelain")),
+        },
+        "configurations": discover_configurations(repo),
+        "tools": resolve_tools(repo),
+    }
+
+
+def collect_remote(target: str) -> dict[str, Any]:
+    collector = r'''set -eu
+repo="$HOME/Git/tools"
+encode() { base64 | tr -d '\n'; }
+emit() { key=$1; shift; printf '%s\t' "$key"; "$@" | encode; printf '\n'; }
+cd -- "$repo"
+emit hostname hostname -s
+emit kernel uname -s
+emit machine uname -m
+emit repo_path pwd -P
+emit branch git branch --show-current
+emit sha git rev-parse HEAD
+emit origin git remote get-url origin
+emit status git status --porcelain=v1 -z --untracked-files=all
+emit worktrees git worktree list --porcelain
+emit hosts_source git show HEAD:nix/hosts.nix
+for remote in $(git remote); do emit "remote.$remote" git remote get-url "$remote"; done
+for tool in git nix ssh; do
+  path=$(command -v "$tool" 2>/dev/null || true)
+  printf 'tool.%s\t' "$tool"
+  printf '%s' "$path" | encode
+  printf '\n'
+done
+'''
+    result = subprocess.run(
+        ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", target, "sh", "-s"],
+        input=collector,
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    if result.returncode == 255:
+        return {"hostname": None, "reachable": False, "error": result.stderr.strip()}
+    if result.returncode != 0:
+        return {
+            "hostname": None,
+            "reachable": True,
+            "error": result.stderr.strip() or "The peer did not return host facts.",
+        }
+    values: dict[str, str] = {}
+    try:
+        for line in result.stdout.splitlines():
+            key, encoded = line.split("\t", maxsplit=1)
+            values[key] = base64.b64decode(encoded).decode()
+    except (ValueError, UnicodeDecodeError) as error:
+        return {"hostname": None, "reachable": True, "error": f"Invalid peer response: {error}"}
+    tracked, untracked = parse_status(values["status"])
+    remotes = {
+        key.removeprefix("remote."): value
+        for key, value in values.items()
+        if key.startswith("remote.")
+    }
+    tools: dict[str, dict[str, Any]] = {}
+    for name in ("git", "nix", "ssh"):
+        invoked = values.get(f"tool.{name}") or None
+        tools[name] = {
+            "invoked_path": invoked,
+            "resolved_path": invoked,
+            "trusted": trusted_tool(invoked, invoked),
+        }
+    return {
+        "hostname": values["hostname"].split(".", maxsplit=1)[0],
+        "platform": {"kernel": values["kernel"], "machine": values["machine"]},
+        "reachable": True,
+        "repo": {
+            "path": values["repo_path"],
+            "branch": values["branch"],
+            "sha": values["sha"],
+            "origin": values["origin"],
+            "remotes": remotes,
+            "tracked_changes": tracked,
+            "untracked": untracked,
+            "untracked_nix_sources": sorted(
+                path for path in untracked if path.endswith(".nix") or path == "flake.lock"
+            ),
+            "worktrees": parse_worktrees(values["worktrees"]),
+        },
+        "configurations": configurations_from_source(values["hosts_source"]),
+        "tools": tools,
+    }
+
+
+def configuration_for(target: str, requested: str | None, facts: dict[str, Any]) -> dict[str, Any]:
+    configurations = facts.get("configurations", {})
+    config_name = requested or target
+    match = re.search(r"(?:nixosConfigurations|darwinConfigurations)\.([A-Za-z0-9_-]+)", config_name)
+    if match:
+        config_name = match.group(1)
+    if config_name in configurations.get("nixos", []):
+        return {
+            "exists": True,
+            "host": config_name,
+            "kind": "nixos",
+            "target": f".#nixosConfigurations.{config_name}.config.system.build.toplevel",
+        }
+    if config_name in configurations.get("darwin", []):
+        return {
+            "exists": True,
+            "host": config_name,
+            "kind": "darwin",
+            "target": f".#darwinConfigurations.{config_name}.system",
+        }
+    return {"exists": False, "host": config_name, "kind": None, "target": None}
+
+
+def evaluate(
+    facts: dict[str, Any],
+    target: str,
+    expected_branch: str,
+    expected_sha: str | None,
+    requested_config: str | None,
+    controller_host: str,
+) -> dict[str, Any]:
+    checks: list[dict[str, Any]] = []
+
+    def check(name: str, passed: bool, detail: str) -> None:
+        checks.append({"name": name, "passed": passed, "detail": detail})
+
+    reachable = bool(facts.get("reachable"))
+    check("peer_reachable", reachable, "reachable" if reachable else facts.get("error", "offline"))
+    if not reachable or "repo" not in facts:
+        configuration = {"exists": False, "host": requested_config or target, "kind": None, "target": None}
+    else:
+        repo = facts["repo"]
+        observed_host = facts.get("hostname")
+        check("host_matches", observed_host == target, f"expected {target}; observed {observed_host}")
+        check(
+            "branch_matches",
+            repo["branch"] == expected_branch,
+            f"expected {expected_branch}; observed {repo['branch'] or '(detached)'}",
+        )
+        sha_matches = not expected_sha or repo["sha"].startswith(expected_sha)
+        check("sha_matches", sha_matches, f"expected {expected_sha or '(not set)'}; observed {repo['sha']}")
+        clean = not repo["tracked_changes"] and not repo["untracked"]
+        check("checkout_clean", clean, f"{len(repo['tracked_changes'])} tracked and {len(repo['untracked'])} untracked paths")
+        check(
+            "nix_sources_tracked",
+            not repo["untracked_nix_sources"],
+            ", ".join(repo["untracked_nix_sources"]) or "all detected Nix sources are tracked",
+        )
+        configuration = configuration_for(target, requested_config, facts)
+        check(
+            "configuration_exists",
+            configuration["exists"],
+            configuration["target"] or f"no host configuration named {configuration['host']}",
+        )
+        check(
+            "configuration_matches_host",
+            configuration["host"] == target,
+            f"target host {target}; affected configuration {configuration['host']}",
+        )
+        for tool, resolution in sorted(facts.get("tools", {}).items()):
+            check(
+                f"tool_{tool}_trusted",
+                bool(resolution.get("trusted")),
+                resolution.get("resolved_path") or "not found",
+            )
+        if target != controller_host:
+            check(
+                "source_remote_exists",
+                controller_host in repo["remotes"],
+                f"required peer remote {controller_host}",
+            )
+    approvals = [
+        "Approve any Git fetch, pull, or checkout that changes the target repository.",
+        "Approve any Nix build, rebuild, switch, copy, or deployment separately.",
+        "Verify the active generation and affected runtime after an approved activation.",
+    ]
+    if target == "auto":
+        approvals.append("Use an interactive Auto session for CyberArk sudo and GUI-keychain access.")
+    elif configuration.get("kind") == "darwin":
+        approvals.append("Use an interactive Darwin session when sudo or GUI-keychain access is required.")
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "status": "pass" if checks and all(item["passed"] for item in checks) else "refuse",
+        "target_host": target,
+        "controller_host": controller_host,
+        "expected": {
+            "branch": expected_branch,
+            "sha": expected_sha,
+            "configuration": requested_config,
+        },
+        "observed": facts,
+        "relevant_configuration": configuration,
+        "checks": checks,
+        "approvals_required": approvals,
+        "activation_verification_reminder": ACTIVATION_REMINDER,
+    }
+
+
+def shell_command(target: str, controller_host: str, repo: str, command: list[str]) -> str:
+    inner = f"cd -- {shlex.quote(repo)} && {shlex.join(command)}"
+    if target == controller_host:
+        return inner
+    return shlex.join(["ssh", target, inner])
+
+
+def render_human(report: dict[str, Any]) -> str:
+    observed = report["observed"]
+    repo = observed.get("repo", {})
+    platform = observed.get("platform", {})
+    lines = [
+        f"host-preflight: {report['status'].upper()}",
+        f"host: {observed.get('hostname') or 'unavailable'} (expected {report['target_host']})",
+        f"platform: {platform.get('machine', 'unknown')} {platform.get('kernel', 'unknown')}",
+        f"peer: {'reachable' if observed.get('reachable') else 'offline'}",
+        f"repo: {repo.get('path', 'unavailable')}",
+        f"remote: {repo.get('origin') or 'unavailable'}",
+        f"branch: {repo.get('branch') or 'unavailable'} (expected {report['expected']['branch']})",
+        f"sha: {repo.get('sha') or 'unavailable'} (expected {report['expected']['sha'] or 'not set'})",
+        f"dirty: {len(repo.get('tracked_changes', []))} tracked, {len(repo.get('untracked', []))} untracked",
+        f"worktrees: {len(repo.get('worktrees', []))}",
+        f"flake target: {report['relevant_configuration'].get('target') or 'absent'}",
+        f"nix: {observed.get('tools', {}).get('nix', {}).get('resolved_path') or 'unavailable'}",
+    ]
+    failures = [item for item in report["checks"] if not item["passed"]]
+    lines.extend(f"refuse: {item['name']}: {item['detail']}" for item in failures)
+    lines.append(f"approvals required: {len(report['approvals_required'])}")
+    lines.append(f"reminder: {report['activation_verification_reminder']}")
+    return "\n".join(lines)
+
+
+def render_plan(report: dict[str, Any]) -> str:
+    if report["status"] != "pass":
+        failures = ", ".join(item["name"] for item in report["checks"] if not item["passed"])
+        raise ValueError(f"Preflight refused the command plan: {failures}")
+    observed = report["observed"]
+    repo = observed["repo"]
+    target = report["target_host"]
+    commands: list[tuple[str, list[str]]] = []
+    controller = report["controller_host"]
+    if target != controller:
+        commands.append(
+            (
+                "Approved fast-forward pull",
+                ["git", "pull", "--ff-only", controller, report["expected"]["branch"]],
+            )
+        )
+    commands.extend(
+        [
+            ("Read-only check", ["nix", "develop", "-c", "just", "check-nix"]),
+            ("Approved rebuild or switch", ["nix", "develop", "-c", "just", "rb"]),
+        ]
+    )
+    lines = ["peer-plan: PRINT ONLY", "No command below was executed."]
+    lines.extend(
+        f"{label}: {shell_command(target, controller, repo['path'], command)}"
+        for label, command in commands
+    )
+    lines.append(f"Activation verification: {ACTIVATION_REMINDER}")
+    if target == "auto":
+        lines.append("Auto constraint: run approved sudo steps interactively. Do not depend on a GUI keychain over SSH.")
+    elif report["relevant_configuration"]["kind"] == "darwin":
+        lines.append("Darwin constraint: run approved sudo or GUI-keychain steps in an interactive session.")
+    return "\n".join(lines)
+
+
+def parser() -> argparse.ArgumentParser:
+    argument_parser = argparse.ArgumentParser(description=__doc__)
+    argument_parser.add_argument("command", choices=("preflight", "peer-plan"), nargs="?", default="preflight")
+    argument_parser.add_argument("--target", required=False)
+    argument_parser.add_argument("--expected-branch")
+    argument_parser.add_argument("--expected-sha")
+    argument_parser.add_argument("--configuration")
+    argument_parser.add_argument("--repo", default=".")
+    argument_parser.add_argument("--json", action="store_true")
+    argument_parser.add_argument("--fixture", type=Path, help=argparse.SUPPRESS)
+    argument_parser.add_argument("--collect-only", action="store_true", help=argparse.SUPPRESS)
+    return argument_parser
+
+
+def main() -> int:
+    arguments = parser().parse_args()
+    repo = Path(arguments.repo)
+    if arguments.collect_only:
+        print("HOST_PREFLIGHT_JSON=" + json.dumps(collect_facts(repo), sort_keys=True, separators=(",", ":")))
+        return 0
+    if not arguments.target or not arguments.expected_branch:
+        parser().error("--target and --expected-branch are required")
+    if not re.fullmatch(r"[A-Za-z0-9._-]+", arguments.target):
+        parser().error("--target contains unsupported characters")
+    if arguments.fixture:
+        facts = json.loads(arguments.fixture.read_text())
+    elif socket.gethostname().split(".", maxsplit=1)[0] == arguments.target:
+        facts = collect_facts(repo)
+    else:
+        facts = collect_remote(arguments.target)
+    report = evaluate(
+        facts,
+        arguments.target,
+        arguments.expected_branch,
+        arguments.expected_sha,
+        arguments.configuration,
+        socket.gethostname().split(".", maxsplit=1)[0],
+    )
+    if arguments.command == "peer-plan":
+        try:
+            print(render_plan(report))
+        except ValueError as error:
+            print(str(error), file=sys.stderr)
+            return 2
+    elif arguments.json:
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        print(render_human(report))
+    return 0 if report["status"] == "pass" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
