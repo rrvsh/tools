@@ -1,6 +1,8 @@
 result
 .direnv
 .env
+__pycache__/
+*.pyc
 
 # Session profiling artifacts
 sessions/profiles/
