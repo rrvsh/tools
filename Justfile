@@ -104,10 +104,13 @@ lint-qml:
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
-test: test-nix test-rs
+test: test-nix test-pr-stack-reconcile test-rs
 
 test-nix:
   if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi
+
+test-pr-stack-reconcile:
+  python3 -m unittest discover -s tests/pr_stack_reconcile -v
 
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all
