@@ -149,6 +149,7 @@ in
         cfg.modules.nixos.user-primary
         cfg.modules.nixos.vultr-vps
         cfg.modules.nixos.hermes-agent
+        cfg.modules.nixos.hermes-active-worker-supervisor
         (
           { lib, ... }:
           {
