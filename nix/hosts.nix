@@ -12,13 +12,6 @@ let
     gitDefaultBranch = "prime";
     sshAuthorizedKeys = rrvshSshAuthorizedKeys;
   };
-  binmohm = {
-    name = "binmohm";
-    fullName = "binmohm";
-    email = "rafiq@rrv.sh";
-    uid = 502;
-    sshAuthorizedKeys = rrvshSshAuthorizedKeys;
-  };
 in
 {
   config.flake.hosts.darwin = {
@@ -32,33 +25,6 @@ in
       modules = [
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.rosetta-builder
-      ];
-    };
-    auto = {
-      hostPlatform = "aarch64-darwin";
-      primaryUser = binmohm;
-      profiles = [
-        "development"
-        "graphical"
-      ];
-      modules = [
-        cfg.modules.darwin.user-primary
-        cfg.modules.darwin.sudo-env-wrapper
-        cfg.modules.darwin.claude-code
-        {
-          home-manager.sharedModules = [
-            {
-              programs.pi-coding-agent.settings = {
-                defaultProvider = "claude-bridge";
-                defaultModel = "claude-sonnet-4-6";
-              };
-              programs.mcp = {
-                enable = true;
-                servers.atlassian-mcp.url = "https://mcp.atlassian.com/v1/mcp";
-              };
-            }
-          ];
-        }
       ];
     };
   };
