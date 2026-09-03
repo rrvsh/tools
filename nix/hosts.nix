@@ -141,10 +141,16 @@ in
               allowPing = false;
               interfaces.tailscale0.allowedTCPPorts = [ 22 ];
             };
-            nix.gc = {
-              automatic = true;
-              dates = "weekly";
-              options = "--delete-older-than 14d";
+            nix = {
+              gc = {
+                automatic = true;
+                dates = "weekly";
+                options = "--delete-older-than 14d";
+              };
+              settings = {
+                min-free = 5 * 1024 * 1024 * 1024;
+                max-free = 10 * 1024 * 1024 * 1024;
+              };
             };
             services = {
               journald.extraConfig = "SystemMaxUse=512M";

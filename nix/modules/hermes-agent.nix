@@ -114,18 +114,82 @@ in
         group = "users";
         mode = "0400";
       };
-      systemd.services.hermes-agent = {
-        environment = {
-          BD_DISABLE_EVENT_FLUSH = "1";
-          BD_DISABLE_METRICS = "1";
-          BEADS_ACTOR = hostName;
-          HOME = lib.mkForce "/home/rafiq";
+      systemd = {
+        services = {
+          hermes-agent = {
+            environment = {
+              BD_DISABLE_EVENT_FLUSH = "1";
+              BD_DISABLE_METRICS = "1";
+              BEADS_ACTOR = hostName;
+              HOME = lib.mkForce "/home/rafiq";
+            };
+            serviceConfig = hardening // {
+              ReadWritePaths = lib.mkForce [
+                "/var/lib/hermes"
+                "/home/rafiq"
+              ];
+            };
+          };
+          hermes-agent-daily-maintenance = {
+            description = "Clean Hermes build outputs and restart Hermes Agent";
+            path = [
+              pkgs.coreutils
+              pkgs.findutils
+              pkgs.jq
+              pkgs.systemd
+              pkgs.util-linux
+            ];
+            script = ''
+              mount_snapshot=/run/hermes-agent-daily-maintenance
+              trap 'systemctl start hermes-agent.service' EXIT
+              systemctl stop hermes-agent.service
+              findmnt --json --output TARGET >"$mount_snapshot/findmnt.json"
+              jq --raw-output0 -e \
+                '.filesystems[] | recurse(.children[]?) | .target' \
+                "$mount_snapshot/findmnt.json" >"$mount_snapshot/targets"
+              [[ -s "$mount_snapshot/targets" ]]
+              find /var/lib/hermes/workspace -xdev -type d \
+                \( -name target -o -name node_modules -o -name .venv -o -name .cargo-home \) \
+                -prune -print0 >"$mount_snapshot/candidates"
+              while IFS= read -r -d "" path; do
+                has_mount=""
+                while IFS= read -r -d "" mount; do
+                  if
+                    [[ "$mount" == "$path" || "$mount" == "$path/"* ]] \
+                      || [[ "$mount" != "/" && "$path" == "$mount/"* ]]
+                  then
+                    has_mount=1
+                    break
+                  fi
+                done <"$mount_snapshot/targets"
+                if [[ -n "$has_mount" ]]; then
+                  echo "Skipping build directory with a mount: $path" >&2
+                else
+                  rm -rf --one-file-system -- "$path"
+                fi
+              done <"$mount_snapshot/candidates"
+              systemctl start hermes-agent.service
+              trap - EXIT
+            '';
+            serviceConfig = {
+              NoNewPrivileges = true;
+              PrivateDevices = true;
+              ProtectHome = true;
+              ProtectSystem = "strict";
+              ReadWritePaths = [ "/var/lib/hermes/workspace" ];
+              RuntimeDirectory = "hermes-agent-daily-maintenance";
+              RuntimeDirectoryMode = "0700";
+              Type = "oneshot";
+            };
+          };
         };
-        serviceConfig = hardening // {
-          ReadWritePaths = lib.mkForce [
-            "/var/lib/hermes"
-            "/home/rafiq"
-          ];
+        timers.hermes-agent-daily-maintenance = {
+          description = "Run daily Hermes maintenance at 02:00 Asia/Singapore";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "*-*-* 02:00:00 Asia/Singapore";
+            Persistent = true;
+          };
         };
       };
     };
