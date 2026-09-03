@@ -95,6 +95,11 @@ in
               };
             };
           delegation = delegationModel;
+          mcp_servers.linear = {
+            url = "https://mcp.linear.app/mcp";
+            auth = "oauth";
+            sampling.enabled = false;
+          };
           memory.write_approval = true;
           skills.write_approval = true;
           cron = {

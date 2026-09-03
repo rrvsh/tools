@@ -137,6 +137,18 @@ in
           };
           Install.WantedBy = [ "timers.target" ];
         };
+        programs.mcp = {
+          enable = true;
+          servers.linear = {
+            url = "https://mcp.linear.app/mcp";
+            auth = "oauth";
+            lifecycle = "lazy";
+            directTools = false;
+            # Keep the shared file in pi-mcp-adapter's native shape.
+            # Home Manager otherwise adds a generic HTTP transport field.
+            type = null;
+          };
+        };
         programs.pi-coding-agent = {
           enable = true;
           package = inputs.pi.packages.${system}.pi-coding-agent;
