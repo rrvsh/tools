@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.paths) root;
+  cfg = config.flake;
+  inherit (cfg.paths) root;
 in
 {
   config.flake.modules.nixos.hermes-agent =
@@ -132,73 +133,33 @@ in
           };
           hermes-agent-daily-maintenance = {
             description = "Clean Hermes build outputs and restart Hermes Agent";
-            path = [
-              pkgs.coreutils
-              pkgs.findutils
-              pkgs.jq
-              pkgs.systemd
-              pkgs.util-linux
-            ];
+            path = [ pkgs.systemd ];
             script = ''
-              mount_snapshot=/run/hermes-agent-daily-maintenance
               trap 'systemctl start hermes-agent.service' EXIT
               systemctl stop hermes-agent.service
-              findmnt --json --output TARGET >"$mount_snapshot/findmnt.json"
-              jq --raw-output0 -e \
-                '.filesystems[] | recurse(.children[]?) | .target' \
-                "$mount_snapshot/findmnt.json" >"$mount_snapshot/targets"
-              [[ -s "$mount_snapshot/targets" ]]
-              find /var/lib/hermes/workspace -xdev -type d \
-                \( -name target -o -name node_modules -o -name .venv -o -name .cargo-home \) \
-                -prune -print0 >"$mount_snapshot/candidates"
-              while IFS= read -r -d "" path; do
-                generated=""
-                case "''${path##*/}" in
-                  target)
-                    [[ -f "$path/CACHEDIR.TAG" || -f "$path/.rustc_info.json" ]] && generated=1
-                    ;;
-                  node_modules)
-                    [[ -d "$path/.bin" || -f "$path/.package-lock.json" ]] && generated=1
-                    ;;
-                  .venv)
-                    [[ -f "$path/pyvenv.cfg" ]] && generated=1
-                    ;;
-                  .cargo-home)
-                    [[ -d "$path/registry" || -d "$path/git" ]] && generated=1
-                    ;;
-                esac
-                if [[ -z "$generated" ]]; then
-                  echo "Skipping unrecognized build directory: $path" >&2
-                  continue
-                fi
-                has_mount=""
-                while IFS= read -r -d "" mount; do
-                  if
-                    [[ "$mount" == "$path" || "$mount" == "$path/"* ]] \
-                      || [[ "$mount" != "/" && "$path" == "$mount/"* ]]
-                  then
-                    has_mount=1
-                    break
-                  fi
-                done <"$mount_snapshot/targets"
-                if [[ -n "$has_mount" ]]; then
-                  echo "Skipping build directory with a mount: $path" >&2
-                else
-                  rm -rf --one-file-system -- "$path"
-                fi
-              done <"$mount_snapshot/candidates"
+              ${
+                cfg.packages.${pkgs.stdenv.hostPlatform.system}.hermes-workspace-cleanup
+              }/bin/hermes-workspace-cleanup \
+                /var/lib/hermes/workspace \
+                /run/hermes-agent-daily-maintenance
               systemctl start hermes-agent.service
               trap - EXIT
             '';
-            serviceConfig = {
-              NoNewPrivileges = true;
-              PrivateDevices = true;
+            serviceConfig = hardening // {
+              CapabilityBoundingSet = [
+                "CAP_DAC_OVERRIDE"
+                "CAP_FOWNER"
+              ];
+              ExecStopPost = "${pkgs.systemd}/bin/systemctl start hermes-agent.service";
+              PrivateTmp = true;
               ProtectHome = true;
               ProtectSystem = "strict";
               ReadWritePaths = [ "/var/lib/hermes/workspace" ];
+              RestrictAddressFamilies = [ "AF_UNIX" ];
               RuntimeDirectory = "hermes-agent-daily-maintenance";
               RuntimeDirectoryMode = "0700";
               Type = "oneshot";
+              UMask = "0077";
             };
           };
         };
