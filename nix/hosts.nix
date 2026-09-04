@@ -43,6 +43,7 @@ in
         cfg.modules.nixos.prismlauncher
         cfg.modules.nixos.gtnh-server
         cfg.modules.nixos.gtnh-backups
+        cfg.modules.nixos.memory-health-audit
         (
           {
             config,
