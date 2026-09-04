@@ -1,6 +1,7 @@
 { config, inputs, ... }:
 let
-  inherit (config.flake.paths) root;
+  cfg = config.flake;
+  inherit (cfg.paths) root;
 in
 {
   config.flake.modules.nixos.hermes-agent =
@@ -114,18 +115,61 @@ in
         group = "users";
         mode = "0400";
       };
-      systemd.services.hermes-agent = {
-        environment = {
-          BD_DISABLE_EVENT_FLUSH = "1";
-          BD_DISABLE_METRICS = "1";
-          BEADS_ACTOR = hostName;
-          HOME = lib.mkForce "/home/rafiq";
+      systemd = {
+        services = {
+          hermes-agent = {
+            environment = {
+              BD_DISABLE_EVENT_FLUSH = "1";
+              BD_DISABLE_METRICS = "1";
+              BEADS_ACTOR = hostName;
+              HOME = lib.mkForce "/home/rafiq";
+            };
+            serviceConfig = hardening // {
+              ReadWritePaths = lib.mkForce [
+                "/var/lib/hermes"
+                "/home/rafiq"
+              ];
+            };
+          };
+          hermes-agent-daily-maintenance = {
+            description = "Clean Hermes build outputs and restart Hermes Agent";
+            path = [ pkgs.systemd ];
+            script = ''
+              trap 'systemctl start hermes-agent.service' EXIT
+              systemctl stop hermes-agent.service
+              ${
+                cfg.packages.${pkgs.stdenv.hostPlatform.system}.hermes-workspace-cleanup
+              }/bin/hermes-workspace-cleanup \
+                /var/lib/hermes/workspace \
+                /run/hermes-agent-daily-maintenance
+              systemctl start hermes-agent.service
+              trap - EXIT
+            '';
+            serviceConfig = hardening // {
+              CapabilityBoundingSet = [
+                "CAP_DAC_OVERRIDE"
+                "CAP_FOWNER"
+              ];
+              ExecStopPost = "${pkgs.systemd}/bin/systemctl start hermes-agent.service";
+              PrivateTmp = true;
+              ProtectHome = true;
+              ProtectSystem = "strict";
+              ReadWritePaths = [ "/var/lib/hermes/workspace" ];
+              RestrictAddressFamilies = [ "AF_UNIX" ];
+              RuntimeDirectory = "hermes-agent-daily-maintenance";
+              RuntimeDirectoryMode = "0700";
+              Type = "oneshot";
+              UMask = "0077";
+            };
+          };
         };
-        serviceConfig = hardening // {
-          ReadWritePaths = lib.mkForce [
-            "/var/lib/hermes"
-            "/home/rafiq"
-          ];
+        timers.hermes-agent-daily-maintenance = {
+          description = "Run daily Hermes maintenance at 02:00 Asia/Singapore";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "*-*-* 02:00:00 Asia/Singapore";
+            Persistent = true;
+          };
         };
       };
     };

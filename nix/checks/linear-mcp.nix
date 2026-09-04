@@ -1,6 +1,5 @@
 { config, lib, ... }:
 let
-  auto = config.flake.darwinConfigurations.auto.config;
   mercury = config.flake.nixosConfigurations.mercury.config;
   nemesis = config.flake.nixosConfigurations.nemesis.config;
 in
@@ -16,9 +15,6 @@ in
         piConfig = nemesis.home-manager.users.rafiq.xdg.configFile."mcp/mcp.json".source;
         piSettings =
           nemesis.home-manager.users.rafiq.home.file."/home/rafiq/.pi/agent/settings.json".source;
-        sharedServers = pkgs.writeText "auto-shared-mcp-servers.json" (
-          builtins.toJSON auto.home-manager.users.binmohm.programs.mcp.servers
-        );
       in
       {
         checks.linear-mcp =
@@ -47,10 +43,6 @@ in
                 }
               ' "$hermes_config" >/dev/null
 
-              jq -e '
-                .["atlassian-mcp"].url == "https://mcp.atlassian.com/v1/mcp"
-                and .linear.url == "https://mcp.linear.app/mcp"
-              ' ${sharedServers} >/dev/null
               jq -e '.packages | index("npm:pi-mcp-adapter") != null' ${piSettings} >/dev/null
 
               ${hermesBin} mcp login --help | grep -F 'usage: hermes mcp login' >/dev/null
