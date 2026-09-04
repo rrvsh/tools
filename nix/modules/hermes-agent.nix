@@ -152,6 +152,25 @@ in
                 \( -name target -o -name node_modules -o -name .venv -o -name .cargo-home \) \
                 -prune -print0 >"$mount_snapshot/candidates"
               while IFS= read -r -d "" path; do
+                generated=""
+                case "''${path##*/}" in
+                  target)
+                    [[ -f "$path/CACHEDIR.TAG" || -f "$path/.rustc_info.json" ]] && generated=1
+                    ;;
+                  node_modules)
+                    [[ -d "$path/.bin" || -f "$path/.package-lock.json" ]] && generated=1
+                    ;;
+                  .venv)
+                    [[ -f "$path/pyvenv.cfg" ]] && generated=1
+                    ;;
+                  .cargo-home)
+                    [[ -d "$path/registry" || -d "$path/git" ]] && generated=1
+                    ;;
+                esac
+                if [[ -z "$generated" ]]; then
+                  echo "Skipping unrecognized build directory: $path" >&2
+                  continue
+                fi
                 has_mount=""
                 while IFS= read -r -d "" mount; do
                   if
