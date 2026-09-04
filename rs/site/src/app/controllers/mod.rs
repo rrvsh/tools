@@ -1,6 +1,7 @@
 mod article;
 mod index;
 mod reader;
+mod webhook;
 
 use crate::app::state::AppState;
 use axum::routing::get;
@@ -17,6 +18,10 @@ pub fn build_router(state: Arc<AppState>, content_dir: &str, static_dir: &str) -
         .nest_service("/assets", ServeDir::new(assets_dir))
         .route("/", get(index::get))
         .route("/reader", get(reader::get))
+        .route(
+            "/webhooks/site-content",
+            webhook::route(PathBuf::from(webhook::TRIGGER_PATH)),
+        )
         .route("/{year}/{month}/{day}/{slug}", get(article::get))
         .with_state(state)
 }
