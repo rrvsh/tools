@@ -10,7 +10,11 @@
       qmlShellHook = pkgs.lib.optionalString pkgs.stdenv.isLinux ''
         export QML_IMPORT_PATH="${pkgs.quickshell}/lib/qt-6/qml:${pkgs.qt6.qtdeclarative}/lib/qt-6/qml''${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
       '';
-      common = with pkgs; [ just ];
+      python = pkgs.python3.withPackages (pythonPackages: [ pythonPackages.pillow ]);
+      common = with pkgs; [
+        just
+        python
+      ];
       nixTools = with pkgs; [
         deadnix
         nixfmt-tree

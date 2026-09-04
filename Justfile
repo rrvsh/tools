@@ -104,7 +104,10 @@ lint-qml:
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
-test: test-nix test-rs
+test: test-nix test-pr-review-media test-rs
+
+test-pr-review-media:
+  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_pr_review_media.py' -v
 
 test-nix:
   if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi
