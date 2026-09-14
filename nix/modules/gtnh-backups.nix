@@ -11,6 +11,7 @@
           description = "Backup GTNH server";
           serviceConfig = {
             Type = "oneshot";
+            ExecCondition = "${pkgs.systemd}/bin/systemctl --quiet is-active gtnh-server.service";
             ExecStart = pkgs.writeShellScript "gtnh-backup" ''
               set -euo pipefail
 

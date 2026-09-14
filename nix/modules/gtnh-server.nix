@@ -23,6 +23,61 @@
       '';
     in
     {
+      home-manager.sharedModules = [
+        (
+          { config, pkgs, ... }:
+          let
+            gtnhIcon = "${config.home.homeDirectory}/.local/share/PrismLauncher/instances/GT_New_Horizons_2.8.4_Java_17-25/icon.png";
+            serverControl = pkgs.writeShellApplication {
+              name = "gtnh-server-control";
+              runtimeInputs = [
+                pkgs.libnotify
+                pkgs.systemd
+              ];
+              text = ''
+                action="''${1-}"
+                case "$action" in
+                  start)
+                    message="GTNH server is starting"
+                    ;;
+                  stop)
+                    message="GTNH server stopped"
+                    ;;
+                  *)
+                    echo "usage: gtnh-server-control start|stop" >&2
+                    exit 2
+                    ;;
+                esac
+
+                if output="$(/run/wrappers/bin/sudo -n systemctl "$action" gtnh-server.service 2>&1)"; then
+                  notify-send "GTNH server" "$message"
+                else
+                  notify-send --urgency=critical "GTNH server" "Could not $action the server"
+                  printf '%s\n' "$output" >&2
+                  exit 1
+                fi
+              '';
+            };
+          in
+          {
+            home.packages = [ serverControl ];
+            xdg.desktopEntries = {
+              gtnh-server-start = {
+                name = "GTNH Server: Start";
+                icon = gtnhIcon;
+                exec = "${serverControl}/bin/gtnh-server-control start";
+                categories = [ "Game" ];
+              };
+              gtnh-server-stop = {
+                name = "GTNH Server: Stop";
+                icon = gtnhIcon;
+                exec = "${serverControl}/bin/gtnh-server-control stop";
+                categories = [ "Game" ];
+              };
+            };
+          }
+        )
+      ];
       users = {
         users.gtnh = {
           description = "GT New Horizons server user";
@@ -48,7 +103,6 @@
         };
         services.gtnh-server = {
           description = "GT New Horizons 2.8.4 Server";
-          wantedBy = [ "multi-user.target" ];
           requires = [ "gtnh-server.socket" ];
           after = [
             "network-online.target"
