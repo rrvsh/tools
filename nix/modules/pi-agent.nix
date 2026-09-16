@@ -117,7 +117,7 @@ in
             sessionDrainRun
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
-          sessionVariables.AGENT_BROWSER_STATE = "${homeDirectory}/.agent-browser/state/agent.json";
+          sessionVariables.AGENT_BROWSER_PROFILE = "Default";
           file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
           # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
           file.".pi/agent/APPEND_SYSTEM.md".source =
@@ -287,6 +287,22 @@ in
             - Do not run `agent-browser` through `bash`.
             - Treat browser snapshot refs as stale after a rerender.
             - Use `--headed` only when the browser task needs the user to act.
+            - Use the configured `Default` profile for normal agent-browser work.
+            - Normal launches use separate temporary snapshots of the base profile.
+            - Separate Pi sessions can use these snapshots concurrently.
+            - Changes in a snapshot do not update the base profile.
+            - On Darwin, snapshots use `~/Library/Application Support/Google/Chrome/Default` as their source.
+            - On Linux, snapshots use `~/.config/chromium/Default` as their source.
+            - When new authentication or an authentication refresh is required:
+              - Get explicit user approval before any direct base-profile access.
+              - Ask the user to open Google Chrome on Darwin or Chromium on Linux.
+              - Ask the user to select `Default` and complete authentication.
+              - Ask the user to close the browser normally after authentication.
+              - Do not launch the base user-data directory through `agent_browser`.
+              - Do not close an existing browser session without explicit user approval.
+              - After the user reports closure, check whether a browser process still uses the base profile.
+              - If the profile is busy, report the active processes and wait for the user.
+              - Verify authentication through a fresh normal headless launch.
 
             ### Missing tools
 
