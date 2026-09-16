@@ -42,6 +42,7 @@ in
         programs.ghostty = {
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty;
+          settings."shell-integration-features" = "ssh-env,ssh-terminfo";
         };
         xdg = lib.optionalAttrs pkgs.stdenv.isLinux {
           # Make text/code MIME handlers open files in Ghostty with the user's
