@@ -117,6 +117,7 @@ in
             sessionDrainRun
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
+          sessionVariables.AGENT_BROWSER_STATE = "${homeDirectory}/.agent-browser/state/agent.json";
           file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
           # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
           file.".pi/agent/APPEND_SYSTEM.md".source =
