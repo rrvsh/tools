@@ -104,13 +104,16 @@ lint-qml:
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
-test: test-nix test-rs
+test: test-nix test-rs test-ts
 
 test-nix:
   if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi
 
 test-rs:
   cargo test --manifest-path rs/Cargo.toml --all
+
+test-ts:
+  node --experimental-strip-types --test pi/extensions/*.test.ts
 
 check: check-gha check-lua check-nix check-qml check-rs test
 

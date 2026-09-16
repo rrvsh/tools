@@ -190,6 +190,7 @@ in
               (root + "/pi/extensions/persisted-model.ts")
               (root + "/pi/extensions/hostname-context.ts")
               (root + "/pi/extensions/system-prompt-viewer.ts")
+              (root + "/pi/extensions/codex-usage.ts")
             ];
           };
           context = ''
