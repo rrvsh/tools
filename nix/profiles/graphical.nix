@@ -23,7 +23,13 @@ in
           echo >&2 "disabling display sleep..."
           sudo pmset -a displaysleep 0
         '';
-        defaults.NSGlobalDomain."com.apple.swipescrolldirection" = false;
+        defaults = {
+          dock.autohide = true;
+          NSGlobalDomain = {
+            _HIHideMenuBar = true;
+            "com.apple.swipescrolldirection" = false;
+          };
+        };
         keyboard = {
           enableKeyMapping = true;
           remapCapsLockToEscape = true;
