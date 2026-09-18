@@ -154,6 +154,7 @@ in
             gh
             git-lfs
             ripgrep
+            zmx
           ];
           shellAliases = {
             cd = "echo \"Please use z\"";
@@ -195,11 +196,67 @@ in
         programs = {
           fish = {
             enable = true;
+            functions = {
+              zmx-new = ''
+                set -l session $argv[1]
+                if test -z "$session"
+                  set session "shell-"(date +%Y%m%d-%H%M%S)"-$fish_pid"
+                end
+                zmx attach "$session"
+              '';
+              zmx-select = ''
+                set -l output (
+                  zmx list --short 2>/dev/null |
+                    sk \
+                      --print0 \
+                      --print-query \
+                      --expect=ctrl-n \
+                      --height=80% \
+                      --reverse \
+                      --prompt='zmx> ' \
+                      --header='Enter: attach | Ctrl-N: create | Ctrl-C: cancel' \
+                      --preview='zmx history {}' \
+                      --preview-window=right:60%:follow |
+                    string split0
+                )
+
+                if test (count $output) -eq 0
+                  return 130
+                end
+
+                set -l query $output[1]
+                set -l session
+                if test (count $output) -gt 1; and test "$output[2]" = ctrl-n
+                  if test -z "$query"
+                    zmx-new
+                    return $status
+                  end
+                  set session $query
+                else
+                  set session $output[-1]
+                  if test -z "$session"
+                    set session $query
+                  end
+                end
+
+                if test -z "$session"
+                  return 130
+                end
+
+                zmx attach "$session"
+              '';
+            };
             interactiveShellInit = ''
               bind \cg 'commandline -r "git add ."; commandline -f execute'
+
+              function __zmx_auto_attach --on-event fish_prompt
+                functions --erase __zmx_auto_attach
+                if not set -q ZMX_SESSION; and not set -q ZMX_NO_AUTO_ATTACH
+                  zmx-new
+                end
+              end
             '';
           };
-          tmux.enable = true;
           starship = {
             enable = true;
             settings = {
@@ -208,6 +265,7 @@ in
                 "$hostname$directory$git_branch$git_status$git_state"
                 "$fill"
                 "$nix_shell"
+                "\${env_var.ZMX_SESSION}"
                 "$time"
                 "\n"
                 "$battery$character"
@@ -218,6 +276,11 @@ in
               git_metrics.format = "([-$deleted]($deleted_style) )([+$added]($added_style))";
               git_branch.format = "[$symbol$branch(:$remote_branch)]($style) ";
               git_metrics.disabled = false;
+              env_var.ZMX_SESSION = {
+                format = "[$symbol]($style) ";
+                style = "green";
+                symbol = "z";
+              };
               time = {
                 disabled = false;
                 format = "[$time]($style)";
