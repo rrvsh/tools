@@ -1,0 +1,186 @@
+diff --git a/src/Surface.zig b/src/Surface.zig
+index 4d66622..9113ff4 100644
+--- a/src/Surface.zig
++++ b/src/Surface.zig
+@@ -331,6 +331,7 @@ const DerivedConfig = struct {
+     title_report: bool,
+     links: []DerivedConfig.Link,
+     link_previews: configpkg.LinkPreviews,
++    link_url_mods: input.Mods,
+     scroll_to_bottom: configpkg.Config.ScrollToBottom,
+     notify_on_command_finish: configpkg.Config.NotifyOnCommandFinish,
+     notify_on_command_finish_action: configpkg.Config.NotifyOnCommandFinishAction,
+@@ -409,6 +410,7 @@ const DerivedConfig = struct {
+             .title_report = config.@"title-report",
+             .links = links,
+             .link_previews = config.@"link-previews",
++            .link_url_mods = config.@"link-url-modifier".mods(),
+             .scroll_to_bottom = config.@"scroll-to-bottom",
+             .notify_on_command_finish = config.@"notify-on-command-finish",
+             .notify_on_command_finish_action = config.@"notify-on-command-finish-action",
+@@ -4410,7 +4412,7 @@ fn linkAtPos(
+     const mouse_mods = self.mouseModsWithCapture(self.mouse.mods);
+
+     // If we have the proper modifiers set then we can check for OSC8 links.
+-    if (mouse_mods.equal(input.ctrlOrSuper(.{}))) hyperlink: {
++    if (mouse_mods.equal(self.config.link_url_mods)) hyperlink: {
+         const rac = mouse_pin.rowAndCell();
+         const cell = rac.cell;
+         if (!cell.hyperlink) break :hyperlink;
+diff --git a/src/config/Config.zig b/src/config/Config.zig
+index 278ffd7..4d90591 100644
+--- a/src/config/Config.zig
++++ b/src/config/Config.zig
+@@ -1414,14 +1414,22 @@ scrollbar: Scrollbar = .system,
+ /// TODO: This can't currently be set!
+ link: RepeatableLink = .{},
+
+-/// Enable URL matching. URLs are matched on hover with control (Linux) or
+-/// command (macOS) pressed and open using the default system application for
+-/// the linked URL.
++/// Enable URL matching. URLs are matched on hover with the modifier selected
++/// by `link-url-modifier` pressed and open using the default system application
++/// for the linked URL.
+ ///
+ /// The URL matcher is always lowest priority of any configured links (see
+ /// `link`). If you want to customize URL matching, use `link` and disable this.
+ @"link-url": bool = true,
+
++/// Modifier required to highlight, preview, and open URLs with the mouse.
++/// Applies to both detected URLs and OSC 8 hyperlinks.
++///
++/// Valid values are `platform` (the default: Control on Linux, Command on
++/// macOS), `ctrl` (Control), and `super` (Super on Linux, Command on macOS).
++/// Existing Shift behavior for overriding application mouse capture is preserved.
++@"link-url-modifier": LinkUrlModifier = .platform,
++
+ /// Show link previews for a matched URL.
+ ///
+ /// When true, link previews are shown for all matched URLs. When false, link
+@@ -3836,7 +3844,7 @@ pub fn default(alloc_gpa: Allocator) Allocator.Error!Config {
+     try result.link.links.append(alloc, .{
+         .regex = url.regex,
+         .action = .{ .open = {} },
+-        .highlight = .{ .hover_mods = inputpkg.ctrlOrSuper(.{}) },
++        .highlight = .{ .hover_mods = result.@"link-url-modifier".mods() },
+     });
+
+     return result;
+@@ -4644,8 +4652,11 @@ pub fn finalize(self: *Config) !void {
+     if (self.@"window-width" > 0) self.@"window-width" = @max(10, self.@"window-width");
+     if (self.@"window-height" > 0) self.@"window-height" = @max(4, self.@"window-height");
+
+-    // If URLs are disabled, cut off the first link. The first link is
+-    // always the URL matcher.
++    // The first link is always the built-in URL matcher. Apply the modifier
++    // after loading config so overrides also take effect on reload.
++    self.link.links.items[0].highlight = .{
++        .hover_mods = self.@"link-url-modifier".mods(),
++    };
+     if (!self.@"link-url") self.link.links.items = self.link.links.items[1..];
+
+     // We warn when the quit-after-last-window-closed-delay is set to a very
+@@ -5240,6 +5251,20 @@ pub const WindowSubtitle = enum {
+     @"working-directory",
+ };
+
++pub const LinkUrlModifier = enum {
++    platform,
++    ctrl,
++    super,
++
++    pub fn mods(self: LinkUrlModifier) inputpkg.Mods {
++        return switch (self) {
++            .platform => inputpkg.ctrlOrSuper(.{}),
++            .ctrl => .{ .ctrl = true },
++            .super => .{ .super = true },
++        };
++    }
++};
++
+ pub const LinkPreviews = enum {
+     false,
+     true,
+@@ -10835,6 +10860,53 @@ test "compatibility: removed bold-is-bright" {
+     }
+ }
+
++test "link-url-modifier defaults and exact matching" {
++    const testing = std.testing;
++    var cfg = try Config.default(testing.allocator);
++    defer cfg.deinit();
++    try testing.expectEqual(LinkUrlModifier.platform, cfg.@"link-url-modifier");
++    try testing.expect(LinkUrlModifier.platform.mods().equal(inputpkg.ctrlOrSuper(.{})));
++    try testing.expect(LinkUrlModifier.ctrl.mods().equal(.{ .ctrl = true }));
++    try testing.expect(LinkUrlModifier.super.mods().equal(.{ .super = true }));
++    try testing.expect(!LinkUrlModifier.super.mods().equal(.{}));
++    try testing.expect(!LinkUrlModifier.super.mods().equal(.{ .ctrl = true }));
++    try testing.expect(!LinkUrlModifier.super.mods().equal(.{ .super = true, .shift = true }));
++}
++
++test "link-url-modifier parsing and updated configuration" {
++    const testing = std.testing;
++    const alloc = testing.allocator;
++    var cfg = try Config.default(alloc);
++    defer cfg.deinit();
++
++    // Re-finalizing with a new setting must refresh the matcher, rather than
++    // retaining the modifier captured when defaults were constructed.
++    inline for (.{ "super", "ctrl", "platform" }) |value| {
++        var it: TestIterator = .{ .data = &.{"--link-url-modifier=" ++ value} };
++        try cfg.loadIter(alloc, &it);
++        try cfg.finalize();
++        const expected = @field(LinkUrlModifier, value);
++        try testing.expectEqual(expected, cfg.@"link-url-modifier");
++        try testing.expect(cfg.link.links.items[0].highlight.hover_mods.equal(expected.mods()));
++    }
++}
++
++test "link-url-modifier with detected URLs disabled" {
++    const testing = std.testing;
++    const alloc = testing.allocator;
++    var cfg = try Config.default(alloc);
++    defer cfg.deinit();
++    var it: TestIterator = .{ .data = &.{
++        "--link-url=false",
++        "--link-url-modifier=super",
++    } };
++    try cfg.loadIter(alloc, &it);
++    try cfg.finalize();
++    try testing.expectEqual(@as(usize, 0), cfg.link.links.items.len);
++    // OSC 8 links still use the chosen modifier independently of the matcher.
++    try testing.expect(cfg.@"link-url-modifier".mods().equal(.{ .super = true }));
++}
++
+ test "compatibility: window new-window" {
+     const testing = std.testing;
+     const alloc = testing.allocator;
+diff --git a/src/renderer/generic.zig b/src/renderer/generic.zig
+index ff632f6..edd174e 100644
+--- a/src/renderer/generic.zig
++++ b/src/renderer/generic.zig
+@@ -565,6 +565,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+             bg_image_fit: configpkg.BackgroundImageFit,
+             bg_image_repeat: bool,
+             links: link.Set,
++            link_url_mods: inputpkg.Mods,
+             vsync: bool,
+             colorspace: configpkg.Config.WindowColorspace,
+             blending: configpkg.Config.AlphaBlending,
+@@ -639,6 +640,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+                     .bg_image_fit = config.@"background-image-fit",
+                     .bg_image_repeat = config.@"background-image-repeat",
+                     .links = links,
++                    .link_url_mods = config.@"link-url-modifier".mods(),
+                     .vsync = config.@"window-vsync",
+                     .colorspace = config.@"window-colorspace",
+                     .blending = config.@"alpha-blending",
+@@ -1250,7 +1252,7 @@ pub fn Renderer(comptime GraphicsAPI: type) type {
+                     const vp = state.mouse.point orelse break :osc8 .empty;
+
+                     // If the right mods aren't pressed, then we can't match.
+-                    if (!state.mouse.mods.equal(inputpkg.ctrlOrSuper(.{})))
++                    if (!state.mouse.mods.equal(self.config.link_url_mods))
+                         break :osc8 .empty;
+
+                     break :osc8 self.terminal_state.linkCells(

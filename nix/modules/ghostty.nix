@@ -38,10 +38,15 @@ in
     };
     homeManager.ghostty =
       { pkgs, ... }:
+      let
+        ghostty = pkgs.ghostty.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [ ./ghostty/link-url-modifier.patch ];
+        });
+      in
       {
         programs.ghostty = {
           enable = true;
-          package = if pkgs.stdenv.isDarwin then null else pkgs.ghostty;
+          package = if pkgs.stdenv.isDarwin then null else ghostty;
           settings = {
             "shell-integration-features" = "ssh-env,ssh-terminfo";
             keybind = lib.optionals pkgs.stdenv.isLinux [
@@ -52,6 +57,9 @@ in
               "super+left=csi:H"
               "super+right=csi:F"
             ];
+          }
+          // lib.optionalAttrs pkgs.stdenv.isLinux {
+            "link-url-modifier" = "super";
           };
         };
         xdg = lib.optionalAttrs pkgs.stdenv.isLinux {
@@ -67,7 +75,7 @@ in
           desktopEntries.editor = {
             name = "Editor";
             exec = "${pkgs.writeShellScript "open-in-editor" ''
-              exec ${pkgs.ghostty}/bin/ghostty -e ${pkgs.bash}/bin/sh -lc 'exec "''${EDITOR:-nvim}" "$@"' editor-shim "$@"
+              exec ${ghostty}/bin/ghostty -e ${pkgs.bash}/bin/sh -lc 'exec "''${EDITOR:-nvim}" "$@"' editor-shim "$@"
             ''} %F";
             noDisplay = true;
             mimeType = editorMimeTypes;
