@@ -89,6 +89,8 @@ Nix flake inputs and source files must be tracked by git to be evaluated; rememb
 
 Style constraints:
 
+- If a Nix module needs no arguments, use a plain attribute set. Omit `{ ... }:` and `_:`.
+
 - One concern per module: one capability, policy, service, tool, or feature.
 - Prefer DRY shared policy; use small helpers/renderers when platform option shapes differ.
 - Prefer concise Nix assignments when they remain clear.
