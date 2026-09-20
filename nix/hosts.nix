@@ -95,6 +95,7 @@ in
       modules = [
         cfg.modules.nixos.user-primary
         cfg.modules.nixos.nvidia-graphics
+        cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
         cfg.modules.nixos.gtnh-server
