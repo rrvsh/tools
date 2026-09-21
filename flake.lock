@@ -1043,22 +1043,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-master": {
-      "locked": {
-        "lastModified": 1785152149,
-        "narHash": "sha256-vbH+CBdQn1k5xyEJE0m5In4lEXgZk9sjQHZdxjMgxN8=",
-        "owner": "nixos",
-        "repo": "nixpkgs",
-        "rev": "aac3a899cc6ce8d928dfc5818dafc093b7936010",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nixos",
-        "ref": "master",
-        "repo": "nixpkgs",
-        "type": "github"
-      }
-    },
     "nixpkgs_10": {
       "locked": {
         "lastModified": 1788614874,
@@ -1424,7 +1408,6 @@
         "nix-rosetta-builder": "nix-rosetta-builder",
         "nixpkgs": "nixpkgs_9",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
-        "nixpkgs-master": "nixpkgs-master",
         "pi": "pi",
         "pi-claude-bridge": "pi-claude-bridge",
         "pi-marginalia": "pi-marginalia",

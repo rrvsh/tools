@@ -6,10 +6,6 @@ watch-site:
 watch-clippy:
   bacon clippy -- --manifest-path rs/Cargo.toml --all
 
-run-docker:
-  docker load -i $(nix build --accept-flake-config .#packages.aarch64-linux.site-image --print-out-paths)
-  docker run --rm -e PORT=8080 -p 8080:8080 site:latest
-
 rb:
   just format-nix
   just lint-nix
@@ -66,7 +62,7 @@ nice: format lint
 format: format-gha format-lua format-nix format-qml format-rs
 
 format-gha:
-  zizmor . --gh-token $(gh auth token) --fix=all
+  zizmor . --fix=all
 
 format-lua:
   stylua .
@@ -92,6 +88,12 @@ lint-nix:
   deadnix --edit
 
 lint-qml:
+  just _lint-qml-{{os()}}
+
+_lint-qml-macos:
+  @echo "Skipping QML lint because Quickshell is Linux-only."
+
+_lint-qml-linux:
   #!/usr/bin/env bash
   set -euo pipefail
   IFS=: read -ra import_paths <<< "$QML_IMPORT_PATH"
@@ -118,7 +120,7 @@ test-ts:
 check: check-gha check-lua check-nix check-qml check-rs test
 
 check-gha:
-  zizmor . --gh-token $(gh auth token)
+  zizmor .
 
 check-lua:
   stylua --check .

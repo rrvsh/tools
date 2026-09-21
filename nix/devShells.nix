@@ -7,8 +7,8 @@
         export RUSTUP_HOME="$HOME/.cache/tools/rustup"
         mkdir -p "$CARGO_HOME" "$RUSTUP_HOME"
       '';
-      qmlShellHook = pkgs.lib.optionalString pkgs.stdenv.isLinux ''
-        export QML_IMPORT_PATH="${pkgs.quickshell}/lib/qt-6/qml:${pkgs.qt6.qtdeclarative}/lib/qt-6/qml''${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
+      qmlShellHook = ''
+        export QML_IMPORT_PATH="${pkgs.lib.optionalString pkgs.stdenv.isLinux "${pkgs.quickshell}/lib/qt-6/qml:"}${pkgs.qt6.qtdeclarative}/lib/qt-6/qml''${QML_IMPORT_PATH:+:$QML_IMPORT_PATH}"
       '';
       common = with pkgs; [ just ];
       nixTools = with pkgs; [
@@ -30,13 +30,8 @@
         gh
         zizmor
       ];
-      qmlTools = pkgs.lib.optionals pkgs.stdenv.isLinux (
-        with pkgs;
-        [
-          quickshell
-          qt6.qtdeclarative
-        ]
-      );
+      tsTools = with pkgs; [ nodejs_24 ];
+      qmlTools = [ pkgs.qt6.qtdeclarative ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.quickshell ];
     in
     {
       devShells = rec {
@@ -59,6 +54,10 @@
           buildInputs = common ++ ghaTools;
         };
 
+        ci-ts = pkgs.mkShell {
+          buildInputs = common ++ tsTools;
+        };
+
         ci-qml = pkgs.mkShell {
           buildInputs = common ++ qmlTools;
           shellHook = qmlShellHook;
@@ -71,6 +70,7 @@
             ++ luaTools
             ++ ghaTools
             ++ rustTools
+            ++ tsTools
             ++ qmlTools
             ++ (with pkgs; [
               age
