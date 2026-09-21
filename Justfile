@@ -92,6 +92,12 @@ lint-nix:
   deadnix --edit
 
 lint-qml:
+  just _lint-qml-{{os()}}
+
+_lint-qml-macos:
+  @echo "Skipping QML lint because Quickshell is Linux-only."
+
+_lint-qml-linux:
   #!/usr/bin/env bash
   set -euo pipefail
   IFS=: read -ra import_paths <<< "$QML_IMPORT_PATH"
