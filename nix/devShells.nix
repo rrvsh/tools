@@ -30,6 +30,7 @@
         gh
         zizmor
       ];
+      tsTools = with pkgs; [ nodejs_24 ];
       qmlTools = [ pkgs.qt6.qtdeclarative ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.quickshell ];
     in
     {
@@ -53,6 +54,10 @@
           buildInputs = common ++ ghaTools;
         };
 
+        ci-ts = pkgs.mkShell {
+          buildInputs = common ++ tsTools;
+        };
+
         ci-qml = pkgs.mkShell {
           buildInputs = common ++ qmlTools;
           shellHook = qmlShellHook;
@@ -65,6 +70,7 @@
             ++ luaTools
             ++ ghaTools
             ++ rustTools
+            ++ tsTools
             ++ qmlTools
             ++ (with pkgs; [
               age
