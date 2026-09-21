@@ -149,22 +149,6 @@ in
           # Keep the shared file in pi-mcp-adapter's native shape.
           # Home Manager otherwise adds a generic HTTP transport field.
           servers = {
-            atlassian = {
-              url = "https://mcp.atlassian.com/v2/mcp";
-              auth = "oauth";
-              lifecycle = "lazy";
-              directTools = false;
-              type = null;
-            };
-            figma = {
-              url = "https://mcp.figma.com/mcp";
-              auth = "oauth";
-              # Figma currently rejects clients outside its MCP catalog.
-              oauth.clientName = "Claude Code";
-              lifecycle = "lazy";
-              directTools = false;
-              type = null;
-            };
             linear = {
               url = "https://mcp.linear.app/mcp";
               auth = "oauth";
