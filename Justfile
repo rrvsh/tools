@@ -62,7 +62,7 @@ nice: format lint
 format: format-gha format-lua format-nix format-qml format-rs
 
 format-gha:
-  zizmor . --gh-token $(gh auth token) --fix=all
+  zizmor . --fix=all
 
 format-lua:
   stylua .
@@ -120,7 +120,7 @@ test-ts:
 check: check-gha check-lua check-nix check-qml check-rs test
 
 check-gha:
-  zizmor . --gh-token $(gh auth token)
+  zizmor .
 
 check-lua:
   stylua --check .
