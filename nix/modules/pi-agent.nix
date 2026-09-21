@@ -156,6 +156,15 @@ in
               directTools = false;
               type = null;
             };
+            figma = {
+              url = "https://mcp.figma.com/mcp";
+              auth = "oauth";
+              # Figma currently rejects clients outside its MCP catalog.
+              oauth.clientName = "Claude Code";
+              lifecycle = "lazy";
+              directTools = false;
+              type = null;
+            };
             linear = {
               url = "https://mcp.linear.app/mcp";
               auth = "oauth";
