@@ -215,8 +215,8 @@ in
                       --reverse \
                       --prompt='zmx> ' \
                       --header='Enter: attach | Ctrl-N: create | Ctrl-C: cancel' \
-                      --preview='zmx history {}' \
-                      --preview-window=right:60%:follow |
+                      --preview='zmx history {} | tail -n "$(tput lines)"' \
+                      --preview-window=right:60% |
                     string split0
                 )
 
