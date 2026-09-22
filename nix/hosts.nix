@@ -47,6 +47,13 @@ in
             users.users.rafiq.uid = lib.mkForce 502;
             home-manager.sharedModules = [
               {
+                home = {
+                  file.".testcontainers.properties".text =
+                    "docker.host=unix:///Users/rafiq/.colima/default/docker.sock\n";
+                  sessionVariables.TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
+                };
+              }
+              {
                 programs.mcp.servers = {
                   atlassian = {
                     url = "https://mcp.atlassian.com/v2/mcp";
