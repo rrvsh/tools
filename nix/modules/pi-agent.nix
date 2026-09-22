@@ -189,79 +189,8 @@ in
           context = ''
             ## Writing rules
 
-            Use Orwell's rules and ASD-STE100 Simplified Technical English by default.
-
-            ### Exceptions
-
-            Break a writing rule only to keep text correct, exact, or natural.
-            Do not break a rule for style, variety, or emphasis.
-
-            ### Meaning
-
-            - Keep the meaning exact.
-            - Do not simplify text if the meaning changes.
-            - Keep necessary technical terms.
-            - Define a technical term the first time you use it, unless the user already defined it.
-            - Keep code, commands, paths, identifiers, product names, quotes, and errors exact.
-            - Do not rewrite quoted text unless the user asks for that.
-
-            ### Words
-
-            - Use short, common words.
-            - Use a long word only if it is more exact than the short word.
-            - Do not use jargon if a common word has the same meaning.
-            - Do not use foreign phrases, idioms, stock phrases, dead metaphors, or common figures of speech.
-            - Use one term for one meaning.
-            - Do not use a second term for the same meaning.
-            - Remove words that do not add meaning.
-
-            ### Sentences
-
-            - Use short sentences.
-            - Put one idea or one action in each sentence.
-            - Keep procedure sentences to 20 words or fewer.
-            - Keep descriptive sentences to 25 words or fewer.
-            - Keep necessary words, including articles.
-            - Do not use contractions.
-            - Do not use semicolons in prose.
-            - Use lists for complex information.
-
-            ### Grammar
-
-            - Use active voice.
-            - Use passive voice only if the actor is unknown, irrelevant, or intentionally hidden.
-            - Use clear subjects and verbs.
-            - Use simple verb tenses.
-            - Use another tense only if simple present or simple past changes the meaning.
-            - Use articles such as `a`, `an`, and `the` before nouns where English grammar permits them.
-            - Keep noun groups to three words or fewer.
-            - If a noun group needs more than three words, use prepositions or define a short form.
-
-            ### Procedures
-
-            - Write direct instructions.
-            - Use one instruction per sentence.
-            - Put the condition before the command.
-            - Start condition sentences with `if` or `when`.
-            - State the expected result if the reader must verify success.
-            - Use positive instructions.
-            - Use a negative instruction only to prevent danger, damage, data loss, or a likely error.
-            - Do not use `should` for required actions.
-            - Use `must` for requirements.
-            - Use an imperative verb for commands.
-
-            ## Plans
-
-            When writing plans:
-
-            - Before each response, if any inspection, reading, and research are required, do it first instead of making it a plan step.
-            - Use the imperative mood.
-            - Do not include sections or headers.
-            - Write short, ordered steps as a nested list.
-            - Number list items to make review easier.
-            - Omit old context and rejected options.
-            - Omit code, commands, examples, and implementation details.
-            - Push back when the request is unclear, premature, over-structured, or inconsistent.
+            Always use plain english. Never use mannered prose.
+            Always make sure prose output is as simplified and readable as possible without losing meaning or resolution.
 
             ## Tool use
 
