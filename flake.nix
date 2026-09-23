@@ -18,13 +18,20 @@
   };
   outputs =
     inputs@{ flake-parts, import-tree, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } ((import-tree ./nix) // { flake.paths.root = ./.; });
+    flake-parts.lib.mkFlake { inherit inputs; } {
+      imports = [ (import-tree ./nix) ];
+      flake.paths.root = ./.;
+    };
   inputs = {
     aenyrathia = {
       url = "github:rrvsh/aenyrathia/prime";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    agent-browser.url = "github:rrvsh/agent-browser-nix";
+    agent-browser = {
+      url = "github:rrvsh/agent-browser-nix";
+      # agent-browser still uses the pre-module import-tree API.
+      inputs.import-tree.url = "github:vic/import-tree/d321337efd0f23a9eb14a42adb7b2c29313ab274";
+    };
     beads.url = "github:gastownhall/beads/v1.2.2";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";

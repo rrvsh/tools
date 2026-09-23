@@ -1,6 +1,9 @@
 let
   commonSettings = {
-    experimental-features = "nix-command flakes";
+    experimental-features = [
+      "nix-command"
+      "flakes"
+    ];
     use-registries = false; # Avoid implicit flake refs.
     flake-registry = ""; # Disable global registry.
     tarball-ttl = 86400; # Refresh tarballs every 24 hours.

@@ -235,7 +235,7 @@ in
               };
             };
             services = {
-              journald.extraConfig = "SystemMaxUse=512M";
+              journald.settings.Journal.SystemMaxUse = "512M";
               openssh = {
                 openFirewall = lib.mkForce false;
                 settings.PermitRootLogin = lib.mkForce "no";
