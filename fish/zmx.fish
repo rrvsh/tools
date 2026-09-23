@@ -100,8 +100,7 @@ function zmx-select
         sk \
           --print0 \
           --print-query \
-          --expect=ctrl-n,ctrl-r \
-          --bind='ctrl-j:down+accept,ctrl-k:up+accept' \
+          --bind='ctrl-n:accept(ctrl-n),ctrl-r:accept(ctrl-r),ctrl-j:accept(ctrl-j),ctrl-k:accept(ctrl-k)' \
           --cycle \
           --delimiter='/' \
           --with-nth=2 \
@@ -121,7 +120,7 @@ function zmx-select
     set -l query $output[1]
     set -l key
     set -l row
-    if test (count $output) -ge 2; and contains -- "$output[2]" ctrl-n ctrl-r
+    if test (count $output) -ge 2; and contains -- "$output[2]" ctrl-n ctrl-r ctrl-j ctrl-k
       set key $output[2]
       if test (count $output) -ge 3
         set row $output[-1]
@@ -136,6 +135,19 @@ function zmx-select
     end
 
     set -l session (string split -m 1 / -- "$row")[1]
+    if contains -- "$key" ctrl-j ctrl-k
+      if test -z "$session"
+        continue
+      end
+
+      set -l current_index (contains -i -- "$session" $active_sessions)
+      if test "$key" = ctrl-j
+        set session $active_sessions[(math "$current_index % "(count $active_sessions)" + 1")]
+      else
+        set session $active_sessions[(math "($current_index - 2 + "(count $active_sessions)") % "(count $active_sessions)" + 1")]
+      end
+    end
+
     if test "$key" = ctrl-r
       if test -z "$session"
         echo 'zmx: select a session to rename' >&2
