@@ -15,7 +15,7 @@ in
         # Apple Silicon only: also install the Intel Homebrew prefix for Rosetta,
         # allowing `arch -x86_64 brew ...` when an x86_64-only formula/cask is needed.
         enableRosetta = true;
-        mutableTaps = false;
+        mutableTaps = true;
         user = primaryUser.name;
         inherit taps;
       };
