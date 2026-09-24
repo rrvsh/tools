@@ -118,10 +118,25 @@ in
           ]
           ++ lib.optionals pkgs.stdenv.isLinux [ pkgs.chromium ];
           sessionVariables.AGENT_BROWSER_PROFILE = "Default";
-          file.".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
-          # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
-          file.".pi/agent/APPEND_SYSTEM.md".source =
-            config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
+          file = {
+            ".pi/config/pi-agent-browser-native/config.json".text = builtins.toJSON agentBrowserConfig;
+            ".pi/context-breadcrumbs.json".text = builtins.toJSON {
+              ignoreDirs = [
+                ".git"
+                "node_modules"
+                "dist"
+                "build"
+                "target"
+                ".venv"
+                "venv"
+                "__pycache__"
+                "fileAI"
+              ];
+            };
+            # Note: this does not show up in the loaded context files, but it is appended to the system prompt.
+            ".pi/agent/APPEND_SYSTEM.md".source =
+              config.lib.file.mkOutOfStoreSymlink "${homeDirectory}/Agents/MEMORY.md";
+          };
         };
         systemd.user.services.pi-session-drain = {
           Unit.Description = "Drain Pi sessions into agent memory";
