@@ -13,14 +13,14 @@ in
         cursorPackage = cfg.packages.${pkgs.stdenv.hostPlatform.system}.pixel-cursor-themes;
         cursorControl = pkgs.writeShellApplication {
           name = "cursorctl";
-          runtimeInputs = with pkgs; [
-            coreutils
-            findutils
-            gawk
-            glib
-            gsettings-desktop-schemas
-            hyprland
-            gnused
+          runtimeInputs = [
+            pkgs.coreutils
+            pkgs.findutils
+            pkgs.gawk
+            pkgs.glib
+            pkgs.gsettings-desktop-schemas
+            config.wayland.windowManager.hyprland.package
+            pkgs.gnused
           ];
           text = ''
                         set -eu
