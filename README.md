@@ -9,6 +9,7 @@ these are the tools i currently use :3
 - to get home-manager logs on darwin, use `darwin-rebuild` instead of `nh`
 - on `alpha`, run rebuilds via `nix develop -c just rb` from the repo root. if rosetta-builder flakes out with platform mismatch / remote builder issues, run `just rb` a second time — it often succeeds on retry.
 - `kikir` uses UID `502` for `rafiq` and shares `~/Agents` through Syncthing at `100.109.192.110:22000`.
+- Development hosts sync only Pi's `~/.pi/agent/sessions` state. Start Pi in the equivalent local project before using `/resume`, and never continue the same session concurrently on multiple machines.
 
 ### to kill Hyprland from an SSH session
 
