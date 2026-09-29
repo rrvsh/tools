@@ -103,10 +103,10 @@ in
           };
         };
         remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
-        # A percentage threshold reserves too much space on large development disks.
+        # Syncthing uses decimal units; 5.4 GB keeps slightly more than 5 GiB free.
         syncthingMinDiskFree = {
-          value = 5;
-          unit = "GiB";
+          value = 5.4;
+          unit = "GB";
         };
         artifactExtensions = [
           "csv"
