@@ -103,6 +103,11 @@ in
           };
         };
         remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
+        # A percentage threshold reserves too much space on large development disks.
+        syncthingMinDiskFree = {
+          value = 5;
+          unit = "GiB";
+        };
         artifactExtensions = [
           "csv"
           "html"
@@ -180,6 +185,7 @@ in
         };
         services.syncthing.settings = {
           devices = remoteSyncthingDevices;
+          options.minHomeDiskFree = syncthingMinDiskFree;
           folders = {
             agents = {
               path = "${config.home.homeDirectory}/Agents";
@@ -188,6 +194,7 @@ in
               type = "sendreceive";
               devices = builtins.attrNames remoteSyncthingDevices;
               maxConflicts = 20;
+              minDiskFree = syncthingMinDiskFree;
               versioning = {
                 type = "staggered";
                 params = {
@@ -203,6 +210,7 @@ in
               type = "sendreceive";
               devices = builtins.attrNames remoteSyncthingDevices;
               maxConflicts = 20;
+              minDiskFree = syncthingMinDiskFree;
               # Syncthing versioning stays disabled because each append could retain a full JSONL copy.
             };
           };
