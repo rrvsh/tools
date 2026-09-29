@@ -103,6 +103,11 @@ in
           };
         };
         remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
+        # Syncthing uses decimal units; 5.4 GB keeps slightly more than 5 GiB free.
+        syncthingMinDiskFree = {
+          value = 5.4;
+          unit = "GB";
+        };
         artifactExtensions = [
           "csv"
           "html"
@@ -180,19 +185,33 @@ in
         };
         services.syncthing.settings = {
           devices = remoteSyncthingDevices;
-          folders.agents = {
-            path = "${config.home.homeDirectory}/Agents";
-            id = "agents";
-            label = "Agents";
-            type = "sendreceive";
-            devices = builtins.attrNames remoteSyncthingDevices;
-            maxConflicts = 20;
-            versioning = {
-              type = "staggered";
-              params = {
-                cleanInterval = "3600";
-                maxAge = "2592000";
+          options.minHomeDiskFree = syncthingMinDiskFree;
+          folders = {
+            agents = {
+              path = "${config.home.homeDirectory}/Agents";
+              id = "agents";
+              label = "Agents";
+              type = "sendreceive";
+              devices = builtins.attrNames remoteSyncthingDevices;
+              maxConflicts = 20;
+              minDiskFree = syncthingMinDiskFree;
+              versioning = {
+                type = "staggered";
+                params = {
+                  cleanInterval = "3600";
+                  maxAge = "2592000";
+                };
               };
+            };
+            pi-sessions = {
+              path = "${config.home.homeDirectory}/.pi/agent/sessions";
+              id = "pi-sessions";
+              label = "Pi sessions";
+              type = "sendreceive";
+              devices = builtins.attrNames remoteSyncthingDevices;
+              maxConflicts = 20;
+              minDiskFree = syncthingMinDiskFree;
+              # Syncthing versioning stays disabled because each append could retain a full JSONL copy.
             };
           };
         };
