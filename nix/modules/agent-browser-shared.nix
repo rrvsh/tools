@@ -1,4 +1,4 @@
-{ config, ... }:
+{ config, lib, ... }:
 let
   cfg = config.flake;
   osModule = {
@@ -10,7 +10,9 @@ let
 in
 {
   config.flake.modules = {
-    darwin.agent-browser-shared = osModule;
+    darwin.agent-browser-shared = lib.recursiveUpdate osModule {
+      homebrew.casks = [ "google-chrome" ];
+    };
     nixos.agent-browser-shared = osModule;
     homeManager.agent-browser-shared =
       {
