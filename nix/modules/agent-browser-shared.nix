@@ -11,7 +11,12 @@ in
 {
   config.flake.modules = {
     darwin.agent-browser-shared = lib.recursiveUpdate osModule {
-      homebrew.casks = [ "google-chrome" ];
+      homebrew.casks = [
+        {
+          name = "google-chrome";
+          args.no_quarantine = true;
+        }
+      ];
     };
     nixos.agent-browser-shared = osModule;
     homeManager.agent-browser-shared =
