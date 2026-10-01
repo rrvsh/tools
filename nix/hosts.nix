@@ -29,6 +29,7 @@ in
       ];
       modules = [
         cfg.modules.darwin.user-primary
+        cfg.modules.darwin.agent-browser-shared
         cfg.modules.darwin.rosetta-builder
       ];
     };
@@ -41,6 +42,7 @@ in
       ];
       modules = [
         cfg.modules.darwin.user-primary
+        cfg.modules.darwin.agent-browser-shared
         (
           { pkgs, ... }:
           {
@@ -117,6 +119,7 @@ in
       ];
       modules = [
         cfg.modules.nixos.user-primary
+        cfg.modules.nixos.agent-browser-shared
         cfg.modules.nixos.nvidia-graphics
         cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
