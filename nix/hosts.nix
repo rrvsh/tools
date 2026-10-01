@@ -59,6 +59,10 @@ in
                     url = "https://mcp.atlassian.com/v2/mcp";
                     exposure = "codemode";
                   };
+                  datadog = {
+                    url = "https://mcp.us5.datadoghq.com/v1/mcp";
+                    exposure = "codemode";
+                  };
                   figma = {
                     url = "https://mcp.figma.com/mcp";
                     exposure = "codemode";
