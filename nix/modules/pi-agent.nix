@@ -168,7 +168,7 @@ in
               # Keep this pinned with the agent-browser flake input: pi-agent-browser-native
               # tracks specific agent-browser CLI versions in its command surface and result parsing.
               "npm:pi-agent-browser-native@0.2.64"
-              "npm:pi-subagents"
+              "npm:pi-subagents@0.74.0"
               "npm:pi-web-access"
               "npm:pi-context-breadcrumbs"
               marginalia.passthru.packagePath
