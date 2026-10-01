@@ -169,7 +169,7 @@ in
               # tracks specific agent-browser CLI versions in its command surface and result parsing.
               "npm:pi-agent-browser-native@0.2.64"
               "npm:pi-subagents@0.74.0"
-              "npm:pi-web-access"
+              "npm:pi-web-access@0.35.0"
               "npm:pi-context-breadcrumbs"
               marginalia.passthru.packagePath
               slopchop.passthru.packagePath
