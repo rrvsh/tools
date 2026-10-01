@@ -1216,11 +1216,11 @@
         "nixpkgs": "nixpkgs_10"
       },
       "locked": {
-        "lastModified": 1788836606,
-        "narHash": "sha256-sWoY/ncWGob9wNfAnVDG1qOh4XcxCrcOMIkeT3MFAxs=",
+        "lastModified": 1790816874,
+        "narHash": "sha256-b988JaV0U3rn1qTXQBtdFzx8N2Nxuh08gd1OzPPNAU8=",
         "owner": "rrvsh",
         "repo": "pi-coding-agent-nix",
-        "rev": "5a7088c76cb50c885996d81654a2c90f7ebf8f5b",
+        "rev": "0fa1f77ea183be8de0dc00771775b76fa14a3f5e",
         "type": "github"
       },
       "original": {

@@ -57,19 +57,13 @@ in
                 programs.mcp.servers = {
                   atlassian = {
                     url = "https://mcp.atlassian.com/v2/mcp";
-                    auth = "oauth";
-                    lifecycle = "lazy";
-                    directTools = false;
-                    type = null;
+                    exposure = "codemode";
                   };
                   figma = {
                     url = "https://mcp.figma.com/mcp";
-                    auth = "oauth";
+                    exposure = "codemode";
                     # Figma currently rejects clients outside its MCP catalog.
                     oauth.clientName = "Claude Code";
-                    lifecycle = "lazy";
-                    directTools = false;
-                    type = null;
                   };
                 };
                 home.packages = with pkgs; [
