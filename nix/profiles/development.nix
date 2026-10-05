@@ -155,6 +155,13 @@ in
               pkgs.writeText "agents-stignore" (lib.concatStringsSep "\n" agentsIgnorePatterns + "\n")
             } ${config.home.homeDirectory}/Agents/.stignore
           '';
+          activation.piSessionsStignore = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            run rm -f ${config.home.homeDirectory}/.pi/agent/sessions/.stignore
+            run ${pkgs.coreutils}/bin/install -Dm0644 ${pkgs.writeText "pi-sessions-stignore" ''
+              **/subagent-artifacts/.last-cleanup
+              **/subagent-artifacts/.sync-conflict-*.last-cleanup
+            ''} ${config.home.homeDirectory}/.pi/agent/sessions/.stignore
+          '';
           packages = [
             pkgs.zmx
           ]
@@ -209,6 +216,7 @@ in
               label = "Pi sessions";
               type = "sendreceive";
               devices = builtins.attrNames remoteSyncthingDevices;
+              ignorePerms = true;
               maxConflicts = 20;
               minDiskFree = syncthingMinDiskFree;
               # Syncthing versioning stays disabled because each append could retain a full JSONL copy.
