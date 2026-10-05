@@ -1,3 +1,17 @@
+function __zmx_attach
+  set -l session $argv[1]
+
+  env ZMX_SESSION_PREFIX= zmx attach "$session"
+  set -l attach_status $status
+  set -l sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
+
+  if not contains -- "$session" $sessions
+    exit 0
+  end
+
+  return $attach_status
+end
+
 function __zmx-cycle
   if not set -q ZMX_SESSION
     echo "zmx: not inside a zmx session" >&2
@@ -142,8 +156,18 @@ function zmx-new
   if test -z "$session"
     set session "shell-"(date +%Y%m%d-%H%M%S)"-$fish_pid"
   end
-  set -g __zmx_selected_session (hostname -s)"/$ZMX_SESSION_PREFIX$session"
-  zmx attach "$session"
+  set -l effective_session "$ZMX_SESSION_PREFIX$session"
+  set -g __zmx_selected_session (hostname -s)"/$effective_session"
+  __zmx_attach "$effective_session"
+end
+
+function zmx-murder
+  if not set -q ZMX_SESSION
+    echo 'zmx: not inside a zmx session' >&2
+    return 1
+  end
+
+  env ZMX_SESSION_PREFIX= zmx kill "$ZMX_SESSION"
 end
 
 function zmx-next
@@ -361,10 +385,22 @@ function zmx-select
 
     set -g __zmx_selected_session "$host/$session"
     if test "$host" = "$current_host"
-      env ZMX_SESSION_PREFIX= zmx attach "$session"
+      __zmx_attach "$session"
     else
       set -l encoded_session (printf '%s' "$session" | base64 | string join '')
-      set -l remote_command "set session (printf '%s' '$encoded_session' | base64 --decode); env ZMX_SESSION_PREFIX= zmx attach \"\$session\""
+      set -l session_ended_status 200
+      set -l remote_command "
+        set session (printf '%s' '$encoded_session' | base64 --decode)
+        env ZMX_SESSION_PREFIX= zmx attach \"\$session\"
+        set attach_status \$status
+        set sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
+
+        if not contains -- \"\$session\" \$sessions
+          exit $session_ended_status
+        end
+
+        exit \$attach_status
+      "
       ssh \
         -t \
         -o BatchMode=yes \
@@ -374,6 +410,13 @@ function zmx-select
         -o "ControlPath=$ZMX_SELECT_CONTROL_PATH" \
         "$host" \
         "$remote_command"
+      set -l attach_status $status
+
+      if test $attach_status -eq $session_ended_status
+        exit 0
+      end
+
+      return $attach_status
     end
     return $status
   end
