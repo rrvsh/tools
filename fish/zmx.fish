@@ -29,61 +29,111 @@ function __zmx-cycle
   env ZMX_SESSION_PREFIX= zmx attach "$sessions[$target_index]"
 end
 
-function __zmx-picker-rows
+function __zmx-picker-host-rows
   set -l anchor $argv[1]
   set -l current_host $argv[2]
+  set -l host $argv[3]
 
-  for host in $argv[3..-1]
-    set -l sessions
-    if test "$host" = "$current_host"
-      set sessions (env ZMX_SESSION_PREFIX= zmx list 2>/dev/null)
-    else
-      set sessions (
-        ssh \
-          -o BatchMode=yes \
-          -o ConnectTimeout=3 \
-          -o ControlMaster=auto \
-          -o ControlPersist=60 \
-          -o "ControlPath=$ZMX_SELECT_CONTROL_PATH" \
-          "$host" \
-          env ZMX_SESSION_PREFIX= zmx list 2>/dev/null
-      )
+  set -l sessions
+  if test "$host" = "$current_host"
+    set sessions (env ZMX_SESSION_PREFIX= zmx list 2>/dev/null)
+  else
+    set sessions (
+      ssh \
+        -o BatchMode=yes \
+        -o ConnectTimeout=3 \
+        -o ControlMaster=auto \
+        -o ControlPersist=60 \
+        -o "ControlPath=$ZMX_SELECT_CONTROL_PATH" \
+        "$host" \
+        env ZMX_SESSION_PREFIX= zmx list 2>/dev/null
+    )
+  end
+  set -l list_status $status
+  if test $list_status -ne 0
+    return $list_status
+  end
+
+  for metadata in $sessions
+    set -l session (string match -r -g 'name=([^\t]+)' -- "$metadata")
+    if test -z "$session"
+      continue
     end
 
-    for metadata in $sessions
-      set -l session (string match -r -g 'name=([^\t]+)' -- "$metadata")
-      if test -z "$session"
-        continue
-      end
-
-      set -l title (string match -r -g '(?:^|\t)title=([^\t]*)' -- "$metadata")
-      if test -z "$title"
-        set title $session
-      end
-
-      set -l key "$host/$session"
-      set -l selection_marker '  '
-      if test "$key" = "$anchor"
-        set selection_marker '→ '
-      end
-
-      set -l clients (string match -r -g '(?:^|\t)clients=([0-9]+)' -- "$metadata")
-      set -l attachment_marker '  '
-      if test -n "$clients"; and test "$clients" -gt 0
-        set attachment_marker '● '
-      end
-
-      set -l label $session
-      if test "$title" != "$session"
-        set label "$title  [$session]"
-      end
-      if test "$host" != "$current_host"
-        set label "[$host] $label"
-      end
-
-      set -l encoded_session (printf '%s' "$session" | base64 | string join '')
-      printf '%s\t%s\t%s\t%s%s%s\n' "$host" "$session" "$encoded_session" "$selection_marker" "$attachment_marker" "$label"
+    set -l title (string match -r -g '(?:^|\t)title=([^\t]*)' -- "$metadata")
+    if test -z "$title"
+      set title $session
     end
+
+    set -l key "$host/$session"
+    set -l selection_marker '  '
+    if test "$key" = "$anchor"
+      set selection_marker '→ '
+    end
+
+    set -l clients (string match -r -g '(?:^|\t)clients=([0-9]+)' -- "$metadata")
+    set -l attachment_marker '  '
+    if test -n "$clients"; and test "$clients" -gt 0
+      set attachment_marker '● '
+    end
+
+    set -l label $session
+    if test "$title" != "$session"
+      set label "$title  [$session]"
+    end
+    if test "$host" != "$current_host"
+      set label "[$host] $label"
+    end
+
+    set -l encoded_session (printf '%s' "$session" | base64 | string join '')
+    printf '%s\t%s\t%s\t%s%s%s\n' "$host" "$session" "$encoded_session" "$selection_marker" "$attachment_marker" "$label"
+  end
+end
+
+function __zmx-picker-status-row
+  set -l host $argv[1]
+  set -l state $argv[2]
+  set -l session_count $argv[3]
+
+  switch "$state"
+    case local
+      printf '\t\t\t● %s: local · %s sessions\n' "$host" "$session_count"
+    case reachable
+      printf '\t\t\t● %s: reachable · %s sessions\n' "$host" "$session_count"
+    case unreachable
+      printf '\t\t\t× %s: unreachable\n' "$host"
+    case connecting
+      printf '\t\t\t… %s: connecting\n' "$host"
+  end
+end
+
+function __zmx-picker-refresh-host
+  set -l anchor $argv[1]
+  set -l current_host $argv[2]
+  set -l host $argv[3]
+  set -l row_file $argv[4]
+  set -l status_file $argv[5]
+  set -l reload_command $argv[6]
+  set -l socket $argv[7]
+  set -l temporary_rows "$row_file.$fish_pid"
+  set -l temporary_status "$status_file.$fish_pid"
+
+  __zmx-picker-host-rows "$anchor" "$current_host" "$host" >"$temporary_rows"
+  set -l list_status $status
+  set -l session_count (string split \n <"$temporary_rows" | string match -r '.+' | count)
+  if test $list_status -eq 0
+    __zmx-picker-status-row "$host" reachable "$session_count" >"$temporary_status"
+  else
+    __zmx-picker-status-row "$host" unreachable >"$temporary_status"
+  end
+  command mv "$temporary_rows" "$row_file"
+  command mv "$temporary_status" "$status_file"
+
+  for attempt in (seq 20)
+    if printf 'reload(%s)\n' "$reload_command" | sk --remote "$socket" >/dev/null 2>&1
+      return
+    end
+    sleep 0.05
   end
 end
 
@@ -123,21 +173,14 @@ function zmx-select
   end
 
   while true
-    set -l rows (__zmx-picker-rows "$anchor" "$current_host" $hosts)
-    set -l active_sessions
-    set -l anchor_label
-    for row in $rows
+    set -l local_rows (__zmx-picker-host-rows "$anchor" "$current_host" "$current_host")
+    set -l anchor_label "$anchor"
+    for row in $local_rows
       set -l fields (string split \t -- "$row")
       set -l session_key "$fields[1]/$fields[2]"
-      set -a active_sessions "$session_key"
       if test "$session_key" = "$anchor"
         set anchor_label (string replace -r '^(?:→ |  )(?:● |  )' '' -- "$fields[4]")
       end
-    end
-
-    if test -n "$anchor"; and not contains -- "$anchor" $active_sessions
-      set anchor
-      set marker
     end
 
     set -l header 'Enter: attach | Ctrl-N: create here | Ctrl-R: rename | Ctrl-J/K: next/previous | Ctrl-C: cancel'
@@ -145,9 +188,66 @@ function zmx-select
       set header "$marker: $anchor_label | $header"
     end
 
+    set -l row_directory (mktemp -d)
+    if test $status -ne 0
+      echo 'zmx: could not create picker row directory' >&2
+      return 1
+    end
+
+    set -l row_files
+    set -l status_files
+    set -l display_hosts $current_host
+    for host in $hosts
+      if test "$host" != "$current_host"
+        set -a display_hosts $host
+      end
+    end
+    for host in $display_hosts
+      set -l row_file "$row_directory/$host.rows"
+      set -l status_file "$row_directory/$host.status"
+      set -a row_files "$row_file"
+      set -a status_files "$status_file"
+      printf '' >"$row_file"
+      if test "$host" = "$current_host"
+        __zmx-picker-status-row "$host" local (count $local_rows) >"$status_file"
+      else
+        __zmx-picker-status-row "$host" connecting >"$status_file"
+      end
+    end
+    if test (count $local_rows) -gt 0
+      printf '%s\n' $local_rows >"$row_directory/$current_host.rows"
+    end
+
+    set -l worker_file "$row_directory/worker.fish"
+    functions --no-details \
+      __zmx-picker-host-rows \
+      __zmx-picker-status-row \
+      __zmx-picker-refresh-host \
+      >"$worker_file"
+    printf '\n__zmx-picker-refresh-host $argv\n' >>"$worker_file"
+
+    set -l socket "zmx-select-$fish_pid-"(random)
+    set -l reload_command (string join ' ' cat $status_files $row_files)
+    set -l refresh_pids
+    for host in $hosts
+      if test "$host" != "$current_host"
+        fish "$worker_file" \
+          "$anchor" \
+          "$current_host" \
+          "$host" \
+          "$row_directory/$host.rows" \
+          "$row_directory/$host.status" \
+          "$reload_command" \
+          "$socket" &
+        set -a refresh_pids $last_pid
+      end
+    end
+
     set -l output (
-      printf '%s\n' $rows |
+      command cat $status_files $row_files |
         sk \
+          --listen "$socket" \
+          --header-lines=(count $status_files) \
           --print0 \
           --print-query \
           --bind='ctrl-n:accept(ctrl-n),ctrl-r:accept(ctrl-r),ctrl-j:accept(ctrl-j),ctrl-k:accept(ctrl-k)' \
@@ -162,6 +262,16 @@ function zmx-select
           --preview-window=right:60% |
         string split0
     )
+
+    set -l rows
+    for row_file in $row_files
+      set -a rows (string split \n <"$row_file")
+    end
+
+    for refresh_pid in $refresh_pids
+      kill "$refresh_pid" 2>/dev/null
+    end
+    command rm -rf "$row_directory"
 
     if test (count $output) -eq 0
       return 130
@@ -182,6 +292,12 @@ function zmx-select
     if test "$key" = ctrl-n
       zmx-new "$query"
       return $status
+    end
+
+    set -l active_sessions
+    for active_row in $rows
+      set -l active_fields (string split \t -- "$active_row")
+      set -a active_sessions "$active_fields[1]/$active_fields[2]"
     end
 
     set -l fields (string split \t -- "$row")
