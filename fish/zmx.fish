@@ -21,7 +21,7 @@ function __zmx_attach
   set -l marker "$murder_dir/$token"
 
   command mkdir -p -- "$murder_dir"
-  command chmod 700 -- "$murder_dir"
+  command chmod 700 "$murder_dir"
   command rm -f -- "$marker"
 
   env \
@@ -213,7 +213,7 @@ function zmx-murder
   set -l murder_dir (__zmx_murder_dir)
   set -l marker "$murder_dir/$token"
   command mkdir -p -- "$murder_dir"
-  command chmod 700 -- "$murder_dir"
+  command chmod 700 "$murder_dir"
   printf '' >"$marker"
 
   env ZMX_SESSION_PREFIX= zmx kill "$ZMX_SESSION"
@@ -446,10 +446,20 @@ function zmx-select
       set -l token "$fish_pid-"(random)"-"(random)"-"(date +%s)
       set -l remote_command "
         set session (printf '%s' '$encoded_session' | base64 --decode)
-        set murder_dir (__zmx_murder_dir)
+        if set -q ZMX_DIR
+          set murder_dir \"\$ZMX_DIR/murder\"
+        else if set -q XDG_RUNTIME_DIR
+          set murder_dir \"\$XDG_RUNTIME_DIR/zmx-murder\"
+        else
+          set runtime_dir /tmp
+          if set -q TMPDIR
+            set runtime_dir (string trim -r -c / -- \"\$TMPDIR\")
+          end
+          set murder_dir \"\$runtime_dir/zmx-murder-\"(id -u)
+        end
         set marker \"\$murder_dir/$token\"
         command mkdir -p -- \"\$murder_dir\"
-        command chmod 700 -- \"\$murder_dir\"
+        command chmod 700 \"\$murder_dir\"
         command rm -f -- \"\$marker\"
 
         env \\
