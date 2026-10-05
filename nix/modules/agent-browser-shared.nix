@@ -96,7 +96,8 @@ in
                 - Each Pi session has a separate pinned tab. Do not run concurrent commands against the same pinned browser session.
                 - Do not adopt an unfamiliar tab or target ID. If the pinned tab is gone, create a new tab instead.
                 - Shared-browser tabs have separate navigation but share cookies, storage, service workers, and login state.
-                - Do not log out, clear cookies, switch accounts, or perform other profile-wide authentication changes without explicit approval.
+                - Never run global `cookies clear`, clear all browsing data, or delete the shared browser profile. These actions sign every shared workflow out of every site.
+                - Do not log out, switch accounts, clear origin storage, or make other profile-wide authentication changes without explicit approval.
                 - The CDP endpoint grants full browser control. Never expose or forward port ${toString cfg.port} beyond loopback.
               '';
             }
