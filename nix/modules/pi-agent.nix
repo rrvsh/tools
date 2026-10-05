@@ -180,6 +180,7 @@ in
               (root + "/pi/extensions/hostname-context.ts")
               (root + "/pi/extensions/system-prompt-viewer.ts")
               (root + "/pi/extensions/codex-usage.ts")
+              (root + "/pi/extensions/thread-title/index.ts")
             ];
           };
           context = ''
