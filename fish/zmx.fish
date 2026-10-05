@@ -1,9 +1,41 @@
+set -g __zmx_tracked_envs DISPLAY,SSH_AUTH_SOCK,SSH_AGENT_PID,SSH_CONNECTION,WINDOWID,XAUTHORITY,KITTY_LISTEN_ON,KITTY_PID,KITTY_WINDOW_ID,ZMX_MURDER_TOKEN
+
+function __zmx_murder_dir
+  if set -q ZMX_DIR
+    printf '%s/murder\n' "$ZMX_DIR"
+  else if set -q XDG_RUNTIME_DIR
+    printf '%s/zmx-murder\n' "$XDG_RUNTIME_DIR"
+  else
+    set -l runtime_dir /tmp
+    if set -q TMPDIR
+      set runtime_dir (string trim -r -c / -- "$TMPDIR")
+    end
+    printf '%s/zmx-murder-%s\n' "$runtime_dir" (id -u)
+  end
+end
+
 function __zmx_attach
   set -l session $argv[1]
+  set -l token "$fish_pid-"(random)"-"(random)"-"(date +%s)
+  set -l murder_dir (__zmx_murder_dir)
+  set -l marker "$murder_dir/$token"
 
-  env ZMX_SESSION_PREFIX= zmx attach "$session"
+  command mkdir -p -- "$murder_dir"
+  command chmod 700 -- "$murder_dir"
+  command rm -f -- "$marker"
+
+  env \
+    ZMX_MURDER_TOKEN="$token" \
+    ZMX_TRACK_ENV="$__zmx_tracked_envs" \
+    ZMX_SESSION_PREFIX= \
+    zmx attach "$session"
   set -l attach_status $status
   set -l sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
+
+  if test -e "$marker"
+    command rm -f -- "$marker"
+    exit 0
+  end
 
   if not contains -- "$session" $sessions
     exit 0
@@ -40,7 +72,12 @@ function __zmx-cycle
       return 2
   end
 
-  env ZMX_SESSION_PREFIX= zmx attach "$sessions[$target_index]"
+  set -l murder_token (env ZMX_SESSION_PREFIX= zmx print-env . ZMX_MURDER_TOKEN 2>/dev/null)
+  env \
+    ZMX_MURDER_TOKEN="$murder_token" \
+    ZMX_TRACK_ENV="$__zmx_tracked_envs" \
+    ZMX_SESSION_PREFIX= \
+    zmx attach "$sessions[$target_index]"
 end
 
 function __zmx-picker-host-rows
@@ -167,7 +204,24 @@ function zmx-murder
     return 1
   end
 
+  set -l token (env ZMX_SESSION_PREFIX= zmx print-env . ZMX_MURDER_TOKEN 2>/dev/null)
+  if test $status -ne 0; or test -z "$token"
+    echo 'zmx: this client predates zmx-murder; attach from a fresh shell' >&2
+    return 1
+  end
+
+  set -l murder_dir (__zmx_murder_dir)
+  set -l marker "$murder_dir/$token"
+  command mkdir -p -- "$murder_dir"
+  command chmod 700 -- "$murder_dir"
+  printf '' >"$marker"
+
   env ZMX_SESSION_PREFIX= zmx kill "$ZMX_SESSION"
+  set -l kill_status $status
+  if test $kill_status -ne 0
+    command rm -f -- "$marker"
+  end
+  return $kill_status
 end
 
 function zmx-next
@@ -389,11 +443,27 @@ function zmx-select
     else
       set -l encoded_session (printf '%s' "$session" | base64 | string join '')
       set -l session_ended_status 200
+      set -l token "$fish_pid-"(random)"-"(random)"-"(date +%s)
       set -l remote_command "
         set session (printf '%s' '$encoded_session' | base64 --decode)
-        env ZMX_SESSION_PREFIX= zmx attach \"\$session\"
+        set murder_dir (__zmx_murder_dir)
+        set marker \"\$murder_dir/$token\"
+        command mkdir -p -- \"\$murder_dir\"
+        command chmod 700 -- \"\$murder_dir\"
+        command rm -f -- \"\$marker\"
+
+        env \\
+          ZMX_MURDER_TOKEN='$token' \\
+          ZMX_TRACK_ENV='$__zmx_tracked_envs' \\
+          ZMX_SESSION_PREFIX= \\
+          zmx attach \"\$session\"
         set attach_status \$status
         set sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
+
+        if test -e \"\$marker\"
+          command rm -f -- \"\$marker\"
+          exit $session_ended_status
+        end
 
         if not contains -- \"\$session\" \$sessions
           exit $session_ended_status
