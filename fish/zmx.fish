@@ -14,6 +14,10 @@ function __zmx_murder_dir
   end
 end
 
+function __zmx_terminate_shell
+  command kill -TERM "$fish_pid"
+end
+
 function __zmx_attach
   set -l session $argv[1]
   set -l token "$fish_pid-"(random)"-"(random)"-"(date +%s)
@@ -34,11 +38,11 @@ function __zmx_attach
 
   if test -e "$marker"
     command rm -f -- "$marker"
-    exit 0
+    __zmx_terminate_shell
   end
 
   if not contains -- "$session" $sessions
-    exit 0
+    __zmx_terminate_shell
   end
 
   return $attach_status
@@ -493,7 +497,7 @@ function zmx-select
       set -l attach_status $status
 
       if test $attach_status -eq $session_ended_status
-        exit 0
+        __zmx_terminate_shell
       end
 
       return $attach_status
