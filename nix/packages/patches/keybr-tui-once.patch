@@ -1,0 +1,94 @@
+diff --git a/src/app.rs b/src/app.rs
+index e98a392..c705b7b 100644
+--- a/src/app.rs
++++ b/src/app.rs
+@@ -68,0 +69,4 @@ pub struct App {
++    /// Exit immediately after completing the current lesson.
++    pub exit_after_lesson: bool,
++    /// Whether this process has completed at least one lesson.
++    pub completed_lesson_this_run: bool,
+@@ -285,0 +290,2 @@ pub fn new_with_state(
++            exit_after_lesson: false,
++            completed_lesson_this_run: false,
+@@ -555,0 +562 @@ pub fn finish_lesson(&mut self) {
++        self.completed_lesson_this_run = true;
+@@ -557,4 +564,8 @@ pub fn finish_lesson(&mut self) {
+-        // Immediately roll into the next lesson — no separate summary screen.
+-        // `start_next_lesson` regenerates text, resets per-lesson counters,
+-        // and sets `screen = AppScreen::Typing`.
+-        self.start_next_lesson();
++        if self.exit_after_lesson {
++            self.running = false;
++        } else {
++            // Immediately roll into the next lesson — no separate summary screen.
++            // `start_next_lesson` regenerates text, resets per-lesson counters,
++            // and sets `screen = AppScreen::Typing`.
++            self.start_next_lesson();
++        }
+diff --git a/src/main.rs b/src/main.rs
+index c93e077..178a40b 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -23 +23,3 @@
+-use app::{App, ErrorMode};
++use std::process::ExitCode;
++
++use app::{App, AppScreen, ErrorMode};
+@@ -59,0 +62,5 @@ struct Cli {
++
++    /// Start practice immediately and exit after one completed lesson.
++    /// Ctrl+C before completion exits with status 130.
++    #[arg(long)]
++    once: bool,
+@@ -62 +69 @@ struct Cli {
+-fn main() -> color_eyre::Result<()> {
++fn main() -> color_eyre::Result<ExitCode> {
+@@ -77 +84 @@ fn main() -> color_eyre::Result<()> {
+-        return Ok(());
++        return Ok(ExitCode::SUCCESS);
+@@ -85 +92,2 @@ fn main() -> color_eyre::Result<()> {
+-        return import::run_import(import_path, target_cpm, cli.force);
++        import::run_import(import_path, target_cpm, cli.force)?;
++        return Ok(ExitCode::SUCCESS);
+@@ -142,0 +151,4 @@ fn main() -> color_eyre::Result<()> {
++    app.exit_after_lesson = cli.once;
++    if cli.once {
++        app.screen = AppScreen::Typing;
++    }
+@@ -182 +194,5 @@ fn main() -> color_eyre::Result<()> {
+-    Ok(())
++    if cli.once && !app.completed_lesson_this_run {
++        Ok(ExitCode::from(130))
++    } else {
++        Ok(ExitCode::SUCCESS)
++    }
+diff --git a/src/update.rs b/src/update.rs
+index 2412cb9..b62ad33 100644
+--- a/src/update.rs
++++ b/src/update.rs
+@@ -835,0 +836,25 @@ fn finishing_lesson_does_not_require_extra_keystroke() {
++    #[test]
++    fn once_mode_exits_after_finishing_one_lesson() {
++        let mut app = make_test_app("a");
++        app.exit_after_lesson = true;
++
++        update(&mut app, AppEvent::Key(make_key(KeyCode::Char('a'))));
++
++        assert!(!app.running);
++        assert!(app.completed_lesson_this_run);
++        assert!(app.last_lesson.is_some());
++        assert!(app.pending_stats_save);
++    }
++
++    #[test]
++    fn normal_mode_continues_after_finishing_a_lesson() {
++        let mut app = make_test_app("a");
++
++        update(&mut app, AppEvent::Key(make_key(KeyCode::Char('a'))));
++
++        assert!(app.running);
++        assert!(app.completed_lesson_this_run);
++        assert_eq!(app.screen, AppScreen::Typing);
++        assert_eq!(app.cursor_pos, 0);
++    }
++

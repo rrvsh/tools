@@ -861,6 +861,23 @@
         "type": "github"
       }
     },
+    "keybr-tui": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791128990,
+        "narHash": "sha256-zQgTgRg9fx4YR/DKfuXsWysc2ZE8vYo0OAghEVtUvd0=",
+        "owner": "y0sif",
+        "repo": "keybr-tui",
+        "rev": "9a9e3546b6c2df0d10f2c5da07d14067cb932461",
+        "type": "github"
+      },
+      "original": {
+        "owner": "y0sif",
+        "repo": "keybr-tui",
+        "rev": "9a9e3546b6c2df0d10f2c5da07d14067cb932461",
+        "type": "github"
+      }
+    },
     "mac-app-util": {
       "inputs": {
         "cl-nix-lite": "cl-nix-lite",
@@ -1402,6 +1419,7 @@
         "hypr-dynamic-cursors": "hypr-dynamic-cursors",
         "hyprland": "hyprland",
         "import-tree": "import-tree_2",
+        "keybr-tui": "keybr-tui",
         "mac-app-util": "mac-app-util",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",

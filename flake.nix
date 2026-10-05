@@ -49,6 +49,10 @@
       inputs.hyprland.follows = "hyprland";
     };
     import-tree.url = "github:vic/import-tree";
+    keybr-tui = {
+      url = "github:y0sif/keybr-tui/9a9e3546b6c2df0d10f2c5da07d14067cb932461";
+      flake = false;
+    };
     tuigreet = {
       url = "github:tuigreet/tuigreet";
       inputs.nixpkgs.follows = "nixpkgs";

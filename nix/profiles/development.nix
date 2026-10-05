@@ -15,6 +15,7 @@ in
         neovim
         nix-index-comma
         pi-agent
+        typing-practice
         yazi
       ];
       home-manager.sharedModules = [
@@ -48,6 +49,7 @@ in
         neovim
         nix-index-comma
         pi-agent
+        typing-practice
         yazi
       ];
       networking.networkmanager.enable = true;
