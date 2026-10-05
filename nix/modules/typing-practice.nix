@@ -61,6 +61,12 @@ in
               rm -rf -- "$lock_dir"
             done
 
+            # The marker can arrive between the last check and acquiring the lock.
+            if [[ -e "$marker" ]]; then
+              rmdir -- "$lock_dir"
+              exit 0
+            fi
+
             printf '%s\n' "$$" > "$lock_dir/pid"
 
             cleanup() {
