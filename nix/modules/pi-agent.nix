@@ -10,8 +10,12 @@ let
     home-manager.sharedModules = [
       cfg.modules.homeManager.pi-agent
       {
-        home.file.".pi/agent/skills/issue-ticket-pr-writing/SKILL.md".source =
-          cfg.paths.root + "/agents/skills/issue-ticket-pr-writing/SKILL.md";
+        home.file = {
+          ".pi/agent/skills/agent-browser/SKILL.md".source =
+            cfg.paths.root + "/agents/skills/agent-browser/SKILL.md";
+          ".pi/agent/skills/issue-ticket-pr-writing/SKILL.md".source =
+            cfg.paths.root + "/agents/skills/issue-ticket-pr-writing/SKILL.md";
+        };
       }
     ];
   };
@@ -207,22 +211,11 @@ in
             - Do not run `agent-browser` through `bash`.
             - Treat browser snapshot refs as stale after a rerender.
             - Use `--headed` only when the browser task needs the user to act.
-            - Use the configured `Default` profile for normal agent-browser work.
-            - Normal launches use separate temporary snapshots of the base profile.
-            - Separate Pi sessions can use these snapshots concurrently.
-            - Changes in a snapshot do not update the base profile.
-            - On Darwin, snapshots use `~/Library/Application Support/Google/Chrome/Default` as their source.
-            - On Linux, snapshots use `~/.config/chromium/Default` as their source.
-            - When new authentication or an authentication refresh is required:
-              - Get explicit user approval before any direct base-profile access.
-              - Ask the user to open Google Chrome on Darwin or Chromium on Linux.
-              - Ask the user to select `Default` and complete authentication.
-              - Ask the user to close the browser normally after authentication.
-              - Do not launch the base user-data directory through `agent_browser`.
-              - Do not close an existing browser session without explicit user approval.
-              - After the user reports closure, check whether a browser process still uses the base profile.
-              - If the profile is busy, report the active processes and wait for the user.
-              - Verify authentication through a fresh normal headless launch.
+            - Use the configured browser connection. Do not override its CDP endpoint, profile, or user-data directory unless troubleshooting requires it.
+            - Do not access or launch the normal human browser profile without explicit approval.
+            - When authentication must be refreshed, ask the user before changing browser service or profile state.
+            - Never copy browser profiles or credentials between hosts.
+            - Rafiq explicitly authorizes final Stripe checkout submission when testing FileAI on a confirmed non-production origin in visibly confirmed Stripe test mode. This does not authorize live, ambiguous, refund, credit, or customer-affecting payment activity.
 
             ### Missing tools
 
