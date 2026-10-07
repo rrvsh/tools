@@ -189,6 +189,51 @@ function __zmx-picker-refresh-host
   end
 end
 
+function __zmx-picker-close-session
+  set -l anchor $argv[1]
+  set -l current_host $argv[2]
+  set -l host $argv[3]
+  set -l encoded_session $argv[4]
+  set -l row_directory $argv[5]
+  set -l reload_command $argv[6]
+  set -l socket $argv[7]
+
+  if test -z "$encoded_session"
+    return
+  end
+
+  set -l session (printf '%s' "$encoded_session" | base64 --decode)
+  set -l kill_status
+  if test "$host" = "$current_host"
+    env ZMX_SESSION_PREFIX= zmx kill "$session"
+    set kill_status $status
+  else
+    set -l remote_command "set session (printf '%s' '$encoded_session' | base64 --decode); env ZMX_SESSION_PREFIX= zmx kill \"\$session\""
+    ssh \
+      -o BatchMode=yes \
+      -o ConnectTimeout=3 \
+      -o ControlMaster=auto \
+      -o ControlPersist=60 \
+      -o "ControlPath=$ZMX_SELECT_CONTROL_PATH" \
+      "$host" \
+      "$remote_command"
+    set kill_status $status
+  end
+
+  if test $kill_status -ne 0
+    return $kill_status
+  end
+
+  __zmx-picker-refresh-host \
+    "$anchor" \
+    "$current_host" \
+    "$host" \
+    "$row_directory/$host.rows" \
+    "$row_directory/$host.status" \
+    "$reload_command" \
+    "$socket"
+end
+
 function zmx-new
   set -l session $argv[1]
   if test -z "$session"
@@ -262,7 +307,7 @@ function zmx-select
       end
     end
 
-    set -l header 'Enter: attach/new | Ctrl-R: rename | Ctrl-C: cancel'
+    set -l header 'Enter: attach/new | Ctrl-R: rename | Ctrl-D: close | Ctrl-C: cancel'
     if test -n "$anchor"
       set header "$marker: $anchor_label | $header"
     end
@@ -300,15 +345,37 @@ function zmx-select
       __zmx-picker-host-rows \
       __zmx-picker-status-row \
       __zmx-picker-refresh-host \
+      __zmx-picker-close-session \
       >"$worker_file"
-    printf '\n__zmx-picker-refresh-host $argv\n' >>"$worker_file"
+    printf '
+switch $argv[1]
+  case refresh
+    __zmx-picker-refresh-host $argv[2..]
+  case close
+    __zmx-picker-close-session $argv[2..]
+end
+' >>"$worker_file"
 
     set -l socket "zmx-select-$fish_pid-"(random)
     set -l reload_command (string join ' ' cat $display_files)
+    set -l close_command (
+      string join ' ' \
+        fish \
+        (string escape -- "$worker_file") \
+        close \
+        (string escape -- "$anchor") \
+        (string escape -- "$current_host") \
+        '{1}' \
+        '{3}' \
+        (string escape -- "$row_directory") \
+        (string escape -- "$reload_command") \
+        (string escape -- "$socket")
+    )
     set -l refresh_pids
     for host in $hosts
       if test "$host" != "$current_host"
         fish "$worker_file" \
+          refresh \
           "$anchor" \
           "$current_host" \
           "$host" \
@@ -325,7 +392,7 @@ function zmx-select
         sk \
           --listen "$socket" \
           --print0 \
-          --bind='ctrl-r:accept(ctrl-r)' \
+          --bind="ctrl-r:accept(ctrl-r),ctrl-d:execute-silent($close_command)" \
           --cycle \
           --delimiter='\t' \
           --with-nth=4 \
