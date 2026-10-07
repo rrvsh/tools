@@ -136,9 +136,6 @@ function __zmx-picker-host-rows
     if test "$title" != "$session"
       set label "$title  [$session]"
     end
-    if test "$host" != "$current_host"
-      set label "[$host] $label"
-    end
 
     set -l encoded_session (printf '%s' "$session" | base64 | string join '')
     printf '%s\t%s\t%s\t%s%s%s\n' "$host" "$session" "$encoded_session" "$selection_marker" "$attachment_marker" "$label"
@@ -276,8 +273,7 @@ function zmx-select
       return 1
     end
 
-    set -l row_files
-    set -l status_files
+    set -l display_files
     set -l display_hosts $current_host
     for host in $hosts
       if test "$host" != "$current_host"
@@ -287,8 +283,7 @@ function zmx-select
     for host in $display_hosts
       set -l row_file "$row_directory/$host.rows"
       set -l status_file "$row_directory/$host.status"
-      set -a row_files "$row_file"
-      set -a status_files "$status_file"
+      set -a display_files "$status_file" "$row_file"
       printf '' >"$row_file"
       if test "$host" = "$current_host"
         __zmx-picker-status-row "$host" local (count $local_rows) >"$status_file"
@@ -309,7 +304,7 @@ function zmx-select
     printf '\n__zmx-picker-refresh-host $argv\n' >>"$worker_file"
 
     set -l socket "zmx-select-$fish_pid-"(random)
-    set -l reload_command (string join ' ' cat $status_files $row_files)
+    set -l reload_command (string join ' ' cat $display_files)
     set -l refresh_pids
     for host in $hosts
       if test "$host" != "$current_host"
@@ -326,7 +321,7 @@ function zmx-select
     end
 
     set -l output (
-      command cat $status_files $row_files |
+      command cat $display_files |
         sk \
           --listen "$socket" \
           --print0 \
