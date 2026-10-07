@@ -15,6 +15,9 @@ let
             cfg.paths.root + "/agents/skills/agent-browser/SKILL.md";
           ".pi/agent/skills/issue-ticket-pr-writing/SKILL.md".source =
             cfg.paths.root + "/agents/skills/issue-ticket-pr-writing/SKILL.md";
+          ".pi/agent/skills/zmx/SKILL.md".source = cfg.paths.root + "/agents/skills/zmx/SKILL.md";
+          ".pi/agent/skills/zmx/scripts/kill-current.sh".source =
+            cfg.paths.root + "/agents/skills/zmx/scripts/kill-current.sh";
         };
       }
     ];
