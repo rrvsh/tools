@@ -35,7 +35,17 @@ in
         marginalia = inputs.pi-marginalia.packages.${system}.pi-marginalia;
         slopchop = inputs.pi-slopchop.packages.${system}.pi-slopchop;
         sessionDrain = inputs.pi-session-drain.packages.${system}.pi-session-drain;
-        piPackage = inputs.pi.packages.${system}.pi-coding-agent;
+        piPackage = inputs.pi.packages.${system}.pi-coding-agent.overrideAttrs (old: {
+          postPatch = lib.optionalString ((old.postPatch or null) != null) old.postPatch + ''
+            substituteInPlace packages/coding-agent/src/modes/interactive/components/session-selector.ts \
+              --replace-fail 'private scope: SessionScope = "current";' \
+                'private scope: SessionScope = "all";' \
+              --replace-fail '// Start loading current sessions immediately' \
+                '// Start loading the configured scope immediately' \
+              --replace-fail 'void this.loadScope("current");' \
+                'void this.loadScope(this.scope);'
+          '';
+        });
         sessionDrainRun = pkgs.writeShellApplication {
           name = "pi-session-drain-run";
           runtimeInputs = [
@@ -163,7 +173,7 @@ in
         };
         programs.pi-coding-agent = {
           enable = true;
-          package = inputs.pi.packages.${system}.pi-coding-agent;
+          package = piPackage;
           extraPackages = [
             pkgs.nodejs_22
             agentBrowser
