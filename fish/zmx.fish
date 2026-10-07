@@ -234,12 +234,29 @@ function __zmx-picker-close-session
     "$socket"
 end
 
+function __zmx-new-session-name
+  set -l prefix $argv[1]
+  set -l sessions $argv[2..]
+  set -l base (env LC_ALL=C date '+%d %b %y %H:%M' | string lower)
+  set -l session $base
+  set -l suffix 2
+
+  while contains -- "$prefix$session" $sessions
+    set session "$base ($suffix)"
+    set suffix (math $suffix + 1)
+  end
+
+  printf '%s\n' "$session"
+end
+
 function zmx-new
   set -l session $argv[1]
+  set -l prefix "$ZMX_SESSION_PREFIX"
   if test -z "$session"
-    set session "shell-"(date +%Y%m%d-%H%M%S)"-$fish_pid"
+    set -l sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
+    set session (__zmx-new-session-name "$prefix" $sessions)
   end
-  set -l effective_session "$ZMX_SESSION_PREFIX$session"
+  set -l effective_session "$prefix$session"
   set -g __zmx_selected_session (hostname -s)"/$effective_session"
   __zmx_attach "$effective_session"
 end
@@ -460,7 +477,18 @@ end
     end
 
     if test -z "$session"
-      set session "shell-"(date +%Y%m%d-%H%M%S)"-$fish_pid"
+      set -l session_rows (__zmx-picker-host-rows '' "$current_host" "$host")
+      if test $status -ne 0
+        echo "zmx: could not list sessions on $host" >&2
+        continue
+      end
+
+      set -l session_names
+      for session_row in $session_rows
+        set -l session_fields (string split \t -- "$session_row")
+        set -a session_names $session_fields[2]
+      end
+      set session (__zmx-new-session-name '' $session_names)
     end
 
     set -g __zmx_selected_session "$host/$session"
