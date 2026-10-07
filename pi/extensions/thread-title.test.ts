@@ -7,6 +7,12 @@ import {
   PRECEDING_USER_MESSAGE_COUNT,
   buildTitleContext,
 } from "./thread-title/context.ts";
+import { generateTitle } from "./thread-title/generator.ts";
+import {
+  DEFAULT_TITLE,
+  showIdleTitle,
+  showWorkingTitle,
+} from "./thread-title/presenter.ts";
 import {
   MAX_TITLE_CHARACTERS,
   createTitleRequestOptions,
@@ -14,6 +20,7 @@ import {
   normalizeTitle,
   renderTitleContext,
 } from "./thread-title/prompt.ts";
+import { createTitleStore } from "./thread-title/store.ts";
 
 const message = (role: string, text: string) => ({
   type: "message",
@@ -96,4 +103,127 @@ test("renders previous and recent context for the model", () => {
   assert.equal(parsed.latestUserMessage, "update it after each turn");
   assert.deepEqual(parsed.precedingUserMessages, ["set a terminal title"]);
   assert.equal(parsed.latestAssistantMessage, "Proposed a lifecycle.");
+});
+
+test("presents working, idle, and default TUI titles", () => {
+  const titles: string[] = [];
+  const ctx = {
+    mode: "tui",
+    ui: { setTitle: (title: string) => titles.push(title) },
+  } as never;
+
+  showWorkingTitle(ctx);
+  showIdleTitle(ctx, "Tab titles");
+  showIdleTitle(ctx, undefined);
+
+  assert.deepEqual(titles, ["...", "Tab titles", DEFAULT_TITLE]);
+});
+
+test("does not present titles outside TUI mode", () => {
+  const titles: string[] = [];
+  const ctx = {
+    mode: "print",
+    ui: { setTitle: (title: string) => titles.push(title) },
+  } as never;
+
+  showWorkingTitle(ctx);
+  showIdleTitle(ctx, "Tab titles");
+
+  assert.deepEqual(titles, []);
+});
+
+test("restores and deduplicates persisted titles", () => {
+  const appended: Array<{ customType: string; data: unknown }> = [];
+  const store = createTitleStore({
+    appendEntry: (customType: string, data: unknown) => {
+      appended.push({ customType, data });
+    },
+  } as never);
+
+  const restored = store.restore([
+    { type: "custom", customType: "other", data: { title: "Ignored" } },
+    { type: "custom", customType: "thread-title", data: { title: '"Old title."' } },
+  ]);
+
+  assert.equal(restored, "Old title");
+  store.save("Old title");
+  store.save("New title");
+  assert.deepEqual(appended, [
+    { customType: "thread-title", data: { title: "New title" } },
+  ]);
+});
+
+test("generates and normalizes a title through the active model", async () => {
+  let request: unknown;
+  let options: { signal?: AbortSignal } | undefined;
+  const signal = new AbortController().signal;
+  const ctx = {
+    model: { api: "test-api" },
+    modelRegistry: {
+      complete: async (_model: unknown, nextRequest: unknown, nextOptions: unknown) => {
+        request = nextRequest;
+        options = nextOptions as { signal?: AbortSignal };
+        return { content: [{ type: "text", text: '"Tab titles."' }] };
+      },
+    },
+  } as never;
+
+  const title = await generateTitle(
+    ctx,
+    {
+      previousTitle: "Old title",
+      latestUserMessage: "Refactor tab titles",
+      precedingUserMessages: [],
+      latestAssistantMessage: "Ready.",
+    },
+    "fallback",
+    signal,
+    "test-session",
+  );
+
+  assert.equal(title, "Tab titles");
+  assert.equal(options?.signal, signal);
+  assert.equal(
+    JSON.parse(
+      ((request as { messages: Array<{ content: Array<{ text: string }> }> }).messages[0]
+        ?.content[0]?.text ?? ""),
+    ).latestUserMessage,
+    "Refactor tab titles",
+  );
+});
+
+test("uses the fallback when title generation is unavailable or fails", async () => {
+  const titleContext = {
+    latestUserMessage: "Refactor tab titles",
+    precedingUserMessages: [],
+  };
+  const signal = new AbortController().signal;
+
+  assert.equal(
+    await generateTitle(
+      { model: undefined } as never,
+      titleContext,
+      "fallback",
+      signal,
+      "test-session",
+    ),
+    "fallback",
+  );
+  assert.equal(
+    await generateTitle(
+      {
+        model: { api: "test-api" },
+        modelRegistry: {
+          complete: async () => {
+            throw new Error("provider failed");
+          },
+        },
+      } as never,
+      titleContext,
+      "fallback",
+      signal,
+      "test-session",
+    ),
+    "fallback",
+  );
 });
