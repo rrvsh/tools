@@ -152,13 +152,13 @@ function __zmx-picker-status-row
 
   switch "$state"
     case local
-      printf '\t\t\t● %s: local · %s sessions\n' "$host" "$session_count"
+      printf '%s\t\t\t● %s: local · %s sessions\n' "$host" "$host" "$session_count"
     case reachable
-      printf '\t\t\t● %s: reachable · %s sessions\n' "$host" "$session_count"
+      printf '%s\t\t\t● %s: reachable · %s sessions\n' "$host" "$host" "$session_count"
     case unreachable
-      printf '\t\t\t× %s: unreachable\n' "$host"
+      printf '%s\t\t\t× %s: unreachable\n' "$host" "$host"
     case connecting
-      printf '\t\t\t… %s: connecting\n' "$host"
+      printf '%s\t\t\t… %s: connecting\n' "$host" "$host"
   end
 end
 
@@ -265,7 +265,7 @@ function zmx-select
       end
     end
 
-    set -l header 'Enter: attach | Ctrl-N: create here | Ctrl-R: rename | Ctrl-J/K: next/previous | Ctrl-C: cancel'
+    set -l header 'Enter: attach/new | Ctrl-R: rename | Ctrl-C: cancel'
     if test -n "$anchor"
       set header "$marker: $anchor_label | $header"
     end
@@ -329,10 +329,8 @@ function zmx-select
       command cat $status_files $row_files |
         sk \
           --listen "$socket" \
-          --header-lines=(count $status_files) \
           --print0 \
-          --print-query \
-          --bind='ctrl-n:accept(ctrl-n),ctrl-r:accept(ctrl-r),ctrl-j:accept(ctrl-j),ctrl-k:accept(ctrl-k)' \
+          --bind='ctrl-r:accept(ctrl-r)' \
           --cycle \
           --delimiter='\t' \
           --with-nth=4 \
@@ -340,15 +338,10 @@ function zmx-select
           --reverse \
           --prompt='zmx> ' \
           --header="$header" \
-          --preview='session="$(printf "%s" {3} | base64 --decode)"; if [ {1} = "$(hostname -s)" ]; then env ZMX_SESSION_PREFIX= zmx history "$session"; else ssh -o BatchMode=yes -o ConnectTimeout=3 -o ControlMaster=auto -o ControlPersist=60 -o ControlPath="$ZMX_SELECT_CONTROL_PATH" {1} "set session (printf \"%s\" {3} | base64 --decode); env ZMX_SESSION_PREFIX= zmx history \"\$session\""; fi | tail -n "$(tput lines)"' \
+          --preview='host={1}; encoded_session={3}; if [ -z "$encoded_session" ]; then printf "Enter to create a new session on %s\n" "$host"; else session="$(printf "%s" "$encoded_session" | base64 --decode)"; if [ "$host" = "$(hostname -s)" ]; then env ZMX_SESSION_PREFIX= zmx history "$session"; else ssh -o BatchMode=yes -o ConnectTimeout=3 -o ControlMaster=auto -o ControlPersist=60 -o ControlPath="$ZMX_SELECT_CONTROL_PATH" "$host" "set session (printf \"%s\" \"$encoded_session\" | base64 --decode); env ZMX_SESSION_PREFIX= zmx history \"\$session\""; fi | tail -n "$(tput lines)"; fi' \
           --preview-window=right:60% |
         string split0
     )
-
-    set -l rows
-    for row_file in $row_files
-      set -a rows (string split \n <"$row_file")
-    end
 
     for refresh_pid in $refresh_pids
       kill "$refresh_pid" 2>/dev/null
@@ -359,48 +352,15 @@ function zmx-select
       return 130
     end
 
-    set -l query $output[1]
     set -l key
-    set -l row
-    if test (count $output) -ge 2; and contains -- "$output[2]" ctrl-n ctrl-r ctrl-j ctrl-k
-      set key $output[2]
-      if test (count $output) -ge 3
-        set row $output[-1]
-      end
-    else if test (count $output) -ge 2
-      set row $output[-1]
-    end
-
-    if test "$key" = ctrl-n
-      zmx-new "$query"
-      return $status
-    end
-
-    set -l active_sessions
-    for active_row in $rows
-      set -l active_fields (string split \t -- "$active_row")
-      set -a active_sessions "$active_fields[1]/$active_fields[2]"
+    set -l row $output[-1]
+    if test (count $output) -ge 2; and test "$output[1]" = ctrl-r
+      set key $output[1]
     end
 
     set -l fields (string split \t -- "$row")
     set -l host $fields[1]
     set -l session $fields[2]
-    set -l session_key "$host/$session"
-    if contains -- "$key" ctrl-j ctrl-k
-      if test -z "$session"
-        continue
-      end
-
-      set -l current_index (contains -i -- "$session_key" $active_sessions)
-      if test "$key" = ctrl-j
-        set session_key $active_sessions[(math "$current_index % "(count $active_sessions)" + 1")]
-      else
-        set session_key $active_sessions[(math "($current_index - 2 + "(count $active_sessions)") % "(count $active_sessions)" + 1")]
-      end
-      set fields (string split -m 1 / -- "$session_key")
-      set host $fields[1]
-      set session $fields[2]
-    end
 
     if test "$key" = ctrl-r
       if test -z "$session"
@@ -438,7 +398,7 @@ function zmx-select
     end
 
     if test -z "$session"
-      return 130
+      set session "shell-"(date +%Y%m%d-%H%M%S)"-$fish_pid"
     end
 
     set -g __zmx_selected_session "$host/$session"
