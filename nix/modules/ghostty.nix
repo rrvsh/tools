@@ -48,7 +48,7 @@ in
           enable = true;
           package = if pkgs.stdenv.isDarwin then null else ghostty;
           settings = {
-            font-size = 16;
+            font-size = lib.mkDefault 16;
             "shell-integration-features" = "ssh-env,ssh-terminfo";
             keybind = lib.optionals pkgs.stdenv.isLinux [
               "super+c=copy_to_clipboard"

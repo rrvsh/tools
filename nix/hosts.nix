@@ -136,6 +136,11 @@ in
           }:
           {
             imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
+            home-manager.sharedModules = [
+              {
+                programs.ghostty.settings.font-size = 13;
+              }
+            ];
             hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
             boot = {
               initrd.availableKernelModules = [
