@@ -71,6 +71,14 @@ in
                     # Figma currently rejects clients outside its MCP catalog.
                     oauth.clientName = "Claude Code";
                   };
+                  slack = {
+                    url = "https://mcp.slack.com/mcp";
+                    exposure = "codemode";
+                    oauth = {
+                      clientId = "556588767717.12269619509622";
+                      callbackPort = 3118;
+                    };
+                  };
                 };
                 home.packages = with pkgs; [
                   awscli2
