@@ -182,7 +182,13 @@ function __zmx-picker-refresh-host
   command mv "$temporary_status" "$status_file"
 
   for attempt in (seq 20)
-    if printf 'reload(%s)\n' "$reload_command" | sk --remote "$socket" >/dev/null 2>&1
+    if curl \
+        --silent \
+        --fail \
+        --unix-socket "$socket" \
+        http://localhost \
+        --data-binary "reload($reload_command)" \
+        >/dev/null 2>&1
       return
     end
     sleep 0.05
@@ -373,7 +379,7 @@ switch $argv[1]
 end
 ' >>"$worker_file"
 
-    set -l socket "zmx-select-$fish_pid-"(random)
+    set -l socket "$row_directory/fzf.sock"
     set -l reload_command (string join ' ' cat $display_files)
     set -l close_command (
       string join ' ' \
@@ -406,10 +412,14 @@ end
 
     set -l output (
       command cat $display_files |
-        sk \
-          --listen "$socket" \
+        fzf \
+          --listen-unsafe="$socket" \
+          --with-shell='sh -c' \
+          --track \
+          --id-nth=1,2 \
           --print0 \
-          --bind="ctrl-r:accept(ctrl-r),ctrl-d:execute-silent($close_command)" \
+          --expect=ctrl-r \
+          --bind="ctrl-d:execute-silent($close_command)" \
           --cycle \
           --delimiter='\t' \
           --with-nth=4 \
@@ -418,7 +428,7 @@ end
           --prompt='zmx> ' \
           --header="$header" \
           --preview='host={1}; encoded_session={3}; if [ -z "$encoded_session" ]; then printf "Enter to create a new session on %s\n" "$host"; else session="$(printf "%s" "$encoded_session" | base64 --decode)"; if [ "$host" = "$(hostname -s)" ]; then env ZMX_SESSION_PREFIX= zmx history "$session"; else ssh -o BatchMode=yes -o ConnectTimeout=3 -o ControlMaster=auto -o ControlPersist=60 -o ControlPath="$ZMX_SELECT_CONTROL_PATH" "$host" "set session (printf \"%s\" \"$encoded_session\" | base64 --decode); env ZMX_SESSION_PREFIX= zmx history \"\$session\""; fi | tail -n "$(tput lines)"; fi' \
-          --preview-window=right:60% |
+          --preview-window=right,60% |
         string split0
     )
 

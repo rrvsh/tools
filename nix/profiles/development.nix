@@ -166,6 +166,7 @@ in
             pkgs.zmx
           ]
           ++ (with pkgs; [
+            curl
             ddgr
             gh
             git-lfs
@@ -187,7 +188,7 @@ in
             gu = "git push";
             gy = "git pull";
             v = "$EDITOR";
-            e = "fish -c 'set -e var; set var (sk); test -n \"$var\"; and $EDITOR $var'";
+            e = "fish -c 'set -e var; set var (fzf); test -n \"$var\"; and $EDITOR $var'";
           };
         };
         services.syncthing.settings = {
@@ -270,9 +271,13 @@ in
           direnv.enable = true;
           direnv.nix-direnv.enable = true;
           mise.enable = true;
-          skim = {
+          fzf = {
             enable = true;
             defaultCommand = "${lib.getExe pkgs.ripgrep} --files --hidden --glob '!.git'";
+            enableBashIntegration = false;
+            enableFishIntegration = false;
+            enableNushellIntegration = false;
+            enableZshIntegration = false;
           };
           git = {
             enable = true;
