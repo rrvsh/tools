@@ -103,6 +103,11 @@ in
           };
         };
         remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
+        # Backport the standalone scrollback restoration fix from
+        # https://github.com/neurosnap/zmx/pull/271 until it reaches a ZMX release.
+        zmx = pkgs.zmx.overrideAttrs (old: {
+          patches = (old.patches or [ ]) ++ [ ./development/zmx-preserve-scrollback-tail.patch ];
+        });
         # Syncthing uses decimal units; 5.4 GB keeps slightly more than 5 GiB free.
         syncthingMinDiskFree = {
           value = 5.4;
@@ -163,7 +168,7 @@ in
             ''} ${config.home.homeDirectory}/.pi/agent/sessions/.stignore
           '';
           packages = [
-            pkgs.zmx
+            zmx
           ]
           ++ (with pkgs; [
             curl
