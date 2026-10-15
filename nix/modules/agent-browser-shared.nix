@@ -108,7 +108,6 @@ in
                   ProgramArguments = [ cfg.chromeExecutable ] ++ browserArguments;
                   RunAtLoad = true;
                   KeepAlive = false;
-                  ProcessType = "Background";
                   StandardOutPath = "${stateDirectory}/chrome.log";
                   StandardErrorPath = "${stateDirectory}/chrome.error.log";
                 };
