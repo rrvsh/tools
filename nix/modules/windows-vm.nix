@@ -53,9 +53,9 @@
               <boot order="1"/>
             </disk>
             <controller type="sata" index="0"/>
-            <interface type="network">
+            <interface type="bridge">
               <mac address="52:54:00:18:f6:30"/>
-              <source network="default"/>
+              <source bridge="br0"/>
               <model type="e1000e"/>
             </interface>
             <graphics type="vnc" port="5900" autoport="no" listen="0.0.0.0">
@@ -100,7 +100,48 @@
     in
     {
       environment.sessionVariables.LIBVIRT_DEFAULT_URI = "qemu:///system";
-      networking.firewall.allowedTCPPorts = [ 5900 ];
+      networking = {
+        firewall.allowedTCPPorts = [ 5900 ];
+        networkmanager = {
+          settings.main.no-auto-default = "enp12s0";
+          ensureProfiles.profiles = {
+            lan-bridge = {
+              connection = {
+                id = "lan-bridge";
+                uuid = "90f94c60-a8ea-49c4-8867-12b7ec620f77";
+                type = "bridge";
+                interface-name = "br0";
+                autoconnect = true;
+                autoconnect-priority = 100;
+              };
+              bridge = {
+                stp = false;
+                mac-address = "74:56:3C:35:AB:E5";
+              };
+              ipv4.method = "auto";
+              ipv6 = {
+                method = "auto";
+                addr-gen-mode = "stable-privacy";
+              };
+            };
+            lan-bridge-port = {
+              connection = {
+                id = "lan-bridge-port";
+                uuid = "19af3f2e-63f4-47ff-a4a7-91eb30648b22";
+                type = "ethernet";
+                interface-name = "enp12s0";
+                autoconnect = true;
+                controller = "br0";
+                port-type = "bridge";
+              };
+              ethernet.mac-address = "74:56:3C:35:AB:E5";
+            };
+          };
+        };
+      };
+      services.udev.extraRules = ''
+        ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_SERIAL_SHORT}=="2325E6E6888E", GROUP="qemu-libvirtd", MODE="0660"
+      '';
       users.users.${primaryUser.name}.extraGroups = [ "libvirtd" ];
 
       virtualisation.libvirtd = {
@@ -134,28 +175,6 @@
             virsh -c qemu:///system define ${windowsDomain}
           '';
           serviceConfig.Type = "oneshot";
-        };
-        libvirt-default-network = {
-          description = "Start the temporary libvirt NAT network";
-          wantedBy = [ "multi-user.target" ];
-          requires = [
-            "libvirtd-config.service"
-            "libvirtd.service"
-          ];
-          after = [
-            "libvirtd-config.service"
-            "libvirtd.service"
-          ];
-          path = [ config.virtualisation.libvirtd.package ];
-          script = ''
-            if ! virsh -c qemu:///system net-info default | grep -q '^Active:.*yes$'; then
-              virsh -c qemu:///system net-start default
-            fi
-          '';
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-          };
         };
       };
     };
