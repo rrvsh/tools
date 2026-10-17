@@ -185,36 +185,6 @@ in
                   "dmask=0077"
                 ];
               };
-              "/mnt/windows" = {
-                device = "/dev/disk/by-uuid/0EA45F71A45F59F3";
-                fsType = "ntfs3";
-                options = [
-                  "rw"
-                  "uid=1000"
-                  "umask=022"
-                  "iocharset=utf8"
-                  "windows_names"
-                  "nofail"
-                  "x-systemd.automount"
-                  "x-systemd.idle-timeout=10min"
-                ];
-              };
-            };
-            # Samba keeps its own password database. After rebuilding, check for an
-            # existing login with `sudo pdbedit -L -u rafiq`; if absent, set one
-            # with `sudo smbpasswd -a rafiq` (the same login password can be used).
-            services.samba = {
-              enable = true;
-              openFirewall = true;
-              settings = {
-                global."security" = "user";
-                windows-profile = {
-                  path = "/mnt/windows/Users/rafiq";
-                  "valid users" = "rafiq";
-                  "guest ok" = "no";
-                  "read only" = "no";
-                };
-              };
             };
           }
         )
