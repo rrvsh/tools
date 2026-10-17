@@ -129,6 +129,7 @@ in
         agentsIgnorePatterns = [
           "/.session-drain/"
           "/.session-drain/**"
+          "/worktrees"
           "**/.cargo-home/"
           "**/.cargo-home/**"
           "**/.venv/"
