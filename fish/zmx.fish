@@ -379,7 +379,7 @@ function zmx-select
   end
 
   set -l current_host (hostname -s)
-  set -l hosts alpha kikir nemesis
+  set -l hosts alpha kikir mercury nemesis
   if not contains -- "$current_host" $hosts
     set -p hosts "$current_host"
   end

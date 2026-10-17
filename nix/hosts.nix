@@ -226,7 +226,6 @@ in
       modules = [
         cfg.modules.nixos.user-primary
         cfg.modules.nixos.vultr-vps
-        cfg.modules.nixos.hermes-agent
         (
           { lib, ... }:
           {
