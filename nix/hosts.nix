@@ -129,6 +129,7 @@ in
         cfg.modules.nixos.user-primary
         cfg.modules.nixos.agent-browser-shared
         cfg.modules.nixos.nvidia-graphics
+        cfg.modules.nixos.windows-vm
         cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
