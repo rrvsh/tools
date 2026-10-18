@@ -58,10 +58,13 @@ A downstream Pi build used the Rust helper while retaining the current All defau
 | Existing JavaScript implementation | 0.18 s | 11.86 s |
 | Rust integration, empty cache | 0.26 s | 0.92 s |
 | Rust integration, warm cache | 0.19 s | 0.51 s |
+| Rust progressive integration, warm cache | 0.24 s to first result | 0.64 s |
 
-The warm integrated result is about 23 times faster than the existing implementation.
+The warm integrated result is about 19 times faster than the existing implementation, with the first selectable result appearing in about 0.24 seconds.
 
-On Alpha, native JavaScript enumeration took 5.38 seconds and 369 MiB RSS. The warm Rust-to-Node bridge took 0.14 seconds for the same 926-session corpus. The Nix package, Rust tests, and patched Pi package all built successfully on Apple Silicon macOS.
+On Alpha, native JavaScript enumeration took 5.38 seconds and 369 MiB RSS. The final warm Rust-to-Node bridge took 0.14 seconds for the same 926-session corpus, with its first record at 0.04 seconds. Kikir's warm bridge took 0.16 seconds, with its first record at 0.06 seconds. The Nix package, Rust tests, and patched Pi package all built successfully on Apple Silicon macOS.
+
+Mercury, the lowest-performance host, took 35.91 seconds for native JavaScript enumeration. After activation, a cold-cache picker produced its first session in 11.29 seconds and finished in 12.83 seconds. Across five warm-cache runs, the first session appeared in 1.14–1.62 seconds and full loading completed in 2.74–3.16 seconds.
 
 ## Cache behaviour
 
@@ -100,4 +103,4 @@ The included `compare-with-pi.mjs` harness compares every returned field and fin
 
 - Review whether the helper should emit records progressively. The current complete result is already around 0.5 seconds.
 - Confirm the downstream patch still applies visibly after each Pi update.
-- Dogfood the activated configuration across all four hosts, with extra cold and warm measurements on Mercury.
+- Continue dogfooding the activated configuration across all four hosts.
