@@ -8,6 +8,10 @@
       ...
     }:
     let
+      # The boot entry name is shared by systemd-boot and the reboot helper so
+      # the top bar cannot drift to a different firmware target.
+      windowsBootName = "11-pro";
+      windowsBootEntry = "windows_${windowsBootName}.conf";
       # The serial-based path remains stable when NVMe discovery order changes.
       windowsDisk = "/dev/disk/by-id/nvme-CT2000P3SSD8_2325E6E6888E";
       # Make the Windows driver bundle and standalone guest-agent installer
@@ -118,11 +122,8 @@
           </devices>
         </domain>
       '';
-      ownershipHook = pkgs.writeShellScript "zagreus-disk-ownership" ''
-        if [[ "$1" != "zagreus" || "$2" != "prepare" || "$3" != "begin" ]]; then
-          exit 0
-        fi
-
+      # Both VM startup and native reboot use the same block ownership checks.
+      diskSafetyCheck = ''
         windows_device=$(${lib.getExe' pkgs.coreutils "readlink"} -f ${windowsDisk})
         if [[ -z "$windows_device" || ! -b "$windows_device" ]]; then
           echo "Windows disk is unavailable" >&2
@@ -145,12 +146,134 @@
           exit 1
         fi
       '';
+      ownershipHook = pkgs.writeShellScript "zagreus-disk-ownership" ''
+        if [[ "$1" != "zagreus" || "$2" != "prepare" || "$3" != "begin" ]]; then
+          exit 0
+        fi
+        ${diskSafetyCheck}
+      '';
+      # Only this immutable helper receives passwordless sudo. It refuses to
+      # arm native boot until libvirt and the block layer both report safety.
+      rebootToWindowsRoot = pkgs.writeShellApplication {
+        name = "reboot-to-windows-root";
+        runtimeInputs = [
+          config.virtualisation.libvirtd.package
+          pkgs.coreutils
+          pkgs.findutils
+          pkgs.glibc.bin
+          pkgs.gnugrep
+          pkgs.jq
+          pkgs.procps
+          pkgs.psmisc
+          pkgs.systemd
+          pkgs.util-linux
+        ];
+        text = ''
+          mode="''${1:---reboot}"
+          if [[ "$mode" != "--reboot" && "$mode" != "--check" && "$mode" != "--prepare-only" ]]; then
+            echo "usage: reboot-to-windows-root [--reboot|--check|--prepare-only]" >&2
+            exit 2
+          fi
+
+          exec 9>/run/reboot-to-windows.lock
+          if ! flock --nonblock 9; then
+            echo "Another Windows reboot request is already running" >&2
+            exit 1
+          fi
+
+          state=$(virsh -c qemu:///system domstate zagreus 2>/dev/null || true)
+          if [[ "$state" != "shut off" ]]; then
+            echo "Shut down the zagreus VM first; current state: ''${state:-unknown}" >&2
+            exit 1
+          fi
+          if pgrep --full -- 'qemu-system-x86_64 .*guest=zagreus' >/dev/null; then
+            echo "The zagreus QEMU process is still running" >&2
+            exit 1
+          fi
+
+          ${diskSafetyCheck}
+          devices=("$windows_device")
+          for partition in "$windows_device"p*; do
+            [[ -e "$partition" ]] && devices+=("$partition")
+          done
+          if fuser --silent "''${devices[@]}"; then
+            echo "A process still has the Windows disk open" >&2
+            exit 1
+          fi
+
+          if ! bootctl --variables=yes list --json=short | jq --exit-status --arg entry ${lib.escapeShellArg windowsBootEntry} 'any(.[]; .id == $entry)' >/dev/null; then
+            echo "Windows boot entry ${windowsBootEntry} is unavailable" >&2
+            exit 1
+          fi
+
+          if [[ "$mode" == "--check" ]]; then
+            echo "Ready to reboot into Windows 11 Pro"
+            exit 0
+          fi
+
+          read_oneshot() {
+            for variable in /sys/firmware/efi/efivars/LoaderEntryOneShot-*; do
+              [[ -e "$variable" ]] || continue
+              dd if="$variable" bs=1 skip=4 status=none | iconv -f UTF-16LE -t UTF-8 | tr -d '\0'
+              return
+            done
+          }
+          clear_oneshot() {
+            bootctl --variables=yes set-oneshot ""
+          }
+
+          bootctl --variables=yes set-oneshot ${lib.escapeShellArg windowsBootEntry}
+          actual=$(read_oneshot)
+          if [[ "$actual" != ${lib.escapeShellArg windowsBootEntry} ]]; then
+            clear_oneshot
+            echo "Could not verify the Windows one-shot boot entry" >&2
+            exit 1
+          fi
+
+          if [[ "$mode" == "--prepare-only" ]]; then
+            clear_oneshot
+            if [[ -n "$(read_oneshot)" ]]; then
+              echo "Could not clear the Windows one-shot boot entry" >&2
+              exit 1
+            fi
+            echo "Set, verified and cleared the Windows one-shot boot entry"
+            exit 0
+          fi
+
+          sync
+          if ! systemctl reboot; then
+            clear_oneshot
+            echo "Reboot failed; cleared the Windows one-shot boot entry" >&2
+            exit 1
+          fi
+        '';
+      };
+      # The user-facing wrapper turns safety failures into a desktop
+      # notification while keeping EFI and reboot operations inside sudo.
+      rebootToWindows = pkgs.writeShellApplication {
+        name = "reboot-to-windows";
+        runtimeInputs = [ pkgs.libnotify ];
+        text = ''
+          mode="''${1:---reboot}"
+          if ! output=$(/run/wrappers/bin/sudo ${lib.getExe rebootToWindowsRoot} "$mode" 2>&1); then
+            notify-send --urgency=critical "Cannot reboot to Windows" "$output"
+            printf '%s\n' "$output" >&2
+            exit 1
+          fi
+          [[ -n "$output" ]] && printf '%s\n' "$output"
+        '';
+      };
     in
     {
+      boot.loader.systemd-boot.windows.${windowsBootName} = {
+        title = "Windows 11 Pro";
+        efiDeviceHandle = "HD0d";
+      };
       environment = {
         sessionVariables.LIBVIRT_DEFAULT_URI = "qemu:///system";
         systemPackages = [
           pkgs.cifs-utils
+          rebootToWindows
           zagreusRdp
         ];
       };
@@ -200,6 +323,17 @@
       services.udev.extraRules = ''
         ACTION=="add|change", SUBSYSTEM=="block", ENV{DEVTYPE}=="disk", ENV{ID_SERIAL_SHORT}=="2325E6E6888E", GROUP="qemu-libvirtd", MODE="0660"
       '';
+      security.sudo.extraRules = [
+        {
+          users = [ primaryUser.name ];
+          commands = [
+            {
+              command = lib.getExe rebootToWindowsRoot;
+              options = [ "NOPASSWD" ];
+            }
+          ];
+        }
+      ];
       users.users.${primaryUser.name}.extraGroups = [ "libvirtd" ];
 
       virtualisation.libvirtd = {

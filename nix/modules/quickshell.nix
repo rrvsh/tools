@@ -18,7 +18,7 @@ in
           cp -r ${../../quickshell/nemesis-shell} "$out"
           chmod -R u+w "$out"
           substituteInPlace "$out/BarHost.qml" \
-            --replace-fail "@systemctl@" "${lib.getExe' pkgs.systemd "systemctl"}"
+            --replace-fail "@rebootToWindows@" "/run/current-system/sw/bin/reboot-to-windows"
         '';
       in
       {

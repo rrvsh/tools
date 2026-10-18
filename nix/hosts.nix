@@ -164,10 +164,6 @@ in
               loader.systemd-boot = {
                 enable = true;
                 edk2-uefi-shell.enable = true;
-                windows."11-pro" = {
-                  title = "Windows 11 Pro";
-                  efiDeviceHandle = "HD0d";
-                };
               };
               loader.efi.canTouchEfiVariables = true;
               kernelPackages = pkgs.linuxPackages_latest;
