@@ -37,8 +37,10 @@ in
         marginalia = inputs.pi-marginalia.packages.${system}.pi-marginalia;
         slopchop = inputs.pi-slopchop.packages.${system}.pi-slopchop;
         sessionDrain = inputs.pi-session-drain.packages.${system}.pi-session-drain;
+        piSessionIndex = cfg.packages.${system}.pi-session-index;
         piPackage = inputs.pi.packages.${system}.pi-coding-agent.overrideAttrs (old: {
           postPatch = lib.optionalString ((old.postPatch or null) != null) old.postPatch + ''
+            patch -p1 < ${root + /patches/pi-session-index.patch}
             substituteInPlace packages/coding-agent/src/modes/interactive/components/session-selector.ts \
               --replace-fail 'private scope: SessionScope = "current";' \
                 'private scope: SessionScope = "all";' \
@@ -179,6 +181,7 @@ in
           extraPackages = [
             pkgs.nodejs_22
             agentBrowser
+            piSessionIndex
           ];
           settings = {
             lastChangelogVersion = lib.getVersion config.programs.pi-coding-agent.package;
