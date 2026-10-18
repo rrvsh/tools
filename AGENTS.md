@@ -33,6 +33,8 @@ Do not run rebuilds by default. Only run `just rb` if the user asks for it or ex
 
 Run rebuilds on the host whose configuration is affected. If editing from a different host, SSH to the affected host and run commands from that host's checkout.
 
+Mercury is the exception: never build or evaluate a system configuration on Mercury because its resources are limited. Use Nemesis as the build host, or build the exact Mercury closure elsewhere and copy it to Mercury before activation. If neither route works, stop and ask instead of falling back to a local Mercury build.
+
 For behavior-preserving refactors, compare the affected system derivation before and after the change when practical, then run `just rb` after approval.
 
 `just rb` runs formatting/checks before rebuilding. If formatting changes files and the command fails, inspect/accept the formatting and rerun.
