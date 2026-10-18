@@ -14,7 +14,10 @@ const child = spawn(
 );
 const rust = [];
 for await (const line of createInterface({ input: child.stdout, crlfDelay: Infinity })) {
-  if (line) rust.push(JSON.parse(line));
+  if (line) {
+    const event = JSON.parse(line);
+    if (event.type !== "pi-session-index") rust.push(event);
+  }
 }
 const exitCode = await new Promise((resolve) => child.once("close", resolve));
 if (exitCode !== 0) process.exit(exitCode ?? 1);

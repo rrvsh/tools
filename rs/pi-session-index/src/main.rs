@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 use std::env;
 use std::fs::{self, File, OpenOptions};
-use std::io::{BufRead, BufReader, Read, Seek, SeekFrom};
+use std::io::{BufRead, BufReader, Read, Seek, SeekFrom, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Instant, UNIX_EPOCH};
 
@@ -187,8 +187,15 @@ fn main() -> Result<()> {
     match args.output {
         Output::Json => println!("{}", serde_json::to_string(&sessions)?),
         Output::Ndjson => {
-            for session in &sessions {
+            println!(
+                "{}",
+                serde_json::json!({ "type": "pi-session-index", "total": candidates.len() })
+            );
+            for (index, session) in sessions.iter().enumerate() {
                 println!("{}", serde_json::to_string(session)?);
+                if index == 0 || (index + 1) % 100 == 0 {
+                    std::io::stdout().flush()?;
+                }
             }
         }
         Output::Summary => {
@@ -606,7 +613,6 @@ fn write_cache(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     use std::time::SystemTime;
 
     fn temporary_directory(name: &str) -> PathBuf {

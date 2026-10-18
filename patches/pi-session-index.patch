@@ -1,13 +1,18 @@
 diff --git a/packages/coding-agent/src/core/session-manager.ts b/packages/coding-agent/src/core/session-manager.ts
-index df5281a..a86aff2 100644
+index df5281a..8e6f15a 100644
 --- a/packages/coding-agent/src/core/session-manager.ts
 +++ b/packages/coding-agent/src/core/session-manager.ts
 @@ -13,0 +14 @@ import {
 +import { spawn } from "child_process";
-@@ -940,0 +942,58 @@ function buildSessionInfosWithConcurrency(
+@@ -940,0 +942,70 @@ function buildSessionInfosWithConcurrency(
 +interface IndexedSessionInfo extends Omit<SessionInfo, "created" | "modified"> {
 +	createdMs: number;
 +	modifiedMs: number;
++}
++
++interface IndexedSessionHeader {
++	type: "pi-session-index";
++	total: number;
 +}
 +
 +async function listAllSessionsFromIndex(
@@ -36,17 +41,24 @@ index df5281a..a86aff2 100644
 +
 +	try {
 +		const sessions: SessionInfo[] = [];
++		let total = 0;
 +		const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
 +		for await (const line of lines) {
 +			if (!line) continue;
-+			const indexed = JSON.parse(line) as IndexedSessionInfo;
-+			const { createdMs, modifiedMs, ...session } = indexed;
++			const event = JSON.parse(line) as IndexedSessionInfo | IndexedSessionHeader;
++			if ("type" in event && event.type === "pi-session-index") {
++				total = event.total;
++				continue;
++			}
++			const { createdMs, modifiedMs, ...session } = event as IndexedSessionInfo;
 +			sessions.push({ ...session, created: new Date(createdMs), modified: new Date(modifiedMs) });
++			const loaded = sessions.length;
++			if (loaded === 1 || loaded % 100 === 0) onProgress?.(loaded, total, [...sessions]);
 +		}
 +		const exitCode = await exited;
 +		signal?.throwIfAborted();
 +		if (exitCode !== 0) return null;
-+		onProgress?.(sessions.length, sessions.length, sessions);
++		onProgress?.(total, total, sessions);
 +		return sessions;
 +	} catch {
 +		signal?.throwIfAborted();
@@ -63,7 +75,7 @@ index df5281a..a86aff2 100644
 +	}
 +}
 +
-@@ -1948,0 +2008,3 @@ export class SessionManager {
+@@ -1948,0 +2020,3 @@ export class SessionManager {
 +		const indexedSessions = await listAllSessionsFromIndex(progress, abortSignal);
 +		if (indexedSessions) return indexedSessions;
 +

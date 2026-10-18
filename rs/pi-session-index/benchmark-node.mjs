@@ -19,6 +19,7 @@ let firstRecordMs;
 for await (const line of lines) {
   if (!line) continue;
   const session = JSON.parse(line);
+  if (session.type === "pi-session-index") continue;
   session.created = new Date(session.createdMs);
   session.modified = new Date(session.modifiedMs);
   delete session.createdMs;
