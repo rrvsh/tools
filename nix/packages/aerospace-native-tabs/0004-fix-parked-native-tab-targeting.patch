@@ -1,0 +1,43 @@
+From 9303cf569bea03e8b699dbd4ad9e1dd9d8968aa3 Mon Sep 17 00:00:00 2001
+From: Mohammad Rafiq <rafiq@rrv.sh>
+Date: Mon, 19 Oct 2026 14:54:33 +0800
+Subject: [PATCH] fix: make parked native tabs targetable
+
+---
+ Sources/AppBundle/command/impl/FocusCommand.swift       | 8 ++++++++
+ Sources/AppBundle/command/impl/ListWindowsCommand.swift | 3 ++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/Sources/AppBundle/command/impl/FocusCommand.swift b/Sources/AppBundle/command/impl/FocusCommand.swift
+index 3f30b62..4779dba 100644
+--- a/Sources/AppBundle/command/impl/FocusCommand.swift
++++ b/Sources/AppBundle/command/impl/FocusCommand.swift
+@@ -6,6 +6,14 @@ struct FocusCommand: Command {
+     /*conforms*/ let shouldResetClosedWindowsCache = false
+
+     func run(_ env: CmdEnv, _ io: CmdIo) async -> BinaryExitCode {
++        // Parked native tabs have no workspace, so handle them before resolving a live focus target.
++        if case .windowId(let windowId) = args.target,
++           let macWindow = Window.get(byId: windowId) as? MacWindow,
++           macWindow.isParkedNativeTab {
++            let selected = await macWindow.macApp.selectTab(windowId, .cancellable)
++            macWindow.nativeFocus()
++            return .from(bool: selected)
++        }
+         guard let target = args.resolveTargetOrReportError(env, io) else { return .fail }
+         if let window = target.windowOrNil, await shouldFailBecauseFullscreen_nonCancellable(
+             window: window,
+diff --git a/Sources/AppBundle/command/impl/ListWindowsCommand.swift b/Sources/AppBundle/command/impl/ListWindowsCommand.swift
+index 553356c..6999f94 100644
+--- a/Sources/AppBundle/command/impl/ListWindowsCommand.swift
++++ b/Sources/AppBundle/command/impl/ListWindowsCommand.swift
+@@ -35,7 +35,8 @@ struct ListWindowsCommand: Command {
+             // Surface parked native-tab members (issue #68) in the unfiltered listing so they are discoverable and
+             // targetable by `focus --window-id`. They aren't in any workspace, so only include them when not filtering
+             // by a specific workspace or monitor.
+-            if args.filteringOptions.workspaces.isEmpty && args.filteringOptions.monitors.isEmpty {
++            let hasMonitorScope = !args.filteringOptions.monitors.isEmpty && args.filteringOptions.monitors != [.all]
++            if args.filteringOptions.workspaces.isEmpty && !hasMonitorScope {
+                 windows += macosTabbedWindowsContainer.children.filterIsInstance(of: Window.self)
+             }
+             if let pid = args.filteringOptions.pidFilter {
