@@ -11,6 +11,34 @@ in
   config.flake = {
     graphicalKeybinds = {
       shared = {
+        open-terminal = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "1";
+        };
+        open-browser = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "2";
+        };
+        close-window = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "W";
+        };
+        toggle-floating = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "P";
+        };
         focus-left = {
           modifiers = [ "alt" ];
           key = "H";
@@ -87,34 +115,6 @@ in
         };
       };
       hyprlandOverrides = {
-        open-terminal = {
-          modifiers = [
-            "alt"
-            "ctrl"
-          ];
-          key = "1";
-        };
-        open-browser = {
-          modifiers = [
-            "alt"
-            "ctrl"
-          ];
-          key = "2";
-        };
-        close-window = {
-          modifiers = [
-            "alt"
-            "ctrl"
-          ];
-          key = "W";
-        };
-        toggle-floating = {
-          modifiers = [
-            "alt"
-            "ctrl"
-          ];
-          key = "P";
-        };
         open-launcher = {
           modifiers = [ "alt" ];
           key = "SPACE";
