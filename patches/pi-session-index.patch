@@ -1,0 +1,81 @@
+diff --git a/packages/coding-agent/src/core/session-manager.ts b/packages/coding-agent/src/core/session-manager.ts
+index df5281a..8e6f15a 100644
+--- a/packages/coding-agent/src/core/session-manager.ts
++++ b/packages/coding-agent/src/core/session-manager.ts
+@@ -13,0 +14 @@ import {
++import { spawn } from "child_process";
+@@ -940,0 +942,70 @@ function buildSessionInfosWithConcurrency(
++interface IndexedSessionInfo extends Omit<SessionInfo, "created" | "modified"> {
++	createdMs: number;
++	modifiedMs: number;
++}
++
++interface IndexedSessionHeader {
++	type: "pi-session-index";
++	total: number;
++}
++
++async function listAllSessionsFromIndex(
++	onProgress?: SessionListProgress,
++	signal?: AbortSignal,
++): Promise<SessionInfo[] | null> {
++	const executable = process.env.PI_SESSION_INDEX_BIN ?? "pi-session-index";
++	const cachePath =
++		process.env.PI_SESSION_INDEX_CACHE ?? join(getDefaultAgentDir(), "cache", "session-index.sqlite3");
++	const child = spawn(
++		executable,
++		["--sessions-dir", getSessionsDir(), "--cache", cachePath, "--output", "ndjson"],
++		{ stdio: ["ignore", "pipe", "pipe"] },
++	);
++	const exited = new Promise<number | null>((resolve, reject) => {
++		child.once("error", reject);
++		child.once("close", resolve);
++	});
++	let stderr = "";
++	child.stderr.setEncoding("utf8");
++	child.stderr.on("data", (chunk: string) => {
++		if (stderr.length < 8192) stderr += chunk.slice(0, 8192 - stderr.length);
++	});
++	const abort = () => child.kill();
++	signal?.addEventListener("abort", abort, { once: true });
++
++	try {
++		const sessions: SessionInfo[] = [];
++		let total = 0;
++		const lines = createInterface({ input: child.stdout, crlfDelay: Infinity });
++		for await (const line of lines) {
++			if (!line) continue;
++			const event = JSON.parse(line) as IndexedSessionInfo | IndexedSessionHeader;
++			if ("type" in event && event.type === "pi-session-index") {
++				total = event.total;
++				continue;
++			}
++			const { createdMs, modifiedMs, ...session } = event as IndexedSessionInfo;
++			sessions.push({ ...session, created: new Date(createdMs), modified: new Date(modifiedMs) });
++			const loaded = sessions.length;
++			if (loaded === 1 || loaded % 100 === 0) onProgress?.(loaded, total, [...sessions]);
++		}
++		const exitCode = await exited;
++		signal?.throwIfAborted();
++		if (exitCode !== 0) return null;
++		onProgress?.(total, total, sessions);
++		return sessions;
++	} catch {
++		signal?.throwIfAborted();
++		if (child.exitCode === null) {
++			child.kill();
++			await exited.catch(() => undefined);
++		}
++		if (stderr && process.env.PI_SESSION_INDEX_DEBUG === "1") {
++			process.stderr.write(`pi-session-index: ${stderr}`);
++		}
++		return null;
++	} finally {
++		signal?.removeEventListener("abort", abort);
++	}
++}
++
+@@ -1948,0 +2020,3 @@ export class SessionManager {
++		const indexedSessions = await listAllSessionsFromIndex(progress, abortSignal);
++		if (indexedSessions) return indexedSessions;
++
