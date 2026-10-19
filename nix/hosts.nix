@@ -43,6 +43,7 @@ in
       modules = [
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.agent-browser-shared
+        cfg.modules.darwin.aerospace
         (
           { pkgs, ... }:
           {
