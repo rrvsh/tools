@@ -81,7 +81,7 @@ in
       packages = pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
         aerospace-native-tabs = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
           pname = "aerospace-native-tabs";
-          version = "0.21.3-Beta-native-tabs-5baec50";
+          version = "0.21.3-Beta-native-tabs-5baec50.1";
           src = pkgs.fetchFromGitHub {
             owner = "nikitabobko";
             repo = "AeroSpace";
@@ -92,10 +92,12 @@ in
             (root + /nix/packages/aerospace-native-tabs/0001-native-tab-debug-probe.patch)
             (root + /nix/packages/aerospace-native-tabs/0002-native-tab-groups.patch)
             (root + /nix/packages/aerospace-native-tabs/0003-native-tab-focus.patch)
+            (root + /nix/packages/aerospace-native-tabs/0004-fix-parked-native-tab-targeting.patch)
           ];
           nativeBuildInputs = [
             swiftToolchain
             pkgs.darwin.binutils-unwrapped
+            pkgs.perl
           ];
           strictDeps = true;
           postPatch = ''
@@ -123,8 +125,11 @@ in
             runHook preBuild
             export HOME="$TMPDIR"
             export SDKROOT=${swiftSdk}
-            swift build -c release --disable-sandbox --product AeroSpaceApp
-            swift build -c release --disable-sandbox --product aerospace
+            export SWIFT_DETERMINISTIC_HASHING=1
+            swift build --jobs 1 -c release --disable-sandbox --product AeroSpaceApp \
+              -Xswiftc -num-threads -Xswiftc 1
+            swift build --jobs 1 -c release --disable-sandbox --product aerospace \
+              -Xswiftc -num-threads -Xswiftc 1
             runHook postBuild
           '';
           installPhase = ''
@@ -134,11 +139,28 @@ in
             rm -rf "$out/Applications/AeroSpace.app/Contents/_CodeSignature"
             install -m755 .build/release/AeroSpaceApp "$out/Applications/AeroSpace.app/Contents/MacOS/AeroSpace"
             install -m755 .build/release/aerospace "$out/bin/aerospace"
-            for binary in "$out/Applications/AeroSpace.app/Contents/MacOS/AeroSpace" "$out/bin/aerospace"; do
+            appBinary="$out/Applications/AeroSpace.app/Contents/MacOS/AeroSpace"
+            cliBinary="$out/bin/aerospace"
+            for binary in "$appBinary" "$cliBinary"; do
               strip -S "$binary"
               install_name_tool -delete_rpath ${swiftToolchain}/lib/swift-6.2/macosx "$binary"
             done
-            /usr/bin/codesign --force --sign - --timestamp=none "$out/bin/aerospace"
+            # Darwin's linker and install_name_tool emit unstable Mach-O UUIDs. Replace
+            # them before signing so identical source produces identical store output.
+            normalizeUuid() {
+              currentUuid=$(otool -l "$1" | awk '/LC_UUID/{getline; getline; print $2; exit}' | tr -d -)
+              CURRENT_UUID="$currentUuid" FIXED_UUID="$2" perl -0777 -i -pe '
+                BEGIN {
+                  $from = pack("H*", $ENV{CURRENT_UUID});
+                  $to = pack("H*", $ENV{FIXED_UUID});
+                }
+                die "Mach-O UUID not found" if index($_, $from) < 0;
+                s/\Q$from\E/$to/;
+              ' "$1"
+            }
+            normalizeUuid "$appBinary" 5BAEC5050C7844DB849D074DEB4538FE
+            normalizeUuid "$cliBinary" 5BAEC5050C7844DB849D074DEB4538FF
+            /usr/bin/codesign --force --sign - --timestamp=none "$cliBinary"
             /usr/bin/codesign --force --deep --sign - --timestamp=none "$out/Applications/AeroSpace.app"
             runHook postInstall
           '';
