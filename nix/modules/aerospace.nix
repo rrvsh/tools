@@ -18,9 +18,9 @@ in
         home-manager.sharedModules = [ cfg.modules.homeManager.aerospace ];
         system = {
           activationScripts.postActivation.text = lib.mkAfter ''
-            shortcutDir=$(/usr/bin/mktemp -d)
+            shortcutDir=$(/usr/bin/mktemp -d /tmp/aerospace-symbolichotkeys.XXXXXX)
             shortcutPlist="$shortcutDir/symbolichotkeys.plist"
-            /bin/chmod 755 "$shortcutDir"
+            /usr/sbin/chown ${lib.escapeShellArg user} "$shortcutDir"
             /usr/bin/sudo -u ${lib.escapeShellArg user} /usr/bin/env HOME=${lib.escapeShellArg userHome} \
               /usr/bin/defaults export com.apple.symbolichotkeys "$shortcutPlist"
             if ! /usr/bin/plutil -extract AppleSymbolicHotKeys raw "$shortcutPlist" >/dev/null 2>&1; then
