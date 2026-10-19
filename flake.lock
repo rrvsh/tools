@@ -994,22 +994,6 @@
         "type": "github"
       }
     },
-    "nixpkgs-swift-sdk": {
-      "locked": {
-        "lastModified": 1789589753,
-        "narHash": "sha256-Uisp/CQL+fEa09yb0Ovx30tCcPV38B614/qNKy4U3xo=",
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f467180b4c6ecc14284ce4539a291939b9821ce6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "NixOS",
-        "repo": "nixpkgs",
-        "rev": "f467180b4c6ecc14284ce4539a291939b9821ce6",
-        "type": "github"
-      }
-    },
     "nixpkgs_10": {
       "locked": {
         "lastModified": 1788614874,
@@ -1303,7 +1287,6 @@
         "nix-rosetta-builder": "nix-rosetta-builder",
         "nixpkgs": "nixpkgs_9",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
-        "nixpkgs-swift-sdk": "nixpkgs-swift-sdk",
         "pi": "pi",
         "pi-claude-bridge": "pi-claude-bridge",
         "pi-marginalia": "pi-marginalia",

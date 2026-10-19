@@ -1,55 +1,36 @@
-{
-  config,
-  inputs,
-  ...
-}:
+{ config, ... }:
 let
   inherit (config.flake.paths) root;
 in
 {
   perSystem =
-    { pkgs, system, ... }:
+    { pkgs, ... }:
     let
-      fetchDependency =
-        {
-          hash,
-          owner,
-          repo,
-          rev,
-        }:
-        pkgs.fetchFromGitHub {
-          inherit
-            hash
-            owner
-            repo
-            rev
-            ;
-        };
-      hotKey = fetchDependency {
+      hotKey = pkgs.fetchFromGitHub {
         owner = "soffes";
         repo = "HotKey";
         rev = "a3cf605d7a96f6ff50e04fcb6dea6e2613cfcbe4";
         hash = "sha256-t6HExQe+yXa951inZHfOILNsDrcFxNxPmrBhKtmL6eA=";
       };
-      soundAdditions = fetchDependency {
+      soundAdditions = pkgs.fetchFromGitHub {
         owner = "InerziaSoft";
         repo = "ISSoundAdditions";
         rev = "4b555f0354e6c280917bae8a598a258efe87ab98";
         hash = "sha256-tCv5XtyMOq0ZOeNPaWXryTg57KsZCpyisc3NQziIQs0=";
       };
-      swiftCollections = fetchDependency {
+      swiftCollections = pkgs.fetchFromGitHub {
         owner = "apple";
         repo = "swift-collections";
         rev = "7b847a3b7008b2dc2f47ca3110d8c782fb2e5c7e";
         hash = "sha256-Bhfmf02JbmEdM1TFdM8UGxlouR8kr61WlU1uI2v67v8=";
       };
-      tomlDecoder = fetchDependency {
+      tomlDecoder = pkgs.fetchFromGitHub {
         owner = "dduan";
         repo = "TOMLDecoder";
         rev = "fa1103a62b1c08cc08eabc58dda8b55887ff1622";
         hash = "sha256-YOR8nAp89zJOk2ZkmISfdzYJm6euuNrTJmOHcfpptco=";
       };
-      swiftSdk = inputs.nixpkgs-swift-sdk.legacyPackages.${system}.apple-sdk_26.src;
+      swiftSdk = pkgs.apple-sdk_26.src;
       swiftToolchain = pkgs.stdenvNoCC.mkDerivation {
         pname = "swift-toolchain";
         version = "6.3.2";
