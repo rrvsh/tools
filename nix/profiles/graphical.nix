@@ -39,6 +39,13 @@ in
           ];
           key = "P";
         };
+        toggle-fullscreen = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "F";
+        };
         focus-left = {
           modifiers = [ "alt" ];
           key = "H";

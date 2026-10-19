@@ -23,6 +23,7 @@ let
     open-browser.command = lua ''hl.dsp.exec_cmd("firefox")'';
     close-window.command = lua "hl.dsp.window.close()";
     toggle-floating.command = lua ''hl.dsp.window.float({ action = "toggle" })'';
+    toggle-fullscreen.command = lua "hl.dsp.window.fullscreen()";
     focus-left.command = lua ''hl.dsp.focus({ direction = "left" })'';
     focus-down.command = lua ''hl.dsp.focus({ direction = "down" })'';
     focus-up.command = lua ''hl.dsp.focus({ direction = "up" })'';
@@ -60,6 +61,7 @@ let
     open-browser = "exec-and-forget open -a Firefox";
     close-window = "close";
     toggle-floating = "layout floating tiling";
+    toggle-fullscreen = "fullscreen";
     focus-left = "focus left";
     focus-down = "focus down";
     focus-up = "focus up";
