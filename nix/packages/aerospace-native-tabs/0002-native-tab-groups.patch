@@ -1,0 +1,1204 @@
+From 08c88a4c0ec796877640a46a8ee2992514563460 Mon Sep 17 00:00:00 2001
+From: luhw-dev <luhw@proton.me>
+Date: Fri, 7 Aug 2026 01:13:04 -0300
+Subject: [PATCH 2/3] feat: handle macOS native window tabs as a single tile
+ (#68)
+
+macOS "Merge All Windows" does not collapse the merged windows in the
+accessibility tree: every tab stays a separate AXWindow with subrole
+AXStandardWindow and a real frame identical to its siblings. AeroSpace's
+one AXUIElement = one CGWindowID = one Window leaf assumption therefore turns
+N stacked tabs into N independent tiling slots. The tile shrinks to make room
+while macOS re-absorbs the new window as a tab, which is what produces the
+empty tiles and ghost windows users see.
+
+Model a tab group as ONE tile instead. Exactly one member, the currently
+active front tab, is tiled; every other member is parked in a new global
+MacosTabbedWindowsContainer, hidden behind the front tab and skipped by
+layout, mirroring how minimized and popup windows are already handled.
+Switching tabs natively makes a different member the front tab and the next
+refresh re-points that same tile to it, preserving the slot so the group does
+not jump.
+
+Two invariants keep this safe. Only the front tab is ever framed, because
+writing a frame to a background tab tears it out of the group. And the whole
+thing is stateless, recomputed from the live tab bar every refresh, so it
+tolerates macOS reassigning tab window ids (b56f606 established that they are
+not stable) and its worst case is plain tiling.
+
+Detection: frame equality, the classic Amethyst heuristic, turns out to be
+unusable in steady state. Two merged tabs share a frame only for the instant
+before AeroSpace tiles them; once it writes two different frames the tabs are
+torn apart and the signal is gone while the group logically still exists.
+Walking for a tab bar does not help either, because only the front tab exposes
+one. The one cross-window link that survives is the front tab's bar roster: it
+lists one AXTabButton per tab whose label corresponds to a member window's
+title. So detection finds windows exposing a multi-tab bar and matches members
+by title, requiring a candidate to also be hidden, meaning absent from a fresh
+kAXWindowsAttribute read, which is what separates a real background tab from a
+separate visible window that merely shares a title (terminals reuse the shell
+path). Labels are frequently a decorated form of the title, so matching allows
+a prefix or a suffix but never a match in the middle, ranks exact over suffix
+over prefix, and assigns each label occurrence to one distinct window.
+
+Cost matters here, because normalizeNativeTabs runs in every refresh and a
+refresh is scheduled on every AX notification. A native tab bar lives in the
+window's title bar, a shallow child of the AXWindow, never in the content
+subtree, so the scan searches breadth-first and stops at the first AXTabGroup.
+It is skipped entirely for an app whose windows are all visible, since a group
+always has at least one hidden member, and memoized per app on window ids,
+hidden bits and titles. Apps are scanned concurrently on their own AX threads
+while reconciliation runs in pid order so the tree does not depend on AX
+timing, and the whole pass is skipped while the left mouse button is down,
+which is when tab tear-out happens.
+
+Everything that can go wrong fails toward plain tiling rather than toward
+hiding a real window: a title flicker that drops a member is debounced for one
+refresh while the group still exists, released immediately once the group is
+gone, a released tab returns to its origin workspace and previous parent kind,
+and a same-app window on another workspace is never pulled into a group.
+
+The reconciliation is deliberately split from the AX detection so it can be
+unit tested without the live AX path. NativeTabsTest covers group formation,
+tab switch preserving the slot, un-merge releasing, the debounce, origin
+workspace restoration, duplicate labels, and the over-grouping cases found
+against Sequel Ace and Ghostty.
+
+Focus cache: a natively selected background tab is still parked when
+updateFocusCache runs, so focusWindow() cannot adopt it. Hold the cache stale
+for that one case so the next refresh retries once the tab has been re-tiled.
+Every other un-adoptable native focus still advances the cache, otherwise
+every refresh would re-attempt setFocus and bounce logical focus back to it.
+---
+ Sources/AppBundle/command/format.swift        |   1 +
+ .../AppBundle/command/impl/FocusCommand.swift |   1 +
+ .../command/impl/LayoutCommand.swift          |   5 +-
+ .../AppBundle/command/impl/MoveCommand.swift  |   4 +-
+ .../AppBundle/command/impl/SplitCommand.swift |   5 +-
+ Sources/AppBundle/focusCache.swift            |   9 +-
+ .../AppBundle/layout/layoutRecursive.swift    |   3 +-
+ Sources/AppBundle/layout/refresh.swift        |   1 +
+ Sources/AppBundle/mouse/moveWithMouse.swift   |   2 +-
+ Sources/AppBundle/mouse/resizeWithMouse.swift |   2 +-
+ Sources/AppBundle/normalizeLayoutReason.swift |   4 +-
+ Sources/AppBundle/normalizeNativeTabs.swift   | 166 ++++++++++++++
+ Sources/AppBundle/tree/MacApp.swift           | 205 +++++++++++++++++
+ Sources/AppBundle/tree/MacWindow.swift        |  34 ++-
+ .../MacosUnconventionalWindowsContainer.swift |  12 +
+ Sources/AppBundle/tree/TreeNode.swift         |   3 +-
+ Sources/AppBundle/tree/TreeNodeCases.swift    |  14 ++
+ Sources/AppBundle/tree/TreeNodeEx.swift       |   8 +-
+ Sources/AppBundle/tree/Window.swift           |   6 +
+ .../tree/frozen/FrozenTreeNode.swift          |   3 +-
+ .../command/MoveCommandTest.swift             |   2 +
+ .../AppBundleTests/tree/NativeTabsTest.swift  | 212 ++++++++++++++++++
+ 22 files changed, 684 insertions(+), 18 deletions(-)
+ create mode 100644 Sources/AppBundle/normalizeNativeTabs.swift
+ create mode 100644 Sources/AppBundleTests/tree/NativeTabsTest.swift
+
+diff --git a/Sources/AppBundle/command/format.swift b/Sources/AppBundle/command/format.swift
+index 1bfc712..bfd2ee6 100644
+--- a/Sources/AppBundle/command/format.swift
++++ b/Sources/AppBundle/command/format.swift
+@@ -251,6 +251,7 @@ private func toLayoutResult(w: Window) -> Result<Primitive, InterVarExpansionErr
+         case .macosNativeFullscreenWindow: .success(.string("macos_native_fullscreen"))
+         case .macosNativeHiddenAppWindow: .success(.string("macos_native_window_of_hidden_app"))
+         case .macosNativeMinimizedWindow: .success(.string("macos_native_minimized"))
++        case .macosNativeTabWindow: .success(.string("macos_native_tab"))
+         case .macosPopupWindow: .success(.string("NULL-WINDOW-LAYOUT"))
+
+         case .rootTilingContainer: .failure(.notPossible("Not possible"))
+diff --git a/Sources/AppBundle/command/impl/FocusCommand.swift b/Sources/AppBundle/command/impl/FocusCommand.swift
+index 0bc1fdb..4bd52aa 100644
+--- a/Sources/AppBundle/command/impl/FocusCommand.swift
++++ b/Sources/AppBundle/command/impl/FocusCommand.swift
+@@ -209,6 +209,7 @@ extension TreeNode {
+                 }
+             case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer,
+                  .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer,
++                 .macosTabbedWindowsContainer,
+                  .floatingWindowsContainer:
+                 die("Impossible")
+         }
+diff --git a/Sources/AppBundle/command/impl/LayoutCommand.swift b/Sources/AppBundle/command/impl/LayoutCommand.swift
+index 0c09587..da30855 100644
+--- a/Sources/AppBundle/command/impl/LayoutCommand.swift
++++ b/Sources/AppBundle/command/impl/LayoutCommand.swift
+@@ -18,8 +18,9 @@ struct LayoutCommand: Command {
+                         node = .tilingContainer(it)
+                     case .macosFullscreenWindowsContainer,
+                          .macosHiddenAppsWindowsContainer,
+-                         .macosMinimizedWindowsContainer:
+-                        let msg = "Can't change layout for macOS minimized, fullscreen windows or windows or hidden apps. " +
++                         .macosMinimizedWindowsContainer,
++                         .macosTabbedWindowsContainer:
++                        let msg = "Can't change layout for macOS minimized, fullscreen windows, windows of hidden apps, or native tabs. " +
+                             "This behavior is subject to change"
+                         return .fail(io.err(msg))
+                     case .unbound, .macosPopupWindowsContainer:
+diff --git a/Sources/AppBundle/command/impl/MoveCommand.swift b/Sources/AppBundle/command/impl/MoveCommand.swift
+index 928a939..eb54557 100644
+--- a/Sources/AppBundle/command/impl/MoveCommand.swift
++++ b/Sources/AppBundle/command/impl/MoveCommand.swift
+@@ -37,7 +37,8 @@ struct MoveCommand: Command {
+                 }
+             case .floatingWindowsContainer: // floating window
+                 return .fail(io.err("moving floating windows isn't yet supported")) // todo
+-            case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer:
++            case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer,
++                 .macosTabbedWindowsContainer:
+                 return .fail(io.err(moveOutMacosUnconventionalWindow))
+             case .macosPopupWindowsContainer:
+                 return .fail(io.err(bugPrompt())) // Impossible
+@@ -113,6 +114,7 @@ private let moveOutMacosUnconventionalWindow = "moving macOS fullscreen, minimiz
+                  .macosMinimizedWindowsContainer,
+                  .macosFullscreenWindowsContainer,
+                  .macosHiddenAppsWindowsContainer,
++                 .macosTabbedWindowsContainer,
+                  .macosPopupWindowsContainer: true
+         }
+     }) as? TilingContainer
+diff --git a/Sources/AppBundle/command/impl/SplitCommand.swift b/Sources/AppBundle/command/impl/SplitCommand.swift
+index 4d06794..485d0a0 100644
+--- a/Sources/AppBundle/command/impl/SplitCommand.swift
++++ b/Sources/AppBundle/command/impl/SplitCommand.swift
+@@ -38,8 +38,9 @@ struct SplitCommand: Command {
+                     window.bind(to: newParent, adaptiveWeight: WEIGHT_AUTO, index: 0)
+                 }
+                 return .succ
+-            case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer:
+-                return .fail(io.err("Can't split macos fullscreen, minimized windows and windows of hidden apps. This behavior may change in the future"))
++            case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer,
++                 .macosTabbedWindowsContainer:
++                return .fail(io.err("Can't split macos fullscreen, minimized windows, windows of hidden apps, and native tabs. This behavior may change in the future"))
+             case .macosPopupWindowsContainer, .workspace:
+                 return .fail(io.err(bugPrompt())) // Impossible
+         }
+diff --git a/Sources/AppBundle/focusCache.swift b/Sources/AppBundle/focusCache.swift
+index d70519e..84d3511 100644
+--- a/Sources/AppBundle/focusCache.swift
++++ b/Sources/AppBundle/focusCache.swift
+@@ -9,7 +9,14 @@
+     }
+     if nativeFocused?.windowId != lastKnownNativeFocusedWindowId {
+         _ = nativeFocused?.focusWindow()
+-        lastKnownNativeFocusedWindowId = nativeFocused?.windowId
++        // Mark this native id as "seen", EXCEPT a just-selected background native tab (issue #68): it is still parked
++        // (it has no workspace) so focusWindow() can't adopt it yet, and leaving the cache stale ONLY for that case
++        // makes the next refresh retry once normalizeNativeTabs() has re-tiled it. Every OTHER un-adoptable native
++        // focus (a minimized window, a window of a hidden app, a window on a workspace assigned to another monitor)
++        // must advance the cache, otherwise every refresh re-attempts setFocus and bounces logical focus back to it.
++        if nativeFocused?.isParkedNativeTab != true {
++            lastKnownNativeFocusedWindowId = nativeFocused?.windowId
++        }
+     }
+     nativeFocused?.macAppUnsafe.lastNativeFocusedWindowId = nativeFocused?.windowId
+ }
+diff --git a/Sources/AppBundle/layout/layoutRecursive.swift b/Sources/AppBundle/layout/layoutRecursive.swift
+index 41756e5..4aaadde 100644
+--- a/Sources/AppBundle/layout/layoutRecursive.swift
++++ b/Sources/AppBundle/layout/layoutRecursive.swift
+@@ -50,7 +50,8 @@ extension TreeNode {
+                         try await container.layoutAccordion(point, width: width, height: height, virtual: virtual, context)
+                 }
+             case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer,
+-                 .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer:
++                 .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer,
++                 .macosTabbedWindowsContainer:
+                 return // Nothing to do for weirdos
+         }
+     }
+diff --git a/Sources/AppBundle/layout/refresh.swift b/Sources/AppBundle/layout/refresh.swift
+index d33f291..ea349fa 100644
+--- a/Sources/AppBundle/layout/refresh.swift
++++ b/Sources/AppBundle/layout/refresh.swift
+@@ -45,6 +45,7 @@ func runHeavyCompleteRefreshSession(
+             updateTrayText()
+             SecureInputPanel.shared.refresh()
+             try await normalizeLayoutReason()
++            try await normalizeNativeTabs()
+             if shouldLayoutWorkspaces { try await layoutWorkspaces() }
+         }
+     }
+diff --git a/Sources/AppBundle/mouse/moveWithMouse.swift b/Sources/AppBundle/mouse/moveWithMouse.swift
+index 867ee69..c132cf8 100644
+--- a/Sources/AppBundle/mouse/moveWithMouse.swift
++++ b/Sources/AppBundle/mouse/moveWithMouse.swift
+@@ -29,7 +29,7 @@ private func moveWithMouse(_ window: Window) async throws { // todo cover with t
+     switch window.windowParentCases {
+         case .floatingWindowsContainer:
+             try await moveFloatingWindow(window)
+-        case .macosFullscreenWindowsContainer, .macosMinimizedWindowsContainer, .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer:
++        case .macosFullscreenWindowsContainer, .macosMinimizedWindowsContainer, .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer, .macosTabbedWindowsContainer:
+             return // Unconventional windows can't be moved with mouse
+         case .tilingContainer:
+             moveTilingWindow(window)
+diff --git a/Sources/AppBundle/mouse/resizeWithMouse.swift b/Sources/AppBundle/mouse/resizeWithMouse.swift
+index c8f0ace..d164480 100644
+--- a/Sources/AppBundle/mouse/resizeWithMouse.swift
++++ b/Sources/AppBundle/mouse/resizeWithMouse.swift
+@@ -42,7 +42,7 @@ private func resizeWithMouse(_ window: Window) async throws { // todo cover with
+     switch window.windowParentCases {
+         case .unbound: return
+         case .floatingWindowsContainer, .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer,
+-             .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer:
++             .macosPopupWindowsContainer, .macosHiddenAppsWindowsContainer, .macosTabbedWindowsContainer:
+             return // Nothing to do for floating, or unconventional windows
+         case .tilingContainer:
+             guard let rect = try await window.getAxRect(.cancellable) else { return }
+diff --git a/Sources/AppBundle/normalizeLayoutReason.swift b/Sources/AppBundle/normalizeLayoutReason.swift
+index 1428ea5..001fbfa 100644
+--- a/Sources/AppBundle/normalizeLayoutReason.swift
++++ b/Sources/AppBundle/normalizeLayoutReason.swift
+@@ -46,6 +46,8 @@ private func _normalizeLayoutReason(workspace: Workspace, windows: [Window]) asy
+                 if !isMacosFullscreen && !isMacosMinimized && !isMacosWindowOfHiddenApp {
+                     try await exitMacOsNativeUnconventionalState(window: window, prevParentKind: prevParentKind, workspace: workspace, .cancellable)
+                 }
++            case .nativeTab:
++                break // Native tab members live in the global macosTabbedWindowsContainer and are reconciled by normalizeNativeTabs()
+         }
+     }
+ }
+@@ -67,7 +69,7 @@ func exitMacOsNativeUnconventionalState(
+             try await window.relayoutWindow(on: workspace, cm, forceTile: true)
+         case .macosPopupWindowsContainer: // Since the window was minimized/fullscreened it was mistakenly detected as popup. Relayout the window
+             try await window.relayoutWindow(on: workspace, cm)
+-        case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer: // wtf case, should never be possible. But If encounter it, let's just re-layout window
++        case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer, .macosTabbedWindowsContainer: // wtf case, should never be possible. But If encounter it, let's just re-layout window
+             try await window.relayoutWindow(on: workspace, cm)
+     }
+ }
+diff --git a/Sources/AppBundle/normalizeNativeTabs.swift b/Sources/AppBundle/normalizeNativeTabs.swift
+new file mode 100644
+index 0000000..c974aed
+--- /dev/null
++++ b/Sources/AppBundle/normalizeNativeTabs.swift
+@@ -0,0 +1,166 @@
++import Common
++
++/// Reconcile macOS native window tabs (https://github.com/nikitabobko/AeroSpace/issues/68).
++///
++/// macOS "Merge All Windows" keeps every tab as a separate AX window. Left alone, AeroSpace tiles each tab as its own
++/// slot, which fights the OS and produces empty tiles. Instead a tab group occupies a SINGLE tile: exactly one member
++/// — the currently active (front) tab — is tiled there, and every other tab is parked in the global
++/// `macosTabbedWindowsContainer` (hidden behind the front tab, never given a slot, never floated). Switching tabs
++/// natively makes a different member the front tab; the next refresh re-points that one tile to it. The tile position
++/// is preserved across switches so the group stays put.
++///
++/// Two invariants make this safe:
++/// - **Only the front tab is ever framed.** Framing a background tab tears it out of the group, so background tabs are
++///   parked (and parked windows are a layout no-op).
++/// - **Stateless and fail-safe toward tiling.** Recomputed from the live tab bar every refresh (tolerates macOS
++///   reassigning tab ids), and it releases a parked window the moment it stops being a confirmed background tab, back
++///   to the kind of parent it had (so a member the user had floated returns to floating). Worst case is plain tiling.
++///   Note the representative is never taken away from the user: if it is floating it stays floating and gets no tile.
++@MainActor
++func normalizeNativeTabs() async throws {
++    // Skip while the left mouse button is down. Refreshes fire on every mouse-move AX notification, so reconciling here
++    // would run the AX scan dozens of times per second during a drag — and a drag is exactly when tab membership is in
++    // flux (macOS tab tear-out). The mouse-up refresh (.globalObserverLeftMouseUp) reconciles right after.
++    if isLeftMouseButtonDown { return }
++
++    // Detection is AX I/O on each app's own thread, so run the apps concurrently instead of serially — same shape as
++    // MacApp.refreshAllAndGetAliveWindowIds. Only the pid crosses the task boundary; the app is looked up back here.
++    let detections: [(Int32, NativeTabDetection)] = try await withThrowingTaskGroup(
++        of: (Int32, NativeTabDetection).self,
++        returning: [(Int32, NativeTabDetection)].self,
++    ) { group in
++        for pid in MacApp.allAppsMap.keys {
++            group.addTask { @Sendable @MainActor in
++                guard let app = MacApp.allAppsMap[pid] else { return (pid, NativeTabDetection(clusters: [], appHasTabBar: false)) }
++                return (pid, try await app.detectNativeTabGroups(.cancellable))
++            }
++        }
++        var result: [(Int32, NativeTabDetection)] = []
++        for try await it in group { result.append(it) }
++        return result
++    }
++
++    var shouldBeParked: Set<UInt32> = []
++    var appsWithTabBar: Set<Int32> = []
++    // Reconcile in pid order, not in task-completion order, so the resulting tree doesn't depend on AX timing.
++    for (pid, detection) in detections.sorted(by: { $0.0 < $1.0 }) {
++        if detection.appHasTabBar { appsWithTabBar.insert(pid) }
++        for cluster in detection.clusters {
++            let members = cluster.memberIds.compactMap { Window.get(byId: $0) }
++            try await reconcileNativeTabGroup(members: members, activeId: cluster.mainMemberId, into: &shouldBeParked)
++        }
++    }
++    try await releaseStaleParkedTabs(keeping: shouldBeParked, appsWithTabBar: appsWithTabBar, fallbackWorkspace: focus.workspace)
++}
++
++/// Collapse one detected tab group onto a SINGLE tile: keep the representative (the active/front tab) tiled and park
++/// every other member. Pure tree manipulation (no AX), so it is unit-testable. Adds parked window ids to `shouldBeParked`.
++@MainActor
++func reconcileNativeTabGroup(members rawMembers: [Window], activeId: UInt32?, into shouldBeParked: inout Set<UInt32>) async throws {
++    if rawMembers.count < 2 { return }
++
++    let active = activeId.flatMap { id in rawMembers.first { $0.windowId == id } }
++    // The group lives on the front tab's workspace (else the first tiled member's). Scope membership to it: a real
++    // background tab is a sibling of the front tab on the SAME workspace, so never pull in a same-app window that is
++    // tiled/floating on a DIFFERENT workspace (a cross-workspace title collision). Parked members have no workspace and
++    // are assumed to belong to this group.
++    let groupWorkspace = active?.nodeWorkspace ?? rawMembers.lazy.filter(\.isTiledWindow).compactMap(\.nodeWorkspace).first
++    let members = groupWorkspace == nil
++        ? rawMembers
++        : rawMembers.filter { $0.nodeWorkspace == nil || $0.nodeWorkspace === groupWorkspace }
++    if members.count < 2 { return }
++
++    let tiledMembers = members.filter(\.isTiledWindow)
++
++    // The representative is the single member that occupies the group's one tile. Prefer the active (front) tab so the
++    // tile shows the current tab and only the front tab is ever framed. If nothing is active (the app isn't frontmost),
++    // keep whichever member is already tiled to avoid churn. Respect user-floated members.
++    guard let representative = active ?? tiledMembers.first ?? members.first(where: \.isParkedNativeTab) else { return }
++
++    // Capture the group's existing tile position (held by a tiled non-representative) BEFORE parking, so the group
++    // stays in place when the front tab — and thus the representative — changes on a tab switch.
++    let anchor = tiledMembers.first { $0 !== representative }
++    let slotParent = anchor?.parent as? TilingContainer
++    let slotIndex = anchor?.ownIndex
++
++    // Park every member except the representative: hidden tabs, never framed, never floated.
++    for member in members where member !== representative {
++        parkAsNativeTab(member)
++        shouldBeParked.insert(member.windowId)
++    }
++
++    // Ensure the representative occupies the group's one tile. If it is already tiled (steady state / first
++    // formation) leave it; if the user floated it, respect that. Only a parked representative needs (re)placing —
++    // into the group's slot if one survives, otherwise a fresh tile.
++    if representative.isTiledWindow || representative.isFloating {
++        // nothing to do
++    } else if let slotParent, let slotIndex {
++        representative.layoutReason = .standard
++        representative.bind(to: slotParent, adaptiveWeight: WEIGHT_AUTO, index: min(slotIndex, slotParent.children.count))
++    } else if representative.isParkedNativeTab {
++        try await releaseFromNativeTab(representative, fallbackWorkspace: groupWorkspace ?? focus.workspace)
++    }
++}
++
++/// Per-parked-window count of consecutive refreshes in which it was NOT confirmed as a background tab. Used to debounce
++/// release so a one-refresh title/label flicker (animated titles, "— Edited") doesn't eject and re-tile a real tab.
++@MainActor var nativeTabReleaseMisses: [UInt32: Int] = [:]
++private let nativeTabReleaseGrace = 2
++
++/// Release any parked tab that has stopped being a confirmed background tab, returning it to tiling. Anything in
++/// `keeping` stays. The grace counter (debounce) is applied ONLY while the window's app still has a tab bar
++/// (`appsWithTabBar`) — that's the transient title-flicker case. If the group is gone (its front tab was closed → no
++/// bar), release immediately so the tile freed by the closed tab is refilled in the same refresh (no flicker).
++@MainActor
++func releaseStaleParkedTabs(keeping: Set<UInt32>, appsWithTabBar: Set<Int32>, fallbackWorkspace: Workspace) async throws {
++    for window in macosTabbedWindowsContainer.children.filterIsInstance(of: Window.self) {
++        if keeping.contains(window.windowId) {
++            nativeTabReleaseMisses[window.windowId] = nil // still a tab; reset the grace counter
++            continue
++        }
++        if appsWithTabBar.contains(window.app.pid) {
++            let misses = (nativeTabReleaseMisses[window.windowId] ?? 0) + 1
++            if misses < nativeTabReleaseGrace {
++                nativeTabReleaseMisses[window.windowId] = misses // grace period — likely a transient title flicker
++                continue
++            }
++        }
++        nativeTabReleaseMisses[window.windowId] = nil
++        try await releaseFromNativeTab(window, fallbackWorkspace: fallbackWorkspace)
++    }
++}
++
++extension Window {
++    var isTiledWindow: Bool {
++        if case .tilingContainer = windowParentCases { true } else { false }
++    }
++    var isParkedNativeTab: Bool {
++        if case .macosTabbedWindowsContainer = windowParentCases { true } else { false }
++    }
++}
++
++@MainActor
++func parkAsNativeTab(_ window: Window) {
++    guard let parent = window.parent, parent !== macosTabbedWindowsContainer else { return }
++    // Capture the origin workspace now — a parked window has no workspace, so we can't read it back at release time.
++    window.layoutReason = .nativeTab(prevParentKind: parent.kind, prevWorkspace: window.nodeWorkspace?.name)
++    window.bind(to: macosTabbedWindowsContainer, adaptiveWeight: WEIGHT_DOESNT_MATTER, index: INDEX_BIND_LAST)
++}
++
++@MainActor
++private func releaseFromNativeTab(_ window: Window, fallbackWorkspace: Workspace) async throws {
++    let (prevParentKind, prevWorkspace): (NonLeafTreeNodeKind, String?) =
++        if case .nativeTab(let kind, let ws) = window.layoutReason { (kind, ws) } else { (.tilingContainer, nil) }
++    // Return the window to its origin workspace (captured at park time), not whatever workspace currently has focus.
++    let workspace = prevWorkspace.map { Workspace.get(byName: $0) } ?? fallbackWorkspace
++    window.layoutReason = .standard
++    switch prevParentKind {
++        case .floatingWindowsContainer:
++            window.bindAsFloatingWindow(to: workspace)
++        case .tilingContainer, .workspace:
++            try await window.relayoutWindow(on: workspace, .cancellable, forceTile: true)
++        case .macosMinimizedWindowsContainer, .macosFullscreenWindowsContainer,
++             .macosHiddenAppsWindowsContainer, .macosPopupWindowsContainer, .macosTabbedWindowsContainer:
++            try await window.relayoutWindow(on: workspace, .cancellable)
++    }
++}
+diff --git a/Sources/AppBundle/tree/MacApp.swift b/Sources/AppBundle/tree/MacApp.swift
+index 66e7189..498a09b 100644
+--- a/Sources/AppBundle/tree/MacApp.swift
++++ b/Sources/AppBundle/tree/MacApp.swift
+@@ -1,6 +1,140 @@
+ import AppKit
+ import Common
+
++/// A detected macOS native window tab group (issue #68). `memberIds` are all windows of the group;
++/// `mainMemberId` is the front tab (the one that exposes the tab bar / is `kAXMain`).
++struct NativeTabCluster: Sendable {
++    let memberIds: [UInt32]
++    let mainMemberId: UInt32?
++}
++
++/// Result of scanning one app for native tab groups. `appHasTabBar` is true when ANY window of the app exposes a
++/// multi-tab bar — i.e. a tab group still exists even if no cluster formed this pass (a transient title-label flicker).
++/// It distinguishes "the group is still there, a member just didn't match" from "the group is gone (tab closed)".
++struct NativeTabDetection: Sendable {
++    let clusters: [NativeTabCluster]
++    let appHasTabBar: Bool
++}
++
++/// How well a window's title corresponds to a tab-bar label, or `nil` for no match. Only the front tab exposes the tab
++/// bar, and a tab button's label is frequently a decorated form of the member window's title rather than equal to it —
++/// e.g. Sequel Ace titles its windows "(MySQL 8.0.46) host/db/db" while the tab label is just "host/db/db" (label is a
++/// suffix), and TextEdit shows "Untitled — Edited" for the tab "Untitled" (label is a prefix). We deliberately match
++/// ONLY at the start or end of the title (never the middle) to avoid grabbing unrelated windows, and rank exact >
++/// suffix > prefix so the most specific window wins when several could match. Empty labels never match.
++func tabLabelMatchScore(windowTitle: String, tabLabel: String) -> Int? {
++    if tabLabel.isEmpty { return nil }
++    if windowTitle == tabLabel { return 3 }
++    if windowTitle.hasSuffix(tabLabel) { return 2 }
++    if windowTitle.hasPrefix(tabLabel) { return 1 }
++    return nil
++}
++
++// A native tab bar lives in the window's TITLE BAR — a shallow child of the AXWindow — never inside the (potentially
++// enormous) content subtree. `nativeTabButtons` therefore searches BREADTH-first and stops at the first AXTabGroup,
++// reading only that group's own buttons. This matters a lot: the scan runs for candidate windows on every refresh, and
++// refreshes fire on every AX notification (including the flood during a window drag). A blind depth-first walk costs up
++// to thousands of AX IPC round-trips per window; breadth-first with an early exit costs a few dozen in the common case,
++// and the node budgets cap the worst case. See https://github.com/nikitabobko/AeroSpace/issues/68
++private let nativeTabBarMaxDepth = 4 // headroom over the observed title-bar depth (1-2)
++private let nativeTabBarNodeBudget = 400
++private let nativeTabGroupMaxDepth = 3
++private let nativeTabGroupNodeBudget = 200
++
++/// The `AXTabButton` elements of `window`'s macOS native tab bar, in bar order, duplicates kept: two tabs can carry the
++/// same title (e.g. two "Untitled") and collapsing them would hide that the bar has >= 2 tabs. Empty when there is no
++/// tab bar. Must run on the app's AX thread.
++private func nativeTabButtons(ofWindow window: AXUIElement, _ job: RunLoopJob) throws -> [AXUIElement] {
++    var queue: [(el: AXUIElement, depth: Int)] = [(window, 0)]
++    var looseButtons: [AXUIElement] = [] // fallback for apps that expose buttons without an enclosing AXTabGroup
++    var visited = 0
++    while !queue.isEmpty {
++        try job.checkCancellation()
++        let (el, depth) = queue.removeFirst()
++        for child in el.get(Ax.childrenAttr) ?? [] {
++            visited += 1
++            if visited > nativeTabBarNodeBudget { return looseButtons }
++            // Read the role first (always present, one IPC) and only pay for the subrole on button-ish elements.
++            let role = child.get(Ax.roleAttr)
++            if role == "AXTabGroup" {
++                // The authoritative container — but an app can also expose an in-content NSTabView (a preferences
++                // pane) as AXTabGroup, so only accept one that actually holds AXTabButtons; otherwise keep searching.
++                let buttons = try nativeTabButtons(insideTabGroup: child, job)
++                if !buttons.isEmpty { return buttons }
++                continue
++            }
++            if role == "AXRadioButton" || role == "AXButton" {
++                if child.get(Ax.subroleAttr) == "AXTabButton" { looseButtons.append(child); continue } // buttons have no interesting children
++            }
++            if depth + 1 < nativeTabBarMaxDepth { queue.append((child, depth + 1)) }
++        }
++    }
++    return looseButtons
++}
++
++/// The tab buttons of an already-located `AXTabGroup`. They are normally its direct children, but a level or two of
++/// wrapper (scroll area / group) is tolerated.
++private func nativeTabButtons(insideTabGroup group: AXUIElement, _ job: RunLoopJob) throws -> [AXUIElement] {
++    var queue: [(el: AXUIElement, depth: Int)] = [(group, 0)]
++    var buttons: [AXUIElement] = []
++    var visited = 0
++    while !queue.isEmpty {
++        try job.checkCancellation()
++        let (el, depth) = queue.removeFirst()
++        for child in el.get(Ax.childrenAttr) ?? [] {
++            visited += 1
++            if visited > nativeTabGroupNodeBudget { return buttons }
++            if child.get(Ax.subroleAttr) == "AXTabButton" { buttons.append(child); continue }
++            if depth + 1 < nativeTabGroupMaxDepth { queue.append((child, depth + 1)) }
++        }
++    }
++    return buttons
++}
++
++/// Memoizes the (expensive) tab-bar scan of one app. `signature` captures everything the scan's result depends on —
++/// which windows exist, which of them are hidden, and their titles — so the very common refresh that changes none of
++/// them reuses the previous scan instead of re-walking AX. Any change self-heals on the next refresh.
++private struct NativeTabScanCache {
++    var signature: String = ""
++    var tabBarById: [UInt32: [String]] = [:]
++}
++
++/// Pure (AX-free, unit-testable) core of tab-group detection: given each window's title, for the front tabs the list of
++/// tab-button labels they expose (one per tab, duplicates kept), and `freshIds` (windows visible in the app's fresh
++/// window read), group the members of each tab group. A non-front member must be HIDDEN (not in `freshIds`) — that is
++/// what distinguishes a real background tab from a separate, visible same-title window. Each tab label occurrence is
++/// assigned to a distinct best-matching window, so a group never has more windows than tabs and duplicate labels still
++/// map to separate windows.
++func nativeTabClusters(titleById: [UInt32: String], tabBarById: [UInt32: [String]], freshIds: Set<UInt32>) -> [NativeTabCluster] {
++    var clusters: [NativeTabCluster] = []
++    var claimed = Set<UInt32>()
++    for frontId in tabBarById.keys.sorted() where !claimed.contains(frontId) {
++        guard let labels = tabBarById[frontId] else { continue }
++        var members: [UInt32] = []
++        var used = claimed
++        for label in labels.sorted() {
++            let best = titleById.keys
++                // Candidates: this front tab itself, or a non-front window that is HIDDEN (not in the fresh read) — a
++                // real background tab. This excludes separate visible windows that merely share a title (terminals), and
++                // never lets one group's bar claim another group's front tab.
++                .filter { !used.contains($0) && ($0 == frontId || (tabBarById[$0] == nil && !freshIds.contains($0))) }
++                .compactMap { id in tabLabelMatchScore(windowTitle: titleById[id] ?? "", tabLabel: label).map { (id: id, score: $0) } }
++                // highest score wins; ties broken by the shorter (more specific) title, then by id for determinism
++                .max { a, b in
++                    if a.score != b.score { return a.score < b.score }
++                    let la = titleById[a.id]?.count ?? 0, lb = titleById[b.id]?.count ?? 0
++                    return la != lb ? la > lb : a.id > b.id
++                }
++            if let best { members.append(best.id); used.insert(best.id) }
++        }
++        if !members.contains(frontId) { members.append(frontId) }
++        if members.count < 2 { continue }
++        for m in members { claimed.insert(m) }
++        clusters.append(NativeTabCluster(memberIds: members, mainMemberId: frontId))
++    }
++    return clusters
++}
++
+ // Potential alternative implementation
+ // https://github.com/swiftlang/swift-evolution/blob/main/proposals/0392-custom-actor-executors.md
+ // (only available since macOS 14)
+@@ -12,6 +146,7 @@ final class MacApp: AbstractApp {
+     private let axApp: ThreadGuardedValue<AXUIElement>
+     private let appAxSubscriptions: ThreadGuardedValue<[AxSubscription]> // keep subscriptions in memory
+     private let windows: ThreadGuardedValue<[UInt32: AxWindow]> = .init([:])
++    private let nativeTabScanCache: ThreadGuardedValue<NativeTabScanCache> = .init(NativeTabScanCache())
+     private var windowsCount = 0
+     var lastNativeFocusedWindowId: UInt32? = nil
+     private var thread: Thread?
+@@ -75,6 +210,7 @@ final class MacApp: AbstractApp {
+
+                 let appAxSubscriptionsThreadGuarded = app?.appAxSubscriptions
+                 let windowsThreadGuarded = app?.windows
++                let nativeTabScanCacheThreadGuarded = app?.nativeTabScanCache
+                 let axAppThreadGuarded = app?.axApp
+
+                 Task.startUnstructured { @MainActor in
+@@ -87,6 +223,7 @@ final class MacApp: AbstractApp {
+
+                     // Destroy AX objects in reverse order of their creation
+                     appAxSubscriptionsThreadGuarded?.destroy()
++                    nativeTabScanCacheThreadGuarded?.destroy()
+                     windowsThreadGuarded?.destroy()
+                     axAppThreadGuarded?.destroy()
+                 }
+@@ -348,6 +485,74 @@ final class MacApp: AbstractApp {
+         } ?? [:]
+     }
+
++    // Detect macOS native tab groups (issue #68) among this app's windows.
++    //
++    // Only the FRONT tab of a "Merge All Windows" group exposes the tab bar through AX; background tabs do not. And
++    // frame-equality (Amethyst's classic heuristic) is destroyed the moment AeroSpace tiles the tabs to different
++    // frames. The one cross-window link that survives both facts is the tab bar's roster: the front tab's bar contains
++    // one AXTabButton per tab, whose title equals each member window's title. So we find each window that exposes a
++    // multi-tab bar (the front tab) and match the group's members by window title.
++    //
++    // Stateless (recomputed every refresh, so it tolerates macOS reassigning tab window ids). Title matching can miss a
++    // member whose title momentarily differs from its tab label (e.g. unsaved "— Edited" suffix, animated titles); that
++    // only fails safe toward tiling, never toward hiding a real window.
++    func detectNativeTabGroups(_ cm: CancellationMode) async throws -> NativeTabDetection {
++        try await thread?.runInLoop(cm) { [windows, axApp, nativeTabScanCache] (job) -> NativeTabDetection in
++            let all = windows.threadGuarded
++            if all.count < 2 { return NativeTabDetection(clusters: [], appHasTabBar: false) } // no possible group
++            // A real background tab is HIDDEN: it is absent from the app's fresh kAXWindowsAttribute read (which returns
++            // only visible windows). A separate standalone window — even one with an identical title (terminals reuse
++            // the shell path) — IS in the fresh read. So only the front tab and not-in-fresh windows may be group members.
++            let freshIds = Set((axApp.threadGuarded.get(Ax.windowsAttr) ?? []).map { $0.windowId })
++            let hasHiddenWindow = all.keys.contains { !freshIds.contains($0) }
++            // FAST PATH, and the reason scanning is affordable at all: with every window visible there is no candidate
++            // background tab, so no cluster can form AND no parked tab of this app can still be one (a group always has
++            // >= 1 hidden member). Skip the AX walk entirely — this is the case for nearly every app on nearly every
++            // refresh, and it is also what makes un-merge release the parked tab immediately.
++            if !hasHiddenWindow {
++                nativeTabScanCache.threadGuarded = NativeTabScanCache()
++                return NativeTabDetection(clusters: [], appHasTabBar: false)
++            }
++
++            var titleById: [UInt32: String] = [:]
++            for (id, w) in all {
++                try job.checkCancellation()
++                titleById[id] = w.ax.get(Ax.titleAttr) ?? ""
++            }
++            let signature = all.keys.sorted()
++                .map { "\($0)|\(freshIds.contains($0) ? 1 : 0)|\(titleById[$0] ?? "")" }
++                .joined(separator: "\u{1}")
++
++            var tabBarById: [UInt32: [String]] // only windows that expose a multi-tab bar (the front tabs)
++            if nativeTabScanCache.threadGuarded.signature == signature {
++                tabBarById = nativeTabScanCache.threadGuarded.tabBarById
++            } else {
++                tabBarById = [:]
++                // Only a VISIBLE window can be the front tab that exposes the bar — background tabs never do — so
++                // walking the hidden ones would be pure waste.
++                for id in all.keys.sorted() where freshIds.contains(id) {
++                    try job.checkCancellation()
++                    guard let ax = all[id]?.ax else { continue }
++                    let labels = try nativeTabButtons(ofWindow: ax, job).compactMap { $0.get(Ax.titleAttr) }
++                    if labels.count >= 2 { tabBarById[id] = labels }
++                }
++                nativeTabScanCache.threadGuarded = NativeTabScanCache(signature: signature, tabBarById: tabBarById)
++            }
++            return NativeTabDetection(
++                clusters: nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: freshIds),
++                appHasTabBar: !tabBarById.isEmpty,
++            )
++        } ?? NativeTabDetection(clusters: [], appHasTabBar: false)
++    }
++
++    // Does this window expose a native multi-tab bar (>= 2 AXTabButtons)? Used at registration to recognize a brand-new
++    // tab so it can be parked immediately instead of flashing as its own tile (issue #68). Short-circuits at 2.
++    func hasNativeTabBar(_ windowId: UInt32, _ cm: CancellationMode) async throws -> Bool {
++        try await withWindow(windowId, cm) { window, job in
++            try nativeTabButtons(ofWindow: window, job).count >= 2
++        } ?? false
++    }
++
+     func getAxTitle(_ windowId: UInt32, _ cm: CancellationMode) async throws -> String? {
+         try await withWindow(windowId, cm) { window, job in
+             window.get(Ax.titleAttr)
+diff --git a/Sources/AppBundle/tree/MacWindow.swift b/Sources/AppBundle/tree/MacWindow.swift
+index 5fd6cbd..c8fbc5d 100644
+--- a/Sources/AppBundle/tree/MacWindow.swift
++++ b/Sources/AppBundle/tree/MacWindow.swift
+@@ -34,6 +34,22 @@ final class MacWindow: Window {
+         let window = MacWindow(windowId, macApp, lastFloatingSize: rect?.size, parent: data.parent, adaptiveWeight: data.adaptiveWeight, index: data.index)
+         allWindowsMap[windowId] = window
+
++        // A brand-new tab of an existing native tab group must not flash as its own tile before normalizeNativeTabs
++        // reconciles (issue #68). Park it immediately if the app already has a tab group — detected either by an
++        // existing parked tab (cheap, and reliable even when the new tab's own bar isn't readable yet at creation) or,
++        // for the first tab, by this window exposing a multi-tab bar. A false positive self-corrects:
++        // releaseStaleParkedTabs releases it once no group is confirmed.
++        // Only a window that would actually TILE can be a tab (skip popups/dialogs, which classify elsewhere).
++        if window.parent is TilingContainer,
++           allWindowsMap.values.count(where: { $0.macApp.pid == macApp.pid }) >= 2
++        {
++            let appHasParkedTab = macosTabbedWindowsContainer.children.contains { ($0 as? MacWindow)?.macApp.pid == macApp.pid }
++            let isTab = appHasParkedTab ? true : try await macApp.hasNativeTabBar(windowId, .cancellable)
++            if isTab {
++                parkAsNativeTab(window)
++            }
++        }
++
+         try await debugWindowsIfRecording(window, .cancellable)
+         if try await !restoreClosedWindowsCacheIfNeeded(newlyDetectedWindow: window) {
+             await tryOnWindowDetected(window)
+@@ -81,7 +97,18 @@ final class MacWindow: Window {
+             return
+         }
+         if !skipClosedWindowsCache { cacheClosedWindowIfNeeded() }
+-        let parent = unbindFromParent().parent
++        let binding = unbindFromParent()
++        let parent = binding.parent
++        // If a tiled native-tab representative just closed, promote its single parked sibling into the exact freed slot
++        // synchronously, so the tile is never empty for a frame (issue #68 close-tab flicker). Only when there is exactly
++        // one parked sibling — then it is unambiguously the group's new front tab.
++        if let tilingParent = parent as? TilingContainer {
++            let parkedSiblings = macosTabbedWindowsContainer.children.compactMap { $0 as? MacWindow }.filter { $0.macApp.pid == macApp.pid }
++            if let sibling = parkedSiblings.singleOrNil() {
++                sibling.layoutReason = .standard
++                sibling.bind(to: tilingParent, adaptiveWeight: binding.adaptiveWeight, index: min(binding.index, tilingParent.children.count))
++            }
++        }
+         let deadWindowWorkspace = parent.nodeWorkspace
+         let focus = focus
+         if let deadWindowWorkspace, deadWindowWorkspace == focus.workspace ||
+@@ -99,6 +126,7 @@ final class MacWindow: Window {
+                     }
+                 case .macosPopupWindowsContainer, // Don't switch back on popup destruction
+                      .workspace, // Workspace is invalid parent for windows
++                     .macosTabbedWindowsContainer, // Don't switch back on background-tab destruction; the representative keeps focus
+                      .macosMinimizedWindowsContainer: // Don't switch back on minimized windows destruction
+                     break
+             }
+@@ -176,7 +204,7 @@ final class MacWindow: Window {
+
+                 setAxFrame(CGPoint(x: newX, y: newY), nil)
+             case .macosNativeFullscreenWindow, .macosNativeHiddenAppWindow, .macosNativeMinimizedWindow,
+-                 .macosPopupWindow, .tiling, .rootTilingContainer, .shimContainerRelation: break
++                 .macosPopupWindow, .macosNativeTabWindow, .tiling, .rootTilingContainer, .shimContainerRelation: break
+         }
+
+         self.prevUnhiddenProportionalPositionInsideWorkspaceRect = nil
+@@ -246,7 +274,7 @@ func tryOnWindowDetected(_ window: Window) async {
+         case .tilingContainer, .floatingWindowsContainer, .macosMinimizedWindowsContainer,
+              .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer:
+             _ = await onWindowDetected(.defaultEnv, CmdIoImpl.emptyStdinIgnoringOut, window)
+-        case .macosPopupWindowsContainer, .unbound:
++        case .macosPopupWindowsContainer, .macosTabbedWindowsContainer, .unbound:
+             break
+     }
+ }
+diff --git a/Sources/AppBundle/tree/MacosUnconventionalWindowsContainer.swift b/Sources/AppBundle/tree/MacosUnconventionalWindowsContainer.swift
+index c961da7..3319208 100644
+--- a/Sources/AppBundle/tree/MacosUnconventionalWindowsContainer.swift
++++ b/Sources/AppBundle/tree/MacosUnconventionalWindowsContainer.swift
+@@ -32,3 +32,15 @@ final class MacosPopupWindowsContainer: TreeNode, NonLeafTreeNodeObject {
+         super.init(parent: NilTreeNode.instance, adaptiveWeight: 1, index: INDEX_BIND_LAST)
+     }
+ }
++
++@MainActor let macosTabbedWindowsContainer = MacosTabbedWindowsContainer()
++/// The container for background members of a macOS native window tab group ("Merge All Windows").
++/// macOS keeps each tab as a separate AX window with an identical frame; we tile only the representative
++/// member and park the rest here so they aren't tiled as their own slots. See
++/// https://github.com/nikitabobko/AeroSpace/issues/68
++final class MacosTabbedWindowsContainer: TreeNode, NonLeafTreeNodeObject {
++    @MainActor
++    fileprivate init() {
++        super.init(parent: NilTreeNode.instance, adaptiveWeight: 1, index: INDEX_BIND_LAST)
++    }
++}
+diff --git a/Sources/AppBundle/tree/TreeNode.swift b/Sources/AppBundle/tree/TreeNode.swift
+index 061084d..83d5e8b 100644
+--- a/Sources/AppBundle/tree/TreeNode.swift
++++ b/Sources/AppBundle/tree/TreeNode.swift
+@@ -59,6 +59,7 @@ open class TreeNode: Equatable, AeroAny {
+             case .floatingWindow, .macosNativeFullscreenWindow: dieT("Weight doesn't make sense for floating windows")
+             case .macosNativeMinimizedWindow: dieT("Weight doesn't make sense for minimized windows")
+             case .macosPopupWindow: dieT("Weight doesn't make sense for popup windows")
++            case .macosNativeTabWindow: dieT("Weight doesn't make sense for native tab windows")
+             case .macosNativeHiddenAppWindow: dieT("Weight doesn't make sense for windows of hidden apps")
+             case .shimContainerRelation: dieT("Weight doesn't make sense for stub containers")
+         }
+@@ -79,7 +80,7 @@ open class TreeNode: Equatable, AeroAny {
+                     CGFloat(newParent.children.sumOfDouble { $0.getWeight(newParent.orientation) }).div(newParent.children.count) ?? 1
+                 case .floatingWindow, .macosNativeFullscreenWindow,
+                      .rootTilingContainer, .macosNativeMinimizedWindow,
+-                     .shimContainerRelation, .macosPopupWindow, .macosNativeHiddenAppWindow:
++                     .shimContainerRelation, .macosPopupWindow, .macosNativeTabWindow, .macosNativeHiddenAppWindow:
+                     WEIGHT_DOESNT_MATTER
+             }
+         } else {
+diff --git a/Sources/AppBundle/tree/TreeNodeCases.swift b/Sources/AppBundle/tree/TreeNodeCases.swift
+index 990843f..2926f29 100644
+--- a/Sources/AppBundle/tree/TreeNodeCases.swift
++++ b/Sources/AppBundle/tree/TreeNodeCases.swift
+@@ -8,6 +8,7 @@ enum TreeNodeCases {
+     case macosHiddenAppsWindowsContainer(MacosHiddenAppsWindowsContainer)
+     case macosFullscreenWindowsContainer(MacosFullscreenWindowsContainer)
+     case macosPopupWindowsContainer(MacosPopupWindowsContainer)
++    case macosTabbedWindowsContainer(MacosTabbedWindowsContainer)
+     case floatingWindowsContainer(FloatingWindowsContainer)
+ }
+
+@@ -18,6 +19,7 @@ enum NonLeafTreeNodeCases {
+     case macosHiddenAppsWindowsContainer(MacosHiddenAppsWindowsContainer)
+     case macosFullscreenWindowsContainer(MacosFullscreenWindowsContainer)
+     case macosPopupWindowsContainer(MacosPopupWindowsContainer)
++    case macosTabbedWindowsContainer(MacosTabbedWindowsContainer)
+     case floatingWindowsContainer(FloatingWindowsContainer)
+ }
+
+@@ -33,6 +35,7 @@ enum NonLeafTreeNodeKind: Equatable {
+     case macosHiddenAppsWindowsContainer
+     case macosFullscreenWindowsContainer
+     case macosPopupWindowsContainer
++    case macosTabbedWindowsContainer
+     case floatingWindowsContainer
+ }
+
+@@ -43,6 +46,7 @@ enum WindowParentCases {
+     case macosHiddenAppsWindowsContainer(MacosHiddenAppsWindowsContainer)
+     case macosFullscreenWindowsContainer(MacosFullscreenWindowsContainer)
+     case macosPopupWindowsContainer(MacosPopupWindowsContainer)
++    case macosTabbedWindowsContainer(MacosTabbedWindowsContainer)
+     case floatingWindowsContainer(FloatingWindowsContainer)
+ }
+
+@@ -82,6 +86,7 @@ extension Window {
+             case .macosHiddenAppsWindowsContainer(let it): .macosHiddenAppsWindowsContainer(it)
+             case .macosMinimizedWindowsContainer(let it): .macosMinimizedWindowsContainer(it)
+             case .macosPopupWindowsContainer(let it): .macosPopupWindowsContainer(it)
++            case .macosTabbedWindowsContainer(let it): .macosTabbedWindowsContainer(it)
+             case .tilingContainer(let it): .tilingContainer(it)
+             case .workspace: dieT("Workspace can't have direct Window children")
+         }
+@@ -99,6 +104,7 @@ extension TilingContainer {
+             case .macosHiddenAppsWindowsContainer: dieT("macosHiddenAppsWindowsContainer can't be TilingContainer's parent")
+             case .macosMinimizedWindowsContainer: dieT("macosMinimizedWindowsContainer can't be TilingContainer's parent")
+             case .macosPopupWindowsContainer: dieT("macosPopupWindowsContainer can't be TilingContainer's parent")
++            case .macosTabbedWindowsContainer: dieT("macosTabbedWindowsContainer can't be TilingContainer's parent")
+         }
+     }
+ }
+@@ -113,6 +119,7 @@ extension TreeNode {
+             case let container as MacosMinimizedWindowsContainer: .macosMinimizedWindowsContainer(container)
+             case let container as MacosFullscreenWindowsContainer: .macosFullscreenWindowsContainer(container)
+             case let container as MacosPopupWindowsContainer: .macosPopupWindowsContainer(container)
++            case let container as MacosTabbedWindowsContainer: .macosTabbedWindowsContainer(container)
+             case let container as FloatingWindowsContainer: .floatingWindowsContainer(container)
+             default: die("Unknown tree")
+         }
+@@ -137,6 +144,7 @@ extension NonLeafTreeNodeObject {
+             case let container as MacosHiddenAppsWindowsContainer: .macosHiddenAppsWindowsContainer(container)
+             case let container as MacosFullscreenWindowsContainer: .macosFullscreenWindowsContainer(container)
+             case let container as MacosPopupWindowsContainer: .macosPopupWindowsContainer(container)
++            case let container as MacosTabbedWindowsContainer: .macosTabbedWindowsContainer(container)
+             case let container as FloatingWindowsContainer: .floatingWindowsContainer(container)
+             default: die("Unknown tree \(self)")
+         }
+@@ -151,6 +159,7 @@ extension NonLeafTreeNodeObject {
+             case .macosFullscreenWindowsContainer: .macosFullscreenWindowsContainer
+             case .macosHiddenAppsWindowsContainer: .macosHiddenAppsWindowsContainer
+             case .macosPopupWindowsContainer: .macosPopupWindowsContainer
++            case .macosTabbedWindowsContainer: .macosTabbedWindowsContainer
+         }
+     }
+ }
+@@ -161,6 +170,7 @@ enum ChildParentRelation: Equatable {
+     case macosNativeHiddenAppWindow
+     case macosNativeMinimizedWindow
+     case macosPopupWindow
++    case macosNativeTabWindow
+     case tiling(parent: TilingContainer) // todo consider splitting it on 'tiles' and 'accordion'
+     case rootTilingContainer
+
+@@ -199,6 +209,10 @@ func getChildParentRelationOrNil(child: TreeNode, parent: NonLeafTreeNodeObject)
+         case (_, .macosMinimizedWindowsContainer): nil
+         case (.macosMinimizedWindowsContainer, _): nil
+
++        case (.window, .macosTabbedWindowsContainer): .macosNativeTabWindow
++        case (_, .macosTabbedWindowsContainer): nil
++        case (.macosTabbedWindowsContainer, _): nil
++
+         case (.tilingContainer, .tilingContainer(let container)),
+              (.window, .tilingContainer(let container)): .tiling(parent: container)
+         case (.tilingContainer, .workspace): .rootTilingContainer
+diff --git a/Sources/AppBundle/tree/TreeNodeEx.swift b/Sources/AppBundle/tree/TreeNodeEx.swift
+index 3c9a1f6..4286fe5 100644
+--- a/Sources/AppBundle/tree/TreeNodeEx.swift
++++ b/Sources/AppBundle/tree/TreeNodeEx.swift
+@@ -42,7 +42,7 @@ extension TreeNode {
+                  .macosFullscreenWindowsContainer,
+                  .macosHiddenAppsWindowsContainer,
+                  .floatingWindowsContainer: parent?.nodeMonitor
+-            case .macosMinimizedWindowsContainer, .macosPopupWindowsContainer: nil
++            case .macosMinimizedWindowsContainer, .macosPopupWindowsContainer, .macosTabbedWindowsContainer: nil
+         }
+     }
+
+@@ -91,7 +91,8 @@ extension TreeNode {
+                      .floatingWindowsContainer,
+                      .macosFullscreenWindowsContainer,
+                      .macosHiddenAppsWindowsContainer,
+-                     .macosPopupWindowsContainer:
++                     .macosPopupWindowsContainer,
++                     .macosTabbedWindowsContainer:
+                     true
+                 case .tilingContainer(let parent):
+                     (layout == nil || parent.layout == layout) &&
+@@ -105,7 +106,8 @@ extension TreeNode {
+                 check(parent.orientation == direction.orientation)
+                 return innermostChild.ownIndex.map { (parent, $0) }
+             case .workspace, .floatingWindowsContainer, nil, .macosMinimizedWindowsContainer,
+-                 .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer, .macosPopupWindowsContainer:
++                 .macosFullscreenWindowsContainer, .macosHiddenAppsWindowsContainer, .macosPopupWindowsContainer,
++                 .macosTabbedWindowsContainer:
+                 return nil
+         }
+     }
+diff --git a/Sources/AppBundle/tree/Window.swift b/Sources/AppBundle/tree/Window.swift
+index 8078bc0..cf33110 100644
+--- a/Sources/AppBundle/tree/Window.swift
++++ b/Sources/AppBundle/tree/Window.swift
+@@ -46,6 +46,11 @@ enum LayoutReason: Equatable {
+     case standard
+     /// Reason for the cur temp layout is macOS native fullscreen, minimize, or hide
+     case macos(prevParentKind: NonLeafTreeNodeKind)
++    /// The window is a background member of a macOS native window tab group (issue #68), parked in
++    /// `macosTabbedWindowsContainer`. `prevParentKind` records where it should return once it stops being a tab, and
++    /// `prevWorkspace` its origin workspace name (a parked window has no workspace, so this must be captured at park
++    /// time, otherwise a release would dump it onto the currently-focused workspace).
++    case nativeTab(prevParentKind: NonLeafTreeNodeKind, prevWorkspace: String?)
+ }
+
+ extension Window {
+@@ -56,6 +61,7 @@ extension Window {
+             case .macosHiddenAppsWindowsContainer: false
+             case .macosMinimizedWindowsContainer: false
+             case .macosPopupWindowsContainer: false
++            case .macosTabbedWindowsContainer: false
+             case .tilingContainer: false
+             case .unbound: false
+         }
+diff --git a/Sources/AppBundle/tree/frozen/FrozenTreeNode.swift b/Sources/AppBundle/tree/frozen/FrozenTreeNode.swift
+index 6b1fa6d..fed878b 100644
+--- a/Sources/AppBundle/tree/frozen/FrozenTreeNode.swift
++++ b/Sources/AppBundle/tree/frozen/FrozenTreeNode.swift
+@@ -22,7 +22,8 @@ struct FrozenContainer: Sendable {
+                      .macosMinimizedWindowsContainer,
+                      .macosHiddenAppsWindowsContainer,
+                      .macosFullscreenWindowsContainer,
+-                     .macosPopupWindowsContainer:
++                     .macosPopupWindowsContainer,
++                     .macosTabbedWindowsContainer:
+                     illegalChildParentRelation(child: $0, parent: container)
+             }
+         }
+diff --git a/Sources/AppBundleTests/command/MoveCommandTest.swift b/Sources/AppBundleTests/command/MoveCommandTest.swift
+index 880355c..c996f71 100644
+--- a/Sources/AppBundleTests/command/MoveCommandTest.swift
++++ b/Sources/AppBundleTests/command/MoveCommandTest.swift
+@@ -332,6 +332,7 @@ extension TreeNode {
+             case .macosFullscreenWindowsContainer: .macosFullscreen
+             case .macosHiddenAppsWindowsContainer: .macosHiddeAppWindow
+             case .macosPopupWindowsContainer: .macosPopupWindowsContainer
++            case .macosTabbedWindowsContainer: .macosTabbed
+             case .tilingContainer(let container):
+                 switch container.layout {
+                     case .tiles:
+@@ -359,4 +360,5 @@ enum LayoutDescription: Equatable {
+     case macosMinimized
+     case macosHiddeAppWindow
+     case macosFullscreen
++    case macosTabbed
+ }
+diff --git a/Sources/AppBundleTests/tree/NativeTabsTest.swift b/Sources/AppBundleTests/tree/NativeTabsTest.swift
+new file mode 100644
+index 0000000..9c35156
+--- /dev/null
++++ b/Sources/AppBundleTests/tree/NativeTabsTest.swift
+@@ -0,0 +1,212 @@
++@testable import AppBundle
++import XCTest
++
++@MainActor
++final class NativeTabsTest: XCTestCase {
++    override func setUp() async throws {
++        setUpWorkspacesForTests()
++        // The tab park container + release-grace counter are global singletons; clear leftovers from other tests.
++        for child in macosTabbedWindowsContainer.children { child.unbindFromParent() }
++        nativeTabReleaseMisses = [:]
++    }
++
++    /// A tab group must collapse onto a SINGLE tile: the active (front) tab is tiled, every other tab is parked
++    /// (hidden, not floated, not a separate slot). Switching the active tab must keep the group in the same slot.
++    /// Un-merging must release the parked tab back to tiling.
++    func testTabGroupOccupiesOneTile_switchPreservesSlot_unmergeReleases() async throws {
++        let workspace = Workspace.get(byName: name)
++        let root = workspace.rootTilingContainer
++
++        // A normal neighbor window plus a 2-tab group whose members both start tiled (the #68 bug we fix).
++        let neighbor = TestWindow.new(id: 1, parent: root)
++        let tabA = TestWindow.new(id: 2, parent: root)
++        let tabB = TestWindow.new(id: 3, parent: root)
++        XCTAssertEqual(root.children.count, 3)
++
++        // --- Form the group: A is the active/front tab ---
++        var parked: Set<UInt32> = []
++        try await reconcileNativeTabGroup(members: [tabA, tabB], activeId: tabA.windowId, into: &parked)
++
++        XCTAssertTrue(tabA.isTiledWindow, "active tab is the one tile")
++        XCTAssertTrue(tabB.isParkedNativeTab, "background tab is parked")
++        XCTAssertTrue(neighbor.isTiledWindow, "unrelated window is untouched")
++        XCTAssertEqual(root.children.count, 2, "the group is one tile next to the neighbor")
++        XCTAssertEqual(parked, [tabB.windowId])
++        let slotIndex = tabA.ownIndex
++
++        // --- Switch tab: B becomes the active/front tab (A recedes to background) ---
++        parked = []
++        try await reconcileNativeTabGroup(members: [tabA, tabB], activeId: tabB.windowId, into: &parked)
++
++        XCTAssertTrue(tabB.isTiledWindow, "after switch, the now-active tab holds the tile")
++        XCTAssertTrue(tabA.isParkedNativeTab, "the previously-active tab is now parked")
++        XCTAssertEqual(tabB.ownIndex, slotIndex, "the group stays in the same tiling slot across a tab switch")
++        XCTAssertEqual(root.children.count, 2)
++        XCTAssertEqual(parked, [tabA.windowId])
++
++        // --- Un-merge: the group is gone (no app tab bar), so the parked tab is released immediately ---
++        try await releaseStaleParkedTabs(keeping: [], appsWithTabBar: [], fallbackWorkspace: workspace)
++        XCTAssertTrue(tabA.isTiledWindow, "un-merged tab returns to tiling immediately once the group is gone")
++        XCTAssertTrue(tabB.isTiledWindow)
++        XCTAssertEqual(root.children.count, 3, "both tabs and the neighbor are tiled again")
++        XCTAssertTrue(macosTabbedWindowsContainer.children.isEmpty)
++    }
++
++    /// Detection must group tabs even when the tab-button label is only a substring of the window title.
++    /// Regression for Sequel Ace: window titles are "(MySQL <ver>) host/db/db", tab labels are "host/db/db".
++    func testDetectionMatchesSubstringTabLabels() {
++        let titleById: [UInt32: String] = [
++            15251: "(MySQL 8.0.46-0ubuntu0.24.04.2) 100.114.137.126/777fy/777fy",
++            15317: "(MySQL 8.0.45) localhost/777fy/777fy",
++        ]
++        // Only the front tab (15251) exposes the bar; it lists both connection labels.
++        let tabBarById: [UInt32: [String]] = [
++            15251: ["100.114.137.126/777fy/777fy", "localhost/777fy/777fy"],
++        ]
++        let clusters = nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [15251]) // 15317 is the hidden background tab
++        XCTAssertEqual(clusters.count, 1)
++        XCTAssertEqual(Set(clusters[0].memberIds), [15251, 15317])
++        XCTAssertEqual(clusters[0].mainMemberId, 15251)
++    }
++
++    /// Detection must not group an unrelated window of the same app that doesn't match the tab roster, and a lone
++    /// front tab (no matching siblings) is not a group.
++    func testDetectionDoesNotOvergroup() {
++        let titleById: [UInt32: String] = [
++            1: "(MySQL 8.0) host-a/db/db",
++            2: "Some Unrelated Window",
++        ]
++        let tabBarById: [UInt32: [String]] = [1: ["host-a/db/db", "host-b/db/db"]]
++        // host-b is not open as a window, and window 2 doesn't match → no group of >= 2.
++        XCTAssertTrue(nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1, 2]).isEmpty)
++    }
++
++    /// While the group still exists (app still has a tab bar) a momentary drop from the cluster (title-label flicker)
++    /// is debounced; but once the group is gone the tab is released at once (covered by the un-merge test above).
++    func testReleaseDebouncedOnlyWhileGroupStillExists() async throws {
++        let workspace = Workspace.get(byName: name)
++        let tabA = TestWindow.new(id: 1, parent: workspace.rootTilingContainer)
++        let tabB = TestWindow.new(id: 2, parent: workspace.rootTilingContainer)
++        var parked: Set<UInt32> = []
++        try await reconcileNativeTabGroup(members: [tabA, tabB], activeId: tabA.windowId, into: &parked)
++        XCTAssertTrue(tabB.isParkedNativeTab)
++
++        let pid = tabB.app.pid // the app still exposes a tab bar
++        try await releaseStaleParkedTabs(keeping: [], appsWithTabBar: [pid], fallbackWorkspace: workspace)
++        XCTAssertTrue(tabB.isParkedNativeTab, "debounced while the group still exists (likely a title flicker)")
++        try await releaseStaleParkedTabs(keeping: [], appsWithTabBar: [pid], fallbackWorkspace: workspace)
++        XCTAssertTrue(tabB.isTiledWindow, "released after the grace period")
++    }
++
++    /// An unrelated same-app window whose title merely COLLIDES with a tab label must not be grabbed: each label is
++    /// assigned to its single best match, and matching only happens at the start/end of the title.
++    func testDetectionDoesNotGrabCollidingSameAppWindow() {
++        let titleById: [UInt32: String] = [
++            1: "Untitled",            // real front tab
++            2: "Untitled 2",          // real second tab
++            3: "Untitled Document",   // unrelated standalone window that merely starts with "Untitled"
++        ]
++        let tabBarById: [UInt32: [String]] = [1: ["Untitled", "Untitled 2"]]
++        let clusters = nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1, 3]) // 2 is the hidden tab; 3 is a separate visible window
++        XCTAssertEqual(clusters.count, 1)
++        // "Untitled" is assigned to the exact match (1), not the prefix-colliding "Untitled Document" (3).
++        XCTAssertEqual(Set(clusters[0].memberIds), [1, 2])
++        XCTAssertFalse(clusters[0].memberIds.contains(3))
++    }
++
++    /// Two separate tab groups of the SAME app that share a label must not steal each other's front tab.
++    func testTwoSameAppGroupsDoNotStealEachOthersFront() {
++        // Group A: front 1 ("A1", bar [A1,A2]) + member 2 ("A2"). Group B: front 3 ("A2", bar [A2,B2]) + member 4 ("B2").
++        // Front 3's title collides with group A's label "A2"; A must not claim front 3.
++        let titleById: [UInt32: String] = [1: "A1", 2: "A2", 3: "A2", 4: "B2"]
++        let tabBarById: [UInt32: [String]] = [1: ["A1", "A2"], 3: ["A2", "B2"]]
++        let clusters = nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1, 3]) // fronts visible; bg tabs 2,4 hidden
++        let sets = clusters.map { Set($0.memberIds) }
++        XCTAssertEqual(clusters.count, 2)
++        XCTAssertTrue(sets.contains([1, 2]), "group A is {1,2}")
++        XCTAssertTrue(sets.contains([3, 4]), "group B keeps its own front tab: {3,4}")
++    }
++
++    /// Reconciliation must not pull in a same-app window that lives on a DIFFERENT workspace (cross-workspace collision).
++    func testReconcileLeavesCrossWorkspaceWindowAlone() async throws {
++        let wsA = Workspace.get(byName: name)
++        let tabA = TestWindow.new(id: 1, parent: wsA.rootTilingContainer)
++        let tabB = TestWindow.new(id: 2, parent: wsA.rootTilingContainer)
++        let wsB = Workspace.get(byName: name + "-B")
++        let stranger = TestWindow.new(id: 3, parent: wsB.rootTilingContainer)
++
++        var parked: Set<UInt32> = []
++        try await reconcileNativeTabGroup(members: [tabA, tabB, stranger], activeId: tabA.windowId, into: &parked)
++        XCTAssertTrue(tabA.isTiledWindow)
++        XCTAssertTrue(tabB.isParkedNativeTab)
++        XCTAssertTrue(stranger.isTiledWindow, "a same-app window on another workspace is not pulled into the group")
++        XCTAssertFalse(parked.contains(stranger.windowId))
++    }
++
++    /// A released tab returns to its ORIGIN workspace, not whatever workspace currently has focus.
++    func testReleasedTabReturnsToOriginWorkspace() async throws {
++        let wsA = Workspace.get(byName: name)
++        let tabA = TestWindow.new(id: 1, parent: wsA.rootTilingContainer)
++        let tabB = TestWindow.new(id: 2, parent: wsA.rootTilingContainer)
++
++        var parked: Set<UInt32> = []
++        try await reconcileNativeTabGroup(members: [tabA, tabB], activeId: tabA.windowId, into: &parked)
++        XCTAssertTrue(tabB.isParkedNativeTab)
++
++        // Focus a different workspace, then release the stale parked tab (group gone → immediate release).
++        let wsB = Workspace.get(byName: name + "-B")
++        _ = wsB.focusWorkspace()
++        try await releaseStaleParkedTabs(keeping: [], appsWithTabBar: [], fallbackWorkspace: wsB)
++        XCTAssertTrue(tabB.isTiledWindow)
++        XCTAssertEqual(tabB.nodeWorkspace?.name, wsA.name, "released tab returns to its origin workspace, not the focused one")
++    }
++
++    /// Two tabs with the SAME title must still be grouped (each duplicate label maps to a distinct window).
++    func testDetectionGroupsDuplicateTabLabels() {
++        let titleById: [UInt32: String] = [1: "Untitled", 2: "Untitled"]
++        let tabBarById: [UInt32: [String]] = [1: ["Untitled", "Untitled"]]
++        let clusters = nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1]) // 2 is the hidden background tab
++        XCTAssertEqual(clusters.count, 1)
++        XCTAssertEqual(Set(clusters[0].memberIds), [1, 2])
++    }
++
++    /// A separate VISIBLE window that shares a title with a tab (terminals reuse the shell path) must not be grouped.
++    /// Regression for Ghostty: several windows titled "luhw@host:~/Projects" were all lumped into one group.
++    func testHiddenSignalExcludesSeparateSameTitleWindow() {
++        let titleById: [UInt32: String] = [1: "term", 2: "term", 3: "term"]
++        let tabBarById: [UInt32: [String]] = [1: ["term", "term"]]
++        // Front 1 and the standalone window 3 are visible; only the real background tab 2 is hidden.
++        let clusters = nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1, 3])
++        XCTAssertEqual(clusters.count, 1)
++        XCTAssertEqual(Set(clusters[0].memberIds), [1, 2])
++        XCTAssertFalse(clusters[0].memberIds.contains(3), "the separate visible same-title window is not grouped")
++    }
++
++    /// A label appearing only in the MIDDLE of an unrelated title is never a match.
++    func testDetectionIgnoresMiddleOfTitleMatches() {
++        // Window 2's title contains "report" in the middle but doesn't start or end with the tab label.
++        let titleById: [UInt32: String] = [1: "report", 2: "my report draft"]
++        let tabBarById: [UInt32: [String]] = [1: ["report", "summary"]]
++        XCTAssertTrue(nativeTabClusters(titleById: titleById, tabBarById: tabBarById, freshIds: [1, 2]).isEmpty)
++    }
++
++    /// A window the user floated must never be pulled into the tile, and a single-window "group" is a no-op.
++    func testRespectsFloatingAndIgnoresSingletons() async throws {
++        let workspace = Workspace.get(byName: name)
++        let root = workspace.rootTilingContainer
++        let floated = TestWindow.new(id: 10, parent: root)
++        floated.bindAsFloatingWindow(to: workspace)
++        let tiled = TestWindow.new(id: 11, parent: root)
++
++        var parked: Set<UInt32> = []
++        // Group of one → nothing to do.
++        try await reconcileNativeTabGroup(members: [tiled], activeId: tiled.windowId, into: &parked)
++        XCTAssertTrue(tiled.isTiledWindow)
++        XCTAssertTrue(parked.isEmpty)
++
++        // Active member is user-floated → it stays floating; the other is still parked (no extra tile, no float-stealing).
++        try await reconcileNativeTabGroup(members: [floated, tiled], activeId: floated.windowId, into: &parked)
++        XCTAssertTrue(floated.isFloating, "user-floated active tab is left floating")
++        XCTAssertTrue(tiled.isParkedNativeTab)
++    }
++}
+--
+2.55.0

@@ -1,0 +1,114 @@
+From 5baec5050c7884db049d074deb4538fea37e2884 Mon Sep 17 00:00:00 2001
+From: luhw-dev <luhw@proton.me>
+Date: Fri, 7 Aug 2026 01:13:40 -0300
+Subject: [PATCH 3/3] feat: focus a background native tab by pressing its tab
+ button (#68)
+
+With a tab group collapsed onto one tile, the background members are parked
+and have no workspace, so `focus --window-id` on one of them fails: there is
+nothing to raise. Raising the AX window would not help either, since tab
+selection is an internal NSWindowTabGroup operation that AX raising does not
+drive.
+
+The one route that does work is pressing the corresponding AXTabButton in the
+bar of whichever window is currently the front tab. Wire that into
+`focus --window-id`: if the target is a parked tab, press its button and let
+the app activate, and the next refresh re-points the group's tile to it.
+
+Press the best matching button rather than the first one, using the same
+prefix/suffix scoring as detection, because with labels like "Untitled" and
+"Untitled 2" the first match can be the wrong tab. Only visible windows are
+searched, since a front tab is visible by definition and only a front tab
+exposes a bar.
+
+Also surface parked tabs in unfiltered `list-windows` output so they are
+discoverable and targetable at all. They belong to no workspace, so they are
+included only when not filtering by workspace or monitor.
+
+Tab selection through AX is best effort. The command reports whether a
+matching button was actually pressed.
+---
+ .../AppBundle/command/impl/FocusCommand.swift |  7 +++++
+ .../command/impl/ListWindowsCommand.swift     |  6 ++++
+ Sources/AppBundle/tree/MacApp.swift           | 31 +++++++++++++++++++
+ 3 files changed, 44 insertions(+)
+
+diff --git a/Sources/AppBundle/command/impl/FocusCommand.swift b/Sources/AppBundle/command/impl/FocusCommand.swift
+index 4bd52aa..3f30b62 100644
+--- a/Sources/AppBundle/command/impl/FocusCommand.swift
++++ b/Sources/AppBundle/command/impl/FocusCommand.swift
+@@ -34,6 +34,13 @@ struct FocusCommand: Command {
+                 }
+             case .windowId(let windowId):
+                 if let windowToFocus = Window.get(byId: windowId) {
++                    // A background native tab (issue #68) can't be focused as a tiling window; switch macOS to it by
++                    // pressing its tab button. The next refresh re-points the group's tile to it.
++                    if windowToFocus.isParkedNativeTab, let macWindow = windowToFocus as? MacWindow {
++                        let selected = await macWindow.macApp.selectTab(windowId, .cancellable)
++                        macWindow.nativeFocus()
++                        return .from(bool: selected)
++                    }
+                     return .from(bool: windowToFocus.focusWindow())
+                 } else {
+                     return .fail(io.err("Can't find window with ID \(windowId)"))
+diff --git a/Sources/AppBundle/command/impl/ListWindowsCommand.swift b/Sources/AppBundle/command/impl/ListWindowsCommand.swift
+index 2c8c1be..553356c 100644
+--- a/Sources/AppBundle/command/impl/ListWindowsCommand.swift
++++ b/Sources/AppBundle/command/impl/ListWindowsCommand.swift
+@@ -32,6 +32,12 @@ struct ListWindowsCommand: Command {
+                 workspaces = workspaces.filter { monitors.contains($0.workspaceMonitor.rect.topLeftCorner) }
+             }
+             windows = workspaces.flatMap(\.allLeafWindowsRecursive)
++            // Surface parked native-tab members (issue #68) in the unfiltered listing so they are discoverable and
++            // targetable by `focus --window-id`. They aren't in any workspace, so only include them when not filtering
++            // by a specific workspace or monitor.
++            if args.filteringOptions.workspaces.isEmpty && args.filteringOptions.monitors.isEmpty {
++                windows += macosTabbedWindowsContainer.children.filterIsInstance(of: Window.self)
++            }
+             if let pid = args.filteringOptions.pidFilter {
+                 windows = windows.filter { $0.app.pid == pid }
+             }
+diff --git a/Sources/AppBundle/tree/MacApp.swift b/Sources/AppBundle/tree/MacApp.swift
+index 498a09b..fad8059 100644
+--- a/Sources/AppBundle/tree/MacApp.swift
++++ b/Sources/AppBundle/tree/MacApp.swift
+@@ -553,6 +553,37 @@ final class MacApp: AbstractApp {
+         } ?? false
+     }
+
++    // Switch the app's visible tab to `windowId` by pressing its tab button. This is the only reliable way to select a
++    // background tab via AX (raising the window doesn't switch tabs). The tab bar lives on whichever window is currently
++    // the front tab, so we search for an AXTabButton whose label matches the target's title.
++    // Returns whether a matching button was pressed.
++    func selectTab(_ windowId: UInt32, _ cm: CancellationMode) async -> Bool {
++        if serverArgs.isReadOnly { return false }
++        return (try? await thread?.runInLoop(cm) { [windows, axApp] (job) -> Bool in
++            let all = windows.threadGuarded
++            guard let target = all[windowId] else { return false }
++            let targetTitle = target.ax.get(Ax.titleAttr) ?? ""
++            // A front tab is by definition visible, and only a front tab exposes a bar, so only visible windows are
++            // worth walking.
++            let freshIds = Set((axApp.threadGuarded.get(Ax.windowsAttr) ?? []).map { $0.windowId })
++            // Press the BEST-matching tab button, not the first: with prefix/suffix labels (e.g. "Untitled" vs
++            // "Untitled 2") the first match can be the wrong tab. Mirror nativeTabClusters' scoring.
++            var best: (button: AXUIElement, score: Int)?
++            for id in all.keys.sorted() where freshIds.contains(id) {
++                try job.checkCancellation()
++                guard let ax = all[id]?.ax else { continue }
++                for button in try nativeTabButtons(ofWindow: ax, job) {
++                    guard let label = button.get(Ax.titleAttr),
++                          let score = tabLabelMatchScore(windowTitle: targetTitle, tabLabel: label),
++                          score > (best?.score ?? Int.min) else { continue }
++                    best = (button, score)
++                }
++            }
++            guard let best else { return false }
++            return AXUIElementPerformAction(best.button, kAXPressAction as CFString) == .success
++        }) ?? false
++    }
++
+     func getAxTitle(_ windowId: UInt32, _ cm: CancellationMode) async throws -> String? {
+         try await withWindow(windowId, cm) { window, job in
+             window.get(Ax.titleAttr)
+--
+2.55.0

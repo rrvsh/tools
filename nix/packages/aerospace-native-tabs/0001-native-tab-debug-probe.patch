@@ -1,0 +1,185 @@
+From 55b22aa9d6d24a56f82a4d04a088deae87644f28 Mon Sep 17 00:00:00 2001
+From: luhw-dev <luhw@proton.me>
+Date: Fri, 7 Aug 2026 01:10:05 -0300
+Subject: [PATCH 1/3] feat: add a native tab group probe to debug-windows (#68)
+
+Handling macOS native window tabs correctly requires knowing what the
+accessibility API actually reports for a merged window group, and the
+existing debug output does not show it. dumpAxRecursive deliberately skips
+AXChildren as too verbose, so the tab bar is invisible in a normal dump, and
+there is no fixture in axDumps/ that captures a merged window.
+
+Add an Aero.tabGroupProbe section to `aerospace debug-windows` that reports,
+for the inspected window: its frame and the frames of same-app windows that
+match it within a tolerance (the classic frame-equality heuristic), the app's
+kAXFocusedWindow, the difference between a fresh kAXWindowsAttribute read and
+the long-lived window refs AeroSpace already tracks, and a walk of the window
+subtree looking for AXTabGroup / AXTabButton elements.
+
+The fresh-vs-tracked split is the interesting part: it shows whether a
+background tab is still enumerable by the app, which decides whether tab
+handling has to protect such windows from garbage collection.
+
+This is read-only and changes no behavior. It is gated behind the existing
+debug-windows unstable-output disclaimer.
+
+Also expose kAXChildrenAttribute as Ax.childrenAttr, needed to walk into the
+tab bar.
+---
+ .../command/impl/DebugWindowsCommand.swift    |   1 +
+ Sources/AppBundle/tree/MacApp.swift           | 110 ++++++++++++++++++
+ Sources/AppBundle/util/accessibility.swift    |   6 +
+ 3 files changed, 117 insertions(+)
+
+diff --git a/Sources/AppBundle/command/impl/DebugWindowsCommand.swift b/Sources/AppBundle/command/impl/DebugWindowsCommand.swift
+index 4815b11..e6c03dc 100644
+--- a/Sources/AppBundle/command/impl/DebugWindowsCommand.swift
++++ b/Sources/AppBundle/command/impl/DebugWindowsCommand.swift
+@@ -97,6 +97,7 @@ private func dumpWindowDebugInfo(_ window: Window, _ cm: CancellationMode) async
+     result["Aero.App.nsApp.execPath"] = .stringOrNull(window.macApp.nsApp.executableURL?.description)
+     result["Aero.App.nsApp.appBundlePath"] = .stringOrNull(window.macApp.nsApp.bundleURL?.description)
+     result["Aero.AXApp"] = .dict(try await window.macApp.dumpAppAxInfo(cm))
++    result["Aero.tabGroupProbe"] = .dict(try await window.macApp.dumpTabGroupProbe(windowId: window.windowId, cm))
+
+     let isDialog = try await window.isDialogHeuristic(windowLevel, cm)
+     let isWindow = try await window.isWindowHeuristic(windowLevel, cm)
+diff --git a/Sources/AppBundle/tree/MacApp.swift b/Sources/AppBundle/tree/MacApp.swift
+index 22d9bde..66e7189 100644
+--- a/Sources/AppBundle/tree/MacApp.swift
++++ b/Sources/AppBundle/tree/MacApp.swift
+@@ -238,6 +238,116 @@ final class MacApp: AbstractApp {
+         } ?? [:]
+     }
+
++    // Read-only probe for macOS native tabs (https://github.com/nikitabobko/AeroSpace/issues/68).
++    // Surfaces the raw AX signals needed to validate tab-group detection. It changes no behavior.
++    func dumpTabGroupProbe(windowId: UInt32, _ cm: CancellationMode) async throws -> [String: Json] {
++        try await thread?.runInLoop(cm) { [axApp, windows] (job) -> [String: Json] in
++            let frameTolerancePx: CGFloat = 10
++
++            func rectString(_ rect: Rect?) -> Json {
++                guard let rect else { return .null }
++                return .string("x:\(Int(rect.topLeftX)) y:\(Int(rect.topLeftY)) w:\(Int(rect.width)) h:\(Int(rect.height))")
++            }
++            func describe(_ id: UInt32, _ ax: AXUIElement) throws -> (rect: Rect?, json: Json) {
++                try job.checkCancellation()
++                let rect = try AppBundle.getAxRect(window: ax, job: job)
++                return (rect, .dict([
++                    "windowId": .int(id),
++                    "rect": rectString(rect),
++                    "subrole": .stringOrNull(ax.get(Ax.subroleAttr)),
++                    "role": .stringOrNull(ax.get(Ax.roleAttr)),
++                    "isMain": ax.get(Ax.isMainAttr).map(Json.bool) ?? .null,
++                    "isFocused": ax.get(Ax.isFocused).map(Json.bool) ?? .null,
++                    "title": .stringOrNull(ax.get(Ax.titleAttr)),
++                ]))
++            }
++            func sameFrame(_ a: Rect?, _ b: Rect?) -> Bool {
++                guard let a, let b else { return false }
++                return abs(a.topLeftX - b.topLeftX) <= frameTolerancePx
++                    && abs(a.topLeftY - b.topLeftY) <= frameTolerancePx
++                    && abs(a.width - b.width) <= frameTolerancePx
++                    && abs(a.height - b.height) <= frameTolerancePx
++            }
++
++            // 1. Fresh read of the app's kAXWindowsAttribute (what a refresh sees right now).
++            let freshList = axApp.threadGuarded.get(Ax.windowsAttr) ?? []
++            var freshRects: [UInt32: Rect] = [:]
++            var freshJson: [Json] = []
++            for (id, ax) in freshList {
++                let (rect, json) = try describe(id, ax)
++                if let rect { freshRects[id] = rect }
++                freshJson.append(json)
++            }
++
++            // 2. Long-lived AX refs AeroSpace already tracks (stay valid even if dropped from a fresh read).
++            var trackedRects: [UInt32: Rect] = [:]
++            var trackedJson: [Json] = []
++            for (id, axWindow) in windows.threadGuarded {
++                let (rect, json) = try describe(id, axWindow.ax)
++                if let rect { trackedRects[id] = rect }
++                trackedJson.append(json)
++            }
++
++            let freshIds = Set(freshList.map { $0.windowId })
++            let trackedIds = Set(windows.threadGuarded.keys)
++
++            // 3. This window's rect (prefer the long-lived tracked ref).
++            let thisAx = windows.threadGuarded[windowId]?.ax ?? freshList.first { $0.windowId == windowId }?.ax
++            let thisRect: Rect? = trackedRects[windowId] ?? freshRects[windowId]
++                ?? thisAx.flatMap { try? AppBundle.getAxRect(window: $0, job: job) }
++
++            // 4. Same-frame siblings = candidate tab-group members.
++            var allRects: [UInt32: Rect] = trackedRects
++            for (id, rect) in freshRects where allRects[id] == nil { allRects[id] = rect }
++            let siblings = allRects.keys
++                .filter { $0 != windowId && sameFrame(allRects[$0], thisRect) }
++                .sorted()
++
++            // 5. Best-effort tab-bar walk: find AXTabButton / AXTabGroup under this window.
++            var tabButtons: [Json] = []
++            var tabGroupFound = false
++            var visited = 0
++            func walk(_ el: AXUIElement, _ depth: Int) throws {
++                if depth > 5 || visited > 2000 { return }
++                try job.checkCancellation()
++                for child in el.get(Ax.childrenAttr) ?? [] {
++                    visited += 1
++                    if visited > 2000 { return }
++                    let role = child.get(Ax.roleAttr)
++                    let subrole = child.get(Ax.subroleAttr)
++                    if role == "AXTabGroup" { tabGroupFound = true }
++                    if subrole == "AXTabButton" {
++                        tabButtons.append(.dict([
++                            "title": .stringOrNull(child.get(Ax.titleAttr)),
++                            "role": .stringOrNull(role),
++                            "subrole": .stringOrNull(subrole),
++                        ]))
++                    }
++                    try walk(child, depth + 1)
++                }
++            }
++            if let thisAx { try walk(thisAx, 0) }
++
++            return [
++                "note": .string("Read-only native-tabs probe (issue #68). Use 'Window > Merge All Windows', focus a tab, then compare frames and the fresh-vs-tracked window sets."),
++                "frameTolerancePx": .int(Int(frameTolerancePx)),
++                "thisWindowId": .int(windowId),
++                "thisWindowRect": rectString(thisRect),
++                "focusedWindowId": axApp.threadGuarded.get(Ax.focusedWindowAttr).map { Json.int($0.windowId) } ?? .null,
++                "freshAxWindowsRead": .array(freshJson),
++                "trackedWindows": .array(trackedJson),
++                "windowIdsOnlyInTracked": .array(trackedIds.subtracting(freshIds).sorted().map { Json.int($0) }),
++                "windowIdsOnlyInFresh": .array(freshIds.subtracting(trackedIds).sorted().map { Json.int($0) }),
++                "sameFrameSiblingWindowIds": .array(siblings.map { Json.int($0) }),
++                "tabBar": .dict([
++                    "axTabGroupFound": .bool(tabGroupFound),
++                    "tabButtonCount": .int(tabButtons.count),
++                    "tabButtons": .array(tabButtons),
++                ]),
++            ]
++        } ?? [:]
++    }
++
+     func getAxTitle(_ windowId: UInt32, _ cm: CancellationMode) async throws -> String? {
+         try await withWindow(windowId, cm) { window, job in
+             window.get(Ax.titleAttr)
+diff --git a/Sources/AppBundle/util/accessibility.swift b/Sources/AppBundle/util/accessibility.swift
+index 9d0d606..ab45673 100644
+--- a/Sources/AppBundle/util/accessibility.swift
++++ b/Sources/AppBundle/util/accessibility.swift
+@@ -279,6 +279,12 @@ enum Ax {
+         key: kAXFocusedWindowAttribute,
+         getter: windowOrNil,
+     )
++    /// Direct AX children. `dumpAxRecursive` deliberately ignores `AXChildren` as too verbose, so reading
++    /// children explicitly (e.g. to find native-tab `AXTabButton`s, issue #68) requires this attr.
++    static let childrenAttr = ReadableAttrImpl<[AXUIElement]>(
++        key: kAXChildrenAttribute,
++        getter: { ($0 as? NSArray)?.map { $0 as! AXUIElement } ?? [] },
++    )
+     //static let mainWindowAttr = ReadableAttrImpl<AXUIElement>(
+     //    key: kAXMainWindowAttribute,
+     //    getter: tryGetWindow
+--
+2.55.0
