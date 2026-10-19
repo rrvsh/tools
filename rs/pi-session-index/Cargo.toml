@@ -5,7 +5,7 @@ edition = "2024"
 description = "Fast local metadata index for Pi JSONL sessions"
 license = "MIT"
 repository = "https://github.com/rrvsh/tools"
-readme = "README.md"
+readme = false
 keywords = ["pi", "session", "index"]
 categories = ["command-line-utilities"]
 
