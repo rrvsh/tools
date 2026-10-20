@@ -145,7 +145,6 @@ in
           key = "mouse:273";
         };
       };
-      aerospaceOverrides = { };
     };
     modules.darwin.profile-graphical =
       { pkgs, ... }:

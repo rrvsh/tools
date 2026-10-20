@@ -1,6 +1,6 @@
 { config, lib, ... }:
 let
-  cfg = config.flake.graphicalKeybinds;
+  cfg = config.flake;
   bindingType = lib.types.submodule {
     options = {
       modifiers = lib.mkOption {
@@ -17,42 +17,41 @@ let
       key = lib.mkOption { type = lib.types.str; };
     };
   };
-  lua = lib.generators.mkLuaInline;
   hyprlandActions = {
-    open-terminal.command = lua ''hl.dsp.exec_cmd("ghostty")'';
-    open-browser.command = lua ''hl.dsp.exec_cmd("firefox")'';
-    close-window.command = lua "hl.dsp.window.close()";
-    toggle-floating.command = lua ''hl.dsp.window.float({ action = "toggle" })'';
-    toggle-fullscreen.command = lua "hl.dsp.window.fullscreen()";
-    focus-left.command = lua ''hl.dsp.focus({ direction = "left" })'';
-    focus-down.command = lua ''hl.dsp.focus({ direction = "down" })'';
-    focus-up.command = lua ''hl.dsp.focus({ direction = "up" })'';
-    focus-right.command = lua ''hl.dsp.focus({ direction = "right" })'';
-    move-left.command = lua ''hl.dsp.window.move({ direction = "left" })'';
-    move-down.command = lua ''hl.dsp.window.move({ direction = "down" })'';
-    move-up.command = lua ''hl.dsp.window.move({ direction = "up" })'';
-    move-right.command = lua ''hl.dsp.window.move({ direction = "right" })'';
-    workspace-previous.command = lua ''hl.dsp.focus({ workspace = "r-1" })'';
-    workspace-next.command = lua ''hl.dsp.focus({ workspace = "r+1" })'';
-    move-workspace-previous.command = lua ''hl.dsp.window.move({ workspace = "r-1" })'';
-    move-workspace-next.command = lua ''hl.dsp.window.move({ workspace = "r+1" })'';
-    open-launcher.command = lua ''hl.dsp.exec_cmd("wofi --show drun")'';
+    open-terminal.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("ghostty")'';
+    open-browser.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("firefox")'';
+    close-window.command = lib.generators.mkLuaInline "hl.dsp.window.close()";
+    toggle-floating.command = lib.generators.mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
+    toggle-fullscreen.command = lib.generators.mkLuaInline "hl.dsp.window.fullscreen()";
+    focus-left.command = lib.generators.mkLuaInline ''hl.dsp.focus({ direction = "left" })'';
+    focus-down.command = lib.generators.mkLuaInline ''hl.dsp.focus({ direction = "down" })'';
+    focus-up.command = lib.generators.mkLuaInline ''hl.dsp.focus({ direction = "up" })'';
+    focus-right.command = lib.generators.mkLuaInline ''hl.dsp.focus({ direction = "right" })'';
+    move-left.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ direction = "left" })'';
+    move-down.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ direction = "down" })'';
+    move-up.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ direction = "up" })'';
+    move-right.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ direction = "right" })'';
+    workspace-previous.command = lib.generators.mkLuaInline ''hl.dsp.focus({ workspace = "r-1" })'';
+    workspace-next.command = lib.generators.mkLuaInline ''hl.dsp.focus({ workspace = "r+1" })'';
+    move-workspace-previous.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ workspace = "r-1" })'';
+    move-workspace-next.command = lib.generators.mkLuaInline ''hl.dsp.window.move({ workspace = "r+1" })'';
+    open-launcher.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("wofi --show drun")'';
     volume-up = {
-      command = lua ''hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+")'';
+      command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%+")'';
       options.repeating = true;
     };
     volume-down = {
-      command = lua ''hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-")'';
+      command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("wpctl set-volume -l 1.5 @DEFAULT_AUDIO_SINK@ 5%-")'';
       options.repeating = true;
     };
-    mute-output.command = lua ''hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")'';
-    mute-input.command = lua ''hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle")'';
+    mute-output.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle")'';
+    mute-input.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle")'';
     drag-window = {
-      command = lua "hl.dsp.window.drag()";
+      command = lib.generators.mkLuaInline "hl.dsp.window.drag()";
       options.mouse = true;
     };
     resize-window = {
-      command = lua "hl.dsp.window.resize()";
+      command = lib.generators.mkLuaInline "hl.dsp.window.resize()";
       options.mouse = true;
     };
   };
@@ -123,7 +122,7 @@ in
                 ]
                 ++ lib.optional (translation ? options) translation.options;
               }
-            ) (cfg.shared // cfg.hyprlandOverrides);
+            ) (cfg.graphicalKeybinds.shared // cfg.graphicalKeybinds.hyprlandOverrides);
           };
         })
       ];
@@ -146,7 +145,7 @@ in
                   ++ [ (lib.toLower binding.key) ]
                 );
                 value = aerospaceActions.${action};
-              }) (cfg.shared // cfg.aerospaceOverrides)
+              }) (cfg.graphicalKeybinds.shared // cfg.graphicalKeybinds.aerospaceOverrides)
             );
           };
         })
