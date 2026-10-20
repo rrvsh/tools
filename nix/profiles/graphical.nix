@@ -145,6 +145,10 @@ in
           key = "mouse:273";
         };
       };
+      applications.ghostty.split-right = {
+        modifiers = [ "super" ];
+        key = "D";
+      };
     };
     modules.darwin.profile-graphical =
       { pkgs, ... }:
