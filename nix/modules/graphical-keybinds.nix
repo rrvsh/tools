@@ -75,49 +75,6 @@ let
     move-workspace-previous = "move-node-to-workspace --focus-follows-window prev";
     move-workspace-next = "move-node-to-workspace --focus-follows-window next";
   };
-  orderedModifiers = order: modifiers: lib.filter (modifier: builtins.elem modifier modifiers) order;
-  renderHyprlandChord =
-    binding:
-    lib.concatStringsSep " + " (
-      map lib.toUpper (
-        orderedModifiers [
-          "alt"
-          "ctrl"
-          "shift"
-          "super"
-        ] binding.modifiers
-      )
-      ++ [ binding.key ]
-    );
-  renderHyprlandBinding =
-    action: binding:
-    let
-      translation = hyprlandActions.${action};
-    in
-    {
-      _args = [
-        (renderHyprlandChord binding)
-        translation.command
-      ]
-      ++ lib.optional (translation ? options) translation.options;
-    };
-  renderAerospaceChord =
-    binding:
-    lib.concatStringsSep "-" (
-      map (modifier: if modifier == "super" then "cmd" else modifier) (
-        orderedModifiers [
-          "super"
-          "alt"
-          "ctrl"
-          "shift"
-        ] binding.modifiers
-      )
-      ++ [ (lib.toLower binding.key) ]
-    );
-  renderAerospaceBinding = action: binding: {
-    name = renderAerospaceChord binding;
-    value = aerospaceActions.${action};
-  };
 in
 {
   options.flake.graphicalKeybinds = lib.mkOption {
@@ -144,9 +101,29 @@ in
       home-manager.sharedModules = [
         ({ config, ... }: {
           config = lib.mkIf config.wayland.windowManager.hyprland.enable {
-            wayland.windowManager.hyprland.settings.bind = lib.mapAttrsToList renderHyprlandBinding (
-              cfg.shared // cfg.hyprlandOverrides
-            );
+            wayland.windowManager.hyprland.settings.bind = lib.mapAttrsToList (
+              action: binding:
+              let
+                translation = hyprlandActions.${action};
+              in
+              {
+                _args = [
+                  (lib.concatStringsSep " + " (
+                    map lib.toUpper (
+                      lib.filter (modifier: builtins.elem modifier binding.modifiers) [
+                        "alt"
+                        "ctrl"
+                        "shift"
+                        "super"
+                      ]
+                    )
+                    ++ [ binding.key ]
+                  ))
+                  translation.command
+                ]
+                ++ lib.optional (translation ? options) translation.options;
+              }
+            ) (cfg.shared // cfg.hyprlandOverrides);
           };
         })
       ];
@@ -156,7 +133,20 @@ in
         ({ config, ... }: {
           config = lib.mkIf config.programs.aerospace.enable {
             programs.aerospace.settings.mode.main.binding = builtins.listToAttrs (
-              lib.mapAttrsToList renderAerospaceBinding (cfg.shared // cfg.aerospaceOverrides)
+              lib.mapAttrsToList (action: binding: {
+                name = lib.concatStringsSep "-" (
+                  map (modifier: if modifier == "super" then "cmd" else modifier) (
+                    lib.filter (modifier: builtins.elem modifier binding.modifiers) [
+                      "super"
+                      "alt"
+                      "ctrl"
+                      "shift"
+                    ]
+                  )
+                  ++ [ (lib.toLower binding.key) ]
+                );
+                value = aerospaceActions.${action};
+              }) (cfg.shared // cfg.aerospaceOverrides)
             );
           };
         })
