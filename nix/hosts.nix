@@ -130,6 +130,7 @@ in
         cfg.modules.nixos.user-primary
         cfg.modules.nixos.agent-browser-shared
         cfg.modules.nixos.nvidia-graphics
+        cfg.modules.nixos.windows-vm
         cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
@@ -164,10 +165,6 @@ in
               loader.systemd-boot = {
                 enable = true;
                 edk2-uefi-shell.enable = true;
-                windows."11-pro" = {
-                  title = "Windows 11 Pro";
-                  efiDeviceHandle = "HD0d";
-                };
               };
               loader.efi.canTouchEfiVariables = true;
               kernelPackages = pkgs.linuxPackages_latest;
@@ -184,36 +181,6 @@ in
                   "fmask=0077"
                   "dmask=0077"
                 ];
-              };
-              "/mnt/windows" = {
-                device = "/dev/disk/by-uuid/0EA45F71A45F59F3";
-                fsType = "ntfs3";
-                options = [
-                  "rw"
-                  "uid=1000"
-                  "umask=022"
-                  "iocharset=utf8"
-                  "windows_names"
-                  "nofail"
-                  "x-systemd.automount"
-                  "x-systemd.idle-timeout=10min"
-                ];
-              };
-            };
-            # Samba keeps its own password database. After rebuilding, check for an
-            # existing login with `sudo pdbedit -L -u rafiq`; if absent, set one
-            # with `sudo smbpasswd -a rafiq` (the same login password can be used).
-            services.samba = {
-              enable = true;
-              openFirewall = true;
-              settings = {
-                global."security" = "user";
-                windows-profile = {
-                  path = "/mnt/windows/Users/rafiq";
-                  "valid users" = "rafiq";
-                  "guest ok" = "no";
-                  "read only" = "no";
-                };
               };
             };
           }

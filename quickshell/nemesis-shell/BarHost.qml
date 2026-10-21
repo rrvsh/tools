@@ -213,7 +213,7 @@ Scope {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: {
                     root.powerMenuOpen = false;
-                    Quickshell.execDetached(["/run/wrappers/bin/sudo", "@systemctl@", "reboot", "--boot-loader-entry", "windows_11-pro.conf"]);
+                    Quickshell.execDetached(["@rebootToWindows@"]);
                 }
             }
 

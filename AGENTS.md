@@ -89,6 +89,20 @@ The Nix config in `nix/` is organized as hosts, profiles, and atomic modules. Ho
 
 Nix flake inputs and source files must be tracked by git to be evaluated; remember to `git add` new files before evaluation/checks.
 
+### Environment variables
+
+- Every user on one machine:
+  - NixOS: use `environment.sessionVariables`.
+  - nix-darwin: use `environment.variables`.
+- One user's login environment: use `home.sessionVariables`.
+- One service:
+  - systemd:
+    - System service: use `systemd.services.<name>.environment`. System services are not available in Home Manager.
+    - User service: use `systemd.user.services.<name>.Service.Environment`.
+  - launchd:
+    - System daemon: use `launchd.daemons.<name>.serviceConfig.EnvironmentVariables`. System daemons are not available in Home Manager.
+    - User agent: use `launchd.agents.<name>.config.EnvironmentVariables`.
+
 Style constraints:
 
 - If a Nix module needs no arguments, use a plain attribute set. Omit `{ ... }:` and `_:`.
