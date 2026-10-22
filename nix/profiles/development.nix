@@ -8,6 +8,7 @@ in
     darwin.profile-development = {
       imports = with cfg.modules.darwin; [
         beads
+        google-drive
         passwordless-sudo
         sops-config
         syncthing
@@ -41,6 +42,7 @@ in
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
         beads
+        google-drive
         passwordless-sudo
         sops-config
         syncthing
@@ -196,6 +198,10 @@ in
             v = "$EDITOR";
             e = "fish -c 'set -e var; set var (fzf); test -n \"$var\"; and $EDITOR $var'";
           };
+        };
+        services.google-drive.accounts.fileai = {
+          email = "rafiq@file.ai";
+          mountName = "file.ai";
         };
         services.syncthing.settings = {
           devices = remoteSyncthingDevices;

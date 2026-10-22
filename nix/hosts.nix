@@ -249,6 +249,9 @@ in
         (
           { lib, ... }:
           {
+            home-manager.sharedModules = [
+              { services.google-drive.localBrowser = false; }
+            ];
             boot.initrd = {
               availableKernelModules = [
                 "ata_piix"
