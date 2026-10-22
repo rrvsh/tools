@@ -41,6 +41,7 @@ in
         piPackage = inputs.pi.packages.${system}.pi-coding-agent.overrideAttrs (old: {
           postPatch = lib.optionalString ((old.postPatch or null) != null) old.postPatch + ''
             patch -p1 < ${root + /patches/pi-session-index.patch}
+            patch -p1 < ${root + /patches/pi-status-alignment.patch}
             substituteInPlace packages/coding-agent/src/modes/interactive/components/session-selector.ts \
               --replace-fail 'private scope: SessionScope = "current";' \
                 'private scope: SessionScope = "all";' \
@@ -202,6 +203,7 @@ in
               (root + "/pi/extensions/hostname-context.ts")
               (root + "/pi/extensions/system-prompt-viewer.ts")
               (root + "/pi/extensions/codex-usage.ts")
+              (root + "/pi/extensions/zmx-title.ts")
               (root + "/pi/extensions/thread-title")
             ];
           };
