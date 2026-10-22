@@ -200,6 +200,25 @@ in
                 ];
               };
             };
+            networking.networkmanager = {
+              ensureProfiles.profiles.wired = {
+                connection = {
+                  id = "wired";
+                  type = "ethernet";
+                  interface-name = "enp12s0";
+                  uuid = "221e9127-902c-483a-bbc4-7d2403b7dce9";
+                  autoconnect = true;
+                  autoconnect-priority = 100;
+                };
+                ethernet.mac-address = "74:56:3C:35:AB:E5";
+                ipv4.method = "auto";
+                ipv6 = {
+                  method = "auto";
+                  addr-gen-mode = "stable-privacy";
+                };
+              };
+              settings.main.no-auto-default = "74:56:3C:35:AB:E5";
+            };
             # Samba keeps its own password database. After rebuilding, check for an
             # existing login with `sudo pdbedit -L -u rafiq`; if absent, set one
             # with `sudo smbpasswd -a rafiq` (the same login password can be used).
