@@ -1,7 +1,13 @@
 { config, lib, ... }:
 let
   cfg = config.flake;
-  ghosttyActions.split-right = "new_split:right";
+  ghosttyActions = {
+    split-right = "new_split:right";
+    focus-split-left = "goto_split:left";
+    focus-split-down = "goto_split:down";
+    focus-split-up = "goto_split:up";
+    focus-split-right = "goto_split:right";
+  };
   editorMimeTypes = [
     "application/toml"
     "application/x-shellscript"
