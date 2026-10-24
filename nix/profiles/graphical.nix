@@ -145,6 +145,40 @@ in
           key = "mouse:273";
         };
       };
+      applications.ghostty = {
+        split-right = {
+          modifiers = [ "super" ];
+          key = "D";
+        };
+        focus-split-left = {
+          modifiers = [
+            "ctrl"
+            "alt"
+          ];
+          key = "H";
+        };
+        focus-split-down = {
+          modifiers = [
+            "ctrl"
+            "alt"
+          ];
+          key = "J";
+        };
+        focus-split-up = {
+          modifiers = [
+            "ctrl"
+            "alt"
+          ];
+          key = "K";
+        };
+        focus-split-right = {
+          modifiers = [
+            "ctrl"
+            "alt"
+          ];
+          key = "L";
+        };
+      };
     };
     modules.darwin.profile-graphical =
       { pkgs, ... }:

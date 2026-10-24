@@ -1,6 +1,13 @@
 { config, lib, ... }:
 let
   cfg = config.flake;
+  ghosttyActions = {
+    split-right = "new_split:right";
+    focus-split-left = "goto_split:left";
+    focus-split-down = "goto_split:down";
+    focus-split-up = "goto_split:up";
+    focus-split-right = "goto_split:right";
+  };
   editorMimeTypes = [
     "application/toml"
     "application/x-shellscript"
@@ -50,14 +57,21 @@ in
           settings = {
             font-size = lib.mkDefault 16;
             "shell-integration-features" = "ssh-env,ssh-terminfo";
-            keybind = lib.optionals pkgs.stdenv.isLinux [
-              "super+c=copy_to_clipboard"
-              "super+v=paste_from_clipboard"
-              "super+t=new_tab"
-              "super+w=close_tab:this"
-              "super+left=csi:H"
-              "super+right=csi:F"
-            ];
+            keybind =
+              lib.optionals pkgs.stdenv.isLinux [
+                "super+c=copy_to_clipboard"
+                "super+v=paste_from_clipboard"
+                "super+t=new_tab"
+                "super+w=close_tab:this"
+                "super+left=csi:H"
+                "super+right=csi:F"
+              ]
+              ++ lib.mapAttrsToList (
+                action: binding:
+                "${
+                  lib.concatStringsSep "+" (binding.modifiers ++ [ (lib.toLower binding.key) ])
+                }=${ghosttyActions.${action}}"
+              ) cfg.graphicalKeybinds.applications.ghostty;
           }
           // lib.optionalAttrs pkgs.stdenv.isLinux {
             "link-url-modifier" = "super";
