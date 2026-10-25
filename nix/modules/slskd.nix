@@ -5,36 +5,24 @@ let
 in
 {
   config.flake.modules.nixos.slskd =
-    { config, primaryUser, ... }:
+    { config, ... }:
     let
+      directories = {
+        downloads = "/var/lib/slskd/downloads";
+        incomplete = "/var/lib/slskd/incomplete";
+      };
       sopsFile = root + "/sops/slskd.yaml";
     in
     {
       services.slskd = {
         enable = true;
+        # The default group is slskd. Use users so the primary user and MusicGrabber can access completed files.
         group = "users";
         environmentFile = config.sops.templates."slskd.env".path;
-        openFirewall = false;
+        openFirewall = true;
         settings = {
-          directories = {
-            incomplete = "/var/lib/slskd/incomplete";
-            downloads = "/var/lib/slskd/downloads";
-          };
-          flags.force_share_scan = false;
-          rooms = [ ];
-          shares = {
-            directories = [ ];
-            filters = [ ];
-          };
-          soulseek = {
-            description = "rrv.sh";
-            listen_port = 50300;
-          };
-          web = {
-            ip_address = "127.0.0.1";
-            port = 5030;
-            https.disabled = true;
-          };
+          inherit directories;
+          shares.directories = [ directories.downloads ];
         };
       };
 
@@ -43,15 +31,12 @@ in
           "slskd/soulseek-username".sopsFile = sopsFile;
           "slskd/soulseek-password".sopsFile = sopsFile;
           "slskd/web-username".sopsFile = sopsFile;
-          "slskd/web-password" = {
-            inherit sopsFile;
-            owner = primaryUser.name;
-          };
+          "slskd/web-password".sopsFile = sopsFile;
         };
         templates."slskd.env" = {
           owner = "slskd";
-          group = "users";
-          mode = "0400";
+          # Restart slskd after credential changes so it reloads the rendered environment file.
+          restartUnits = [ "slskd.service" ];
           content = ''
             SLSKD_SLSK_USERNAME=${config.sops.placeholder."slskd/soulseek-username"}
             SLSKD_SLSK_PASSWORD=${config.sops.placeholder."slskd/soulseek-password"}
@@ -68,8 +53,8 @@ in
           WorkingDirectory = "${config.services.slskd.package}/lib/slskd";
         };
         tmpfiles.rules = [
-          "d /var/lib/slskd/incomplete 0770 slskd users -"
-          "d /var/lib/slskd/downloads 0770 slskd users -"
+          "d ${directories.incomplete} 0770 slskd users -"
+          "d ${directories.downloads} 0770 slskd users -"
         ];
       };
     };
