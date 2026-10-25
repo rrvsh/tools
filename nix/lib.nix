@@ -52,6 +52,7 @@ let
         systemBuilder {
           specialArgs = {
             hostName = name;
+            system = value.hostPlatform;
             inherit (value) primaryUser;
           };
           modules = [
