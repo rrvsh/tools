@@ -32,6 +32,7 @@ in
         cfg.modules.darwin.agent-browser-shared
         cfg.modules.darwin.rosetta-builder
         cfg.modules.darwin.slskd
+        cfg.modules.darwin.musicgrabber
       ];
     };
     kikir = {
@@ -135,6 +136,7 @@ in
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
         cfg.modules.nixos.slskd
+        cfg.modules.nixos.musicgrabber
         cfg.modules.nixos.gtnh-server
         cfg.modules.nixos.gtnh-backups
         (

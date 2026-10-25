@@ -73,6 +73,10 @@
       flake = false;
     };
     mac-app-util.url = "github:hraban/mac-app-util";
+    musicgrabber = {
+      url = "github:rrvsh/musicgrabber-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pi.url = "github:rrvsh/pi-coding-agent-nix";
     pi-claude-bridge = {
       url = "github:rrvsh/pi-claude-bridge-nix";
