@@ -133,6 +133,7 @@ in
         cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
+        cfg.modules.nixos.slskd
         cfg.modules.nixos.gtnh-server
         cfg.modules.nixos.gtnh-backups
         (
