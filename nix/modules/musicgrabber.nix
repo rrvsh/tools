@@ -17,6 +17,9 @@
               export SLSKD_USER="$(<${config.sops.secrets."slskd/web-username".path})"
               export SLSKD_PASS="$(<${config.sops.secrets."slskd/web-password".path})"
               export SLSKD_DOWNLOADS_PATH=${pkgs.lib.escapeShellArg "${config.users.users.${primaryUser.name}.home}/Library/Application Support/slskd/downloads"}
+              export MUSIC_DIR=${pkgs.lib.escapeShellArg "${config.users.users.${primaryUser.name}.home}/Music/Mine"}
+              export SINGLES_SUBDIR=.
+              export ALBUMS_SUBDIR=.
               export SOURCE_SOULSEEK_ENABLED=true
               exec ${
                 inputs.musicgrabber.packages.${pkgs.stdenv.hostPlatform.system}.musicgrabber
@@ -64,7 +67,12 @@
             "slskd.service"
           ];
           wantedBy = [ "multi-user.target" ];
-          environment.HOME = config.users.users.${primaryUser.name}.home;
+          environment = {
+            HOME = config.users.users.${primaryUser.name}.home;
+            MUSIC_DIR = "${config.users.users.${primaryUser.name}.home}/Music/Mine";
+            SINGLES_SUBDIR = ".";
+            ALBUMS_SUBDIR = ".";
+          };
           serviceConfig = {
             User = primaryUser.name;
             Group = "users";
