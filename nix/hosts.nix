@@ -31,6 +31,7 @@ in
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.agent-browser-shared
         cfg.modules.darwin.rosetta-builder
+        cfg.modules.darwin.slskd
       ];
     };
     kikir = {
@@ -133,6 +134,7 @@ in
         cfg.modules.nixos.xremap
         cfg.modules.nixos.steam
         cfg.modules.nixos.prismlauncher
+        cfg.modules.nixos.slskd
         cfg.modules.nixos.gtnh-server
         cfg.modules.nixos.gtnh-backups
         (
