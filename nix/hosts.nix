@@ -31,6 +31,7 @@ in
         cfg.modules.darwin.user-primary
         cfg.modules.darwin.agent-browser-shared
         cfg.modules.darwin.rosetta-builder
+        cfg.modules.darwin.slskd
       ];
     };
     kikir = {
