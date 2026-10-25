@@ -2,6 +2,7 @@
 let
   cfg = config.flake;
   inherit (cfg.paths) root;
+  sopsFile = root + "/sops/slskd.yaml";
 in
 {
   config.flake.modules = {
@@ -19,7 +20,6 @@ in
           downloads = "${stateDir}/downloads";
           incomplete = "${stateDir}/incomplete";
         };
-        sopsFile = root + "/sops/slskd-alpha.yaml";
         package = pkgs.stdenvNoCC.mkDerivation {
           pname = "slskd";
           inherit version;
@@ -46,58 +46,49 @@ in
           inherit directories;
           flags.no_version_check = true;
           shares.directories = [ directories.downloads ];
-          web = {
-            ip_address = "127.0.0.1";
-            https.disabled = true;
-          };
         };
-        program = pkgs.writeShellScript "slskd" ''
-          set -euo pipefail
-          umask 0077
-          mkdir -p ${pkgs.lib.escapeShellArg directories.incomplete} ${pkgs.lib.escapeShellArg directories.downloads}
-          export SLSKD_SLSK_USERNAME="$(<${config.sops.secrets."slskd/soulseek-username".path})"
-          export SLSKD_SLSK_PASSWORD="$(<${config.sops.secrets."slskd/soulseek-password".path})"
-          export SLSKD_USERNAME="$(<${config.sops.secrets."slskd/web-username".path})"
-          export SLSKD_PASSWORD="$(<${config.sops.secrets."slskd/web-password".path})"
-          cd ${package}/libexec/slskd
-          exec ${package}/libexec/slskd/slskd \
-            --app-dir ${pkgs.lib.escapeShellArg stateDir} \
-            --config ${settings}
-        '';
       in
       {
         launchd.user.agents.slskd = {
           serviceConfig = {
-            ProgramArguments = [ "${program}" ];
+            ProgramArguments = [
+              "${pkgs.writeShellScript "slskd" ''
+                set -euo pipefail
+                umask 0077
+                mkdir -p ${pkgs.lib.escapeShellArg directories.incomplete} ${pkgs.lib.escapeShellArg directories.downloads}
+                export SLSKD_SLSK_USERNAME="$(<${
+                  config.sops.secrets."slskd/soulseek-username".path
+                })-${config.networking.hostName}"
+                export SLSKD_SLSK_PASSWORD="$(<${config.sops.secrets."slskd/soulseek-password".path})"
+                export SLSKD_USERNAME="$(<${config.sops.secrets."slskd/web-username".path})"
+                export SLSKD_PASSWORD="$(<${config.sops.secrets."slskd/web-password".path})"
+                cd ${package}/libexec/slskd
+                exec ${package}/libexec/slskd/slskd \
+                  --app-dir ${pkgs.lib.escapeShellArg stateDir} \
+                  --config ${settings}
+              ''}"
+            ];
             RunAtLoad = true;
             KeepAlive.SuccessfulExit = false;
-            ProcessType = "Background";
-            ThrottleInterval = 5;
             # Change the plist when credentials change so launchd restarts slskd with the new values.
             EnvironmentVariables.SLSKD_SECRETS_HASH =
               config.sops.secrets."slskd/soulseek-username".sopsFileHash;
           };
-          managedBy = "flake.modules.darwin.slskd";
         };
 
-        sops.secrets = {
-          "slskd/soulseek-username" = {
-            inherit sopsFile;
-            owner = primaryUser.name;
-          };
-          "slskd/soulseek-password" = {
-            inherit sopsFile;
-            owner = primaryUser.name;
-          };
-          "slskd/web-username" = {
-            inherit sopsFile;
-            owner = primaryUser.name;
-          };
-          "slskd/web-password" = {
-            inherit sopsFile;
-            owner = primaryUser.name;
-          };
-        };
+        sops.secrets =
+          let
+            mkSecret = _: {
+              inherit sopsFile;
+              owner = primaryUser.name;
+            };
+          in
+          pkgs.lib.genAttrs [
+            "slskd/soulseek-username"
+            "slskd/soulseek-password"
+            "slskd/web-username"
+            "slskd/web-password"
+          ] mkSecret;
       };
 
     nixos.slskd =
@@ -107,7 +98,6 @@ in
           downloads = "/var/lib/slskd/downloads";
           incomplete = "/var/lib/slskd/incomplete";
         };
-        sopsFile = root + "/sops/slskd.yaml";
       in
       {
         services.slskd = {
@@ -134,7 +124,9 @@ in
             # Restart slskd after credential changes so it reloads the rendered environment file.
             restartUnits = [ "slskd.service" ];
             content = ''
-              SLSKD_SLSK_USERNAME=${config.sops.placeholder."slskd/soulseek-username"}
+              SLSKD_SLSK_USERNAME=${
+                config.sops.placeholder."slskd/soulseek-username"
+              }-${config.networking.hostName}
               SLSKD_SLSK_PASSWORD=${config.sops.placeholder."slskd/soulseek-password"}
               SLSKD_USERNAME=${config.sops.placeholder."slskd/web-username"}
               SLSKD_PASSWORD=${config.sops.placeholder."slskd/web-password"}
