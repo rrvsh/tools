@@ -5,7 +5,7 @@ let
 in
 {
   config.flake.modules.nixos.slskd =
-    { config, ... }:
+    { config, lib, ... }:
     let
       directories = {
         downloads = "/var/lib/slskd/downloads";
@@ -48,6 +48,8 @@ in
 
       systemd = {
         services.slskd.serviceConfig = {
+          # Nixpkgs makes every shared directory read-only, but this directory also receives completed downloads.
+          ReadOnlyPaths = lib.mkForce [ ];
           StateDirectoryMode = "0750";
           UMask = "0007";
           WorkingDirectory = "${config.services.slskd.package}/lib/slskd";
