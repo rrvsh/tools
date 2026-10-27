@@ -91,6 +91,15 @@ in
           type = lib.types.attrsOf bindingType;
           default = { };
         };
+        applications = lib.mkOption {
+          type = lib.types.submodule {
+            options.ghostty = lib.mkOption {
+              type = lib.types.attrsOf bindingType;
+              default = { };
+            };
+          };
+          default = { };
+        };
       };
     };
     default = { };
