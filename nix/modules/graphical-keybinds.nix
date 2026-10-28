@@ -20,6 +20,9 @@ let
   hyprlandActions = {
     open-terminal.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("ghostty")'';
     open-browser.command = lib.generators.mkLuaInline ''hl.dsp.exec_cmd("firefox")'';
+    screenshot-region.command = lib.generators.mkLuaInline ''
+      hl.dsp.exec_cmd([[geometry="$(slurp)" || exit 0; [ -n "$geometry" ] || exit 0; grim -g "$geometry" - | wl-copy --type image/png]])
+    '';
     close-window.command = lib.generators.mkLuaInline "hl.dsp.window.close()";
     toggle-floating.command = lib.generators.mkLuaInline ''hl.dsp.window.float({ action = "toggle" })'';
     toggle-fullscreen.command = lib.generators.mkLuaInline "hl.dsp.window.fullscreen()";
@@ -58,6 +61,7 @@ let
   aerospaceActions = {
     open-terminal = "exec-and-forget osascript -e 'tell application \"Ghostty\" to new window'";
     open-browser = "exec-and-forget open -a Firefox";
+    screenshot-region = "exec-and-forget /usr/sbin/screencapture -i -c";
     close-window = "close";
     toggle-floating = "layout floating tiling";
     toggle-fullscreen = "fullscreen";

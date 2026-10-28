@@ -25,6 +25,13 @@ in
           ];
           key = "2";
         };
+        screenshot-region = {
+          modifiers = [
+            "alt"
+            "ctrl"
+          ];
+          key = "S";
+        };
         close-window = {
           modifiers = [
             "alt"
@@ -264,6 +271,8 @@ in
             home.packages = with pkgs; [
               mixxx
               libnotify
+              grim
+              slurp
               wl-clipboard
               activitywatch
               aw-watcher-window-wayland
