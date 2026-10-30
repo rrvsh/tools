@@ -84,6 +84,10 @@ function __zmx-cycle
     zmx attach "$sessions[$target_index]"
 end
 
+function __zmx-picker-clear-viewport
+  printf '\033[2J\033[H'
+end
+
 function __zmx-picker-pi-marker
   set -l state $argv[1]
   set -l pid $argv[2]
@@ -143,6 +147,9 @@ function __zmx-picker-host-rows
     return $list_status
   end
 
+  set -l absent_rows
+  set -l waiting_rows
+  set -l working_rows
   for metadata in $sessions
     set -l session (string match -r -g 'name=([^\t]+)' -- "$metadata")
     if test -z "$session"
@@ -171,7 +178,19 @@ function __zmx-picker-host-rows
       set -l preview_key (string replace -a / _ -- "$encoded_session")
       set preview_file "$preview_directory/$preview_key"
     end
-    printf '%s\t%s\t%s\t%s%s%s\t%s\t%s\n' "$host" "$session" "$encoded_session" "$selection_marker" "$pi_marker" "$label" "$preview_file" "$label"
+    set -l row (printf '%s\t%s\t%s\t%s%s%s\t%s\t%s' "$host" "$session" "$encoded_session" "$selection_marker" "$pi_marker" "$label" "$preview_file" "$label")
+    switch "$pi_marker"
+      case '! '
+        set -a waiting_rows "$row"
+      case '… '
+        set -a working_rows "$row"
+      case '*'
+        set -a absent_rows "$row"
+    end
+  end
+
+  for row in $absent_rows $waiting_rows $working_rows
+    printf '%s\n' "$row"
   end
 end
 
@@ -648,7 +667,10 @@ end
         continue
       end
 
-      if not read --prompt-str='zmx title (empty clears): ' --local title
+      read --prompt-str='zmx title (empty clears): ' --local title
+      set -l read_status $status
+      __zmx-picker-clear-viewport
+      if test $read_status -ne 0
         continue
       end
 
@@ -673,6 +695,7 @@ end
       if test $status -ne 0
         printf '%s\n' "$rename_output" >&2
         read --prompt-str='Press Enter to continue' --local ignored
+        __zmx-picker-clear-viewport
       end
       continue
     end
