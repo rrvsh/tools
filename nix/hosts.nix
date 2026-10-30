@@ -85,6 +85,7 @@ in
                 };
                 home.packages = with pkgs; [
                   awscli2
+                  kubectl
                   colima
                   docker-client
                   goose
