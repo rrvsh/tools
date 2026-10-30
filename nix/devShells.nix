@@ -30,7 +30,8 @@
         gh
         zizmor
       ];
-      tsTools = with pkgs; [ nodejs_24 ];
+      fishTools = [ pkgs.fish ];
+      tsTools = [ pkgs.nodejs_24 ];
       qmlTools = [ pkgs.qt6.qtdeclarative ] ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ pkgs.quickshell ];
     in
     {
@@ -54,6 +55,10 @@
           buildInputs = common ++ ghaTools;
         };
 
+        ci-fish = pkgs.mkShell {
+          buildInputs = common ++ fishTools;
+        };
+
         ci-ts = pkgs.mkShell {
           buildInputs = common ++ tsTools;
         };
@@ -70,6 +75,7 @@
             ++ luaTools
             ++ ghaTools
             ++ rustTools
+            ++ fishTools
             ++ tsTools
             ++ qmlTools
             ++ (with pkgs; [
