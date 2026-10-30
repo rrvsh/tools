@@ -38,6 +38,10 @@ let
                 type = lib.types.listOf lib.types.deferredModule;
                 default = [ ];
               };
+              extraConfig = lib.mkOption {
+                type = lib.types.deferredModule;
+                default = { };
+              };
             };
           }
         );
@@ -47,6 +51,7 @@ let
         {
           systemBuilder,
           platformModules,
+          includeExtraConfig ? false,
         }:
         name: value:
         systemBuilder {
@@ -66,7 +71,8 @@ let
             platformModules.profile-default
           ]
           ++ map (profile: builtins.getAttr "profile-${profile}" platformModules) value.profiles
-          ++ value.modules;
+          ++ value.modules
+          ++ lib.optional includeExtraConfig value.extraConfig;
         };
     };
   };
