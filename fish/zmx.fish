@@ -84,11 +84,48 @@ function __zmx-cycle
     zmx attach "$sessions[$target_index]"
 end
 
+function __zmx-picker-clear-viewport
+  printf '\033[2J\033[H'
+end
+
+function __zmx-picker-pi-marker
+  set -l state $argv[1]
+  set -l pid $argv[2]
+  set -l heartbeat $argv[3]
+  set -l observed_at $argv[4]
+
+  if not contains -- "$state" working waiting
+    printf '  '
+    return
+  end
+  if not string match -qr '^[1-9][0-9]*$' -- "$pid"
+    printf '  '
+    return
+  end
+  if not string match -qr '^[0-9]+$' -- "$heartbeat"; or not string match -qr '^[0-9]+$' -- "$observed_at"
+    printf '  '
+    return
+  end
+
+  set -l age (math "$observed_at - $heartbeat")
+  if test "$age" -lt -5; or test "$age" -gt 30
+    printf '  '
+    return
+  end
+
+  if test "$state" = working
+    printf '… '
+  else
+    printf '! '
+  end
+end
+
 function __zmx-picker-host-rows
   set -l anchor $argv[1]
   set -l current_host $argv[2]
   set -l host $argv[3]
   set -l preview_directory $argv[4]
+  set -l observed_at (date +%s)
 
   set -l sessions
   if test "$host" = "$current_host"
@@ -110,17 +147,18 @@ function __zmx-picker-host-rows
     return $list_status
   end
 
-  set -l session_index 0
+  set -l absent_rows
+  set -l waiting_rows
+  set -l working_rows
   for metadata in $sessions
-    set session_index (math $session_index + 1)
     set -l session (string match -r -g 'name=([^\t]+)' -- "$metadata")
     if test -z "$session"
       continue
     end
 
-    set -l title (string match -r -g '(?:^|\t)title=([^\t]*)' -- "$metadata")
-    if test -z "$title"
-      set title $session
+    set -l label (string match -r -g '(?:^|\t)title=([^\t]*)' -- "$metadata")
+    if test -z "$label"
+      set label $session
     end
 
     set -l key "$host/$session"
@@ -129,23 +167,30 @@ function __zmx-picker-host-rows
       set selection_marker '→ '
     end
 
-    set -l clients (string match -r -g '(?:^|\t)clients=([0-9]+)' -- "$metadata")
-    set -l attachment_marker '  '
-    if test -n "$clients"; and test "$clients" -gt 0
-      set attachment_marker '● '
-    end
-
-    set -l label $session
-    if test "$title" != "$session"
-      set label "$title  [$session]"
-    end
+    set -l pi_state (string match -r -g '(?:^|\t)pi_state=([^\t]*)' -- "$metadata")
+    set -l pi_pid (string match -r -g '(?:^|\t)pi_pid=([^\t]*)' -- "$metadata")
+    set -l pi_heartbeat (string match -r -g '(?:^|\t)pi_heartbeat=([^\t]*)' -- "$metadata")
+    set -l pi_marker (__zmx-picker-pi-marker "$pi_state" "$pi_pid" "$pi_heartbeat" "$observed_at")
 
     set -l encoded_session (printf '%s' "$session" | base64 | string join '')
     set -l preview_file
     if test -n "$preview_directory"
-      set preview_file "$preview_directory/"(printf '%06d' $session_index)
+      set -l preview_key (string replace -a / _ -- "$encoded_session")
+      set preview_file "$preview_directory/$preview_key"
     end
-    printf '%s\t%s\t%s\t%s%s%s\t%s\n' "$host" "$session" "$encoded_session" "$selection_marker" "$attachment_marker" "$label" "$preview_file"
+    set -l row (printf '%s\t%s\t%s\t%s%s%s\t%s\t%s' "$host" "$session" "$encoded_session" "$selection_marker" "$pi_marker" "$label" "$preview_file" "$label")
+    switch "$pi_marker"
+      case '! '
+        set -a waiting_rows "$row"
+      case '… '
+        set -a working_rows "$row"
+      case '*'
+        set -a absent_rows "$row"
+    end
+  end
+
+  for row in $absent_rows $waiting_rows $working_rows
+    printf '%s\n' "$row"
   end
 end
 
@@ -156,13 +201,31 @@ function __zmx-picker-status-row
 
   switch "$state"
     case local
-      printf '%s\t\t\t● %s: local · %s sessions\n' "$host" "$host" "$session_count"
+      printf '%s\t\t\t%s: local · %s sessions\n' "$host" "$host" "$session_count"
     case reachable
-      printf '%s\t\t\t● %s: reachable · %s sessions\n' "$host" "$host" "$session_count"
+      printf '%s\t\t\t%s: reachable · %s sessions\n' "$host" "$host" "$session_count"
     case unreachable
-      printf '%s\t\t\t× %s: unreachable\n' "$host" "$host"
+      printf '%s\t\t\t%s: unreachable\n' "$host" "$host"
     case connecting
-      printf '%s\t\t\t… %s: connecting\n' "$host" "$host"
+      printf '%s\t\t\t%s: connecting\n' "$host" "$host"
+  end
+end
+
+function __zmx-picker-reload
+  set -l reload_command $argv[1]
+  set -l socket $argv[2]
+
+  for attempt in (seq 20)
+    if curl \
+        --silent \
+        --fail \
+        --unix-socket "$socket" \
+        http://localhost \
+        --data-binary "reload-sync($reload_command)+refresh-preview" \
+        >/dev/null 2>&1
+      return
+    end
+    sleep 0.05
   end
 end
 
@@ -174,48 +237,56 @@ function __zmx-picker-refresh-host
   set -l status_file $argv[5]
   set -l reload_command $argv[6]
   set -l socket $argv[7]
-  set -l preview_root $argv[8]
-  set -l preview_lines $argv[9]
-  set -l preview_directory
+  set -l preview_directory $argv[8]
   set -l temporary_rows "$row_file.$fish_pid"
   set -l temporary_status "$status_file.$fish_pid"
 
-  if test -n "$preview_root"
-    set preview_directory "$preview_root.$fish_pid"
-    command mkdir -m 700 "$preview_directory"
+  if test -n "$preview_directory"
+    command mkdir -p -m 700 "$preview_directory"
   end
 
   __zmx-picker-host-rows "$anchor" "$current_host" "$host" "$preview_directory" >"$temporary_rows"
   set -l list_status $status
   set -l session_count (string split \n <"$temporary_rows" | string match -r '.+' | count)
   if test $list_status -eq 0
-    __zmx-picker-status-row "$host" reachable "$session_count" >"$temporary_status"
+    set -l host_state reachable
+    if test "$host" = "$current_host"
+      set host_state local
+    end
+    __zmx-picker-status-row "$host" "$host_state" "$session_count" >"$temporary_status"
   else
     __zmx-picker-status-row "$host" unreachable >"$temporary_status"
   end
-  command mv "$temporary_rows" "$row_file"
-  command mv "$temporary_status" "$status_file"
 
-  for attempt in (seq 20)
-    if curl \
-        --silent \
-        --fail \
-        --unix-socket "$socket" \
-        http://localhost \
-        --data-binary "reload-sync($reload_command)+refresh-preview" \
-        >/dev/null 2>&1
-      break
-    end
-    sleep 0.05
+  set -l changed false
+  if not command cmp -s "$temporary_rows" "$row_file"
+    command mv "$temporary_rows" "$row_file"
+    set changed true
+  else
+    command rm "$temporary_rows"
   end
-
-  if test $list_status -ne 0; or test -z "$preview_directory"
-    return $list_status
+  if not command cmp -s "$temporary_status" "$status_file"
+    command mv "$temporary_status" "$status_file"
+    set changed true
+  else
+    command rm "$temporary_status"
   end
+  if test "$changed" = true
+    __zmx-picker-reload "$reload_command" "$socket"
+  end
+  return $list_status
+end
 
+function __zmx-picker-refresh-previews
+  set -l anchor $argv[1]
+  set -l host $argv[2]
+  set -l row_file $argv[3]
+  set -l socket $argv[4]
+  set -l preview_lines $argv[5]
   set -l rows (string split \n <"$row_file" | string match -r '.+')
   set -l prioritized_rows
   set -l remaining_rows
+
   for row in $rows
     set -l fields (string split \t -- "$row")
     if test "$fields[1]/$fields[2]" = "$anchor"
@@ -229,13 +300,16 @@ function __zmx-picker-refresh-host
     set -l fields (string split \t -- "$row")
     set -l encoded_session $fields[3]
     set -l preview_file $fields[5]
+    if test -z "$preview_file"; or test -e "$preview_file"
+      continue
+    end
+
     set -l temporary_preview "$preview_file.$fish_pid"
     set -l remote_command "
       set session (printf '%s' '$encoded_session' | base64 --decode)
       env ZMX_SESSION_PREFIX= zmx history \"\$session\" | tail -n '$preview_lines'
       exit \$pipestatus[1]
     "
-
     ssh \
       -o BatchMode=yes \
       -o ConnectTimeout=3 \
@@ -248,7 +322,6 @@ function __zmx-picker-refresh-host
       printf 'Could not load preview from %s.\n' "$host" >"$temporary_preview"
     end
     command mv "$temporary_preview" "$preview_file"
-
     curl \
       --silent \
       --fail \
@@ -256,6 +329,35 @@ function __zmx-picker-refresh-host
       http://localhost \
       --data-binary refresh-preview \
       >/dev/null 2>&1
+  end
+end
+
+function __zmx-picker-watch-host
+  set -l anchor $argv[1]
+  set -l current_host $argv[2]
+  set -l host $argv[3]
+  set -l row_file $argv[4]
+  set -l status_file $argv[5]
+  set -l reload_command $argv[6]
+  set -l socket $argv[7]
+  set -l preview_directory $argv[8]
+  set -l preview_lines $argv[9]
+
+  while true
+    __zmx-picker-refresh-host \
+      "$anchor" \
+      "$current_host" \
+      "$host" \
+      "$row_file" \
+      "$status_file" \
+      "$reload_command" \
+      "$socket" \
+      "$preview_directory"
+    set -l refresh_status $status
+    if test $refresh_status -eq 0; and test "$host" != "$current_host"
+      __zmx-picker-refresh-previews "$anchor" "$host" "$row_file" "$socket" "$preview_lines"
+    end
+    sleep 2
   end
 end
 
@@ -397,7 +499,7 @@ function zmx-select
       set -l fields (string split \t -- "$row")
       set -l session_key "$fields[1]/$fields[2]"
       if test "$session_key" = "$anchor"
-        set anchor_label (string replace -r '^(?:→ |  )(?:● |  )' '' -- "$fields[4]")
+        set anchor_label "$fields[6]"
       end
     end
 
@@ -436,15 +538,19 @@ function zmx-select
 
     set -l worker_file "$row_directory/worker.fish"
     functions --no-details \
+      __zmx-picker-pi-marker \
       __zmx-picker-host-rows \
       __zmx-picker-status-row \
+      __zmx-picker-reload \
       __zmx-picker-refresh-host \
+      __zmx-picker-refresh-previews \
+      __zmx-picker-watch-host \
       __zmx-picker-close-session \
       >"$worker_file"
     printf '
 switch $argv[1]
-  case refresh
-    __zmx-picker-refresh-host $argv[2..]
+  case watch
+    __zmx-picker-watch-host $argv[2..]
   case close
     __zmx-picker-close-session $argv[2..]
 end
@@ -466,22 +572,24 @@ end
         (string escape -- "$socket") \
         (string escape -- "$preview_lines")
     )
-    set -l refresh_pids
-    for host in $hosts
+    set -l watch_pids
+    for host in $display_hosts
+      set -l preview_directory
       if test "$host" != "$current_host"
-        fish "$worker_file" \
-          refresh \
-          "$anchor" \
-          "$current_host" \
-          "$host" \
-          "$row_directory/$host.rows" \
-          "$row_directory/$host.status" \
-          "$reload_command" \
-          "$socket" \
-          "$row_directory/$host.previews" \
-          "$preview_lines" &
-        set -a refresh_pids $last_pid
+        set preview_directory "$row_directory/$host.previews"
       end
+      fish "$worker_file" \
+        watch \
+        "$anchor" \
+        "$current_host" \
+        "$host" \
+        "$row_directory/$host.rows" \
+        "$row_directory/$host.status" \
+        "$reload_command" \
+        "$socket" \
+        "$preview_directory" \
+        "$preview_lines" &
+      set -a watch_pids $last_pid
     end
 
     set -l output (
@@ -501,13 +609,13 @@ end
           --reverse \
           --prompt='zmx> ' \
           --header="$header" \
-          --preview='host={1}; encoded_session={3}; preview_file={5}; if [ -z "$encoded_session" ]; then printf "Enter to create a new session on %s\n" "$host"; else session="$(printf "%s" "$encoded_session" | base64 --decode)"; if [ "$host" = "$(hostname -s)" ]; then env ZMX_SESSION_PREFIX= zmx history "$session" | tail -n "$(tput lines)"; elif [ -f "$preview_file" ]; then command cat "$preview_file"; else printf "Loading preview from %s…\n" "$host"; fi; fi' \
-          --preview-window=right,60% |
+          --preview='host={1}; encoded_session={3}; preview_file={5}; preview_lines=${FZF_PREVIEW_LINES:-24}; if [ -z "$encoded_session" ]; then printf "Enter to create a new session on %s\n" "$host"; else session="$(printf "%s" "$encoded_session" | base64 --decode)"; if [ "$host" = "$(hostname -s)" ]; then env ZMX_SESSION_PREFIX= zmx history "$session" | tail -n "$preview_lines"; elif [ -f "$preview_file" ]; then tail -n "$preview_lines" "$preview_file"; else printf "Loading preview from %s…\n" "$host"; fi; fi' \
+          --preview-window=right,60%,follow |
         string split0
     )
 
-    for refresh_pid in $refresh_pids
-      kill "$refresh_pid" 2>/dev/null
+    for watch_pid in $watch_pids
+      kill "$watch_pid" 2>/dev/null
     end
     command rm -rf "$row_directory"
 
@@ -559,7 +667,10 @@ end
         continue
       end
 
-      if not read --prompt-str='zmx title (empty clears): ' --local title
+      read --prompt-str='zmx title (empty clears): ' --local title
+      set -l read_status $status
+      __zmx-picker-clear-viewport
+      if test $read_status -ne 0
         continue
       end
 
@@ -584,6 +695,7 @@ end
       if test $status -ne 0
         printf '%s\n' "$rename_output" >&2
         read --prompt-str='Press Enter to continue' --local ignored
+        __zmx-picker-clear-viewport
       end
       continue
     end

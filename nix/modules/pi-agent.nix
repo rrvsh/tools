@@ -204,6 +204,7 @@ in
               (root + "/pi/extensions/system-prompt-viewer.ts")
               (root + "/pi/extensions/codex-usage.ts")
               (root + "/pi/extensions/zmx-title.ts")
+              (root + "/pi/extensions/zmx-status.ts")
               (root + "/pi/extensions/thread-title")
             ];
           };

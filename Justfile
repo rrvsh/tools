@@ -106,7 +106,10 @@ _lint-qml-linux:
 lint-rs:
   cargo clippy --manifest-path rs/Cargo.toml --fix --allow-dirty --all
 
-test: test-nix test-rs test-ts
+test: test-fish test-nix test-rs test-ts
+
+test-fish:
+  fish fish/zmx.test.fish
 
 test-nix:
   if [ "${ALL_SYSTEMS:-0}" = "1" ]; then nix flake check --accept-flake-config --all-systems; else nix flake check --accept-flake-config; fi
