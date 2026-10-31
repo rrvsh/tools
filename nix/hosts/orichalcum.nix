@@ -11,12 +11,12 @@ in
   config.flake.hosts.nixos.orichalcum = {
     hostPlatform = "x86_64-linux";
     primaryUser = primaryUsers.rafiq;
-    modules = [
-      cfg.modules.nixos.user-config
+    modules = [ cfg.modules.nixos.user-config ];
+    machineModules = [
       cfg.modules.nixos.podman
       cfg.modules.nixos.vultr-vps
     ];
-    extraConfig =
+    extraMachineConfig =
       { pkgs, ... }:
       {
         boot.initrd = {

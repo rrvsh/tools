@@ -10,8 +10,27 @@ in
       "graphical"
       "development"
     ];
-    modules = [
-      cfg.modules.nixos.user-primary
+    modules = [ cfg.modules.nixos.user-primary ];
+    extraConfig =
+      { pkgs, ... }:
+      {
+        home-manager.sharedModules = [
+          {
+            programs.ghostty.settings.font-size = 13;
+          }
+        ];
+        boot = {
+          loader = {
+            systemd-boot = {
+              enable = true;
+              edk2-uefi-shell.enable = true;
+            };
+            efi.canTouchEfiVariables = true;
+          };
+          kernelPackages = pkgs.linuxPackages_latest;
+        };
+      };
+    machineModules = [
       cfg.modules.nixos.agent-browser-shared
       cfg.modules.nixos.nvidia-graphics
       cfg.modules.nixos.xremap
@@ -22,21 +41,15 @@ in
       cfg.modules.nixos.gtnh-server
       cfg.modules.nixos.gtnh-backups
     ];
-    extraConfig =
+    extraMachineConfig =
       {
         config,
-        pkgs,
         lib,
         modulesPath,
         ...
       }:
       {
         imports = [ (modulesPath + "/installer/scan/not-detected.nix") ];
-        home-manager.sharedModules = [
-          {
-            programs.ghostty.settings.font-size = 13;
-          }
-        ];
         hardware.cpu.amd.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
         boot = {
           initrd.availableKernelModules = [
@@ -48,16 +61,10 @@ in
             "sd_mod"
           ];
           kernelModules = [ "kvm-amd" ];
-          loader.systemd-boot = {
-            enable = true;
-            edk2-uefi-shell.enable = true;
-            windows."11-pro" = {
-              title = "Windows 11 Pro";
-              efiDeviceHandle = "HD0d";
-            };
+          loader.systemd-boot.windows."11-pro" = {
+            title = "Windows 11 Pro";
+            efiDeviceHandle = "HD0d";
           };
-          loader.efi.canTouchEfiVariables = true;
-          kernelPackages = pkgs.linuxPackages_latest;
         };
         fileSystems = {
           "/" = {
