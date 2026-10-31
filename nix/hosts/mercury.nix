@@ -7,16 +7,16 @@ in
     hostPlatform = "x86_64-linux";
     primaryUser = primaryUsers.rafiq;
     profiles = [ "development" ];
-    modules = [
-      cfg.modules.nixos.user-primary
-      cfg.modules.nixos.vultr-vps
-    ];
-    extraConfig =
+    modules = [ cfg.modules.nixos.user-primary ];
+    extraConfig = {
+      home-manager.sharedModules = [
+        { services.google-drive.localBrowser = false; }
+      ];
+    };
+    machineModules = [ cfg.modules.nixos.vultr-vps ];
+    extraMachineConfig =
       { lib, ... }:
       {
-        home-manager.sharedModules = [
-          { services.google-drive.localBrowser = false; }
-        ];
         boot.initrd = {
           availableKernelModules = [
             "ata_piix"

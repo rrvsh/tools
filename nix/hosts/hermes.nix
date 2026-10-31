@@ -6,11 +6,9 @@ in
   config.flake.hosts.nixos.hermes = {
     hostPlatform = "x86_64-linux";
     primaryUser = primaryUsers.rafiq;
-    modules = [
-      cfg.modules.nixos.user-config
-      cfg.modules.nixos.vultr-vps
-    ];
-    extraConfig =
+    modules = [ cfg.modules.nixos.user-config ];
+    machineModules = [ cfg.modules.nixos.vultr-vps ];
+    extraMachineConfig =
       {
         config,
         lib,

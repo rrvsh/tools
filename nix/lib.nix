@@ -42,6 +42,14 @@ let
                 type = lib.types.deferredModule;
                 default = { };
               };
+              machineModules = lib.mkOption {
+                type = lib.types.listOf lib.types.deferredModule;
+                default = [ ];
+              };
+              extraMachineConfig = lib.mkOption {
+                type = lib.types.deferredModule;
+                default = { };
+              };
             };
           }
         );
@@ -52,6 +60,7 @@ let
           systemBuilder,
           platformModules,
           includeExtraConfig ? false,
+          includeMachineConfig ? false,
         }:
         name: value:
         systemBuilder {
@@ -72,7 +81,9 @@ let
           ]
           ++ map (profile: builtins.getAttr "profile-${profile}" platformModules) value.profiles
           ++ value.modules
-          ++ lib.optional includeExtraConfig value.extraConfig;
+          ++ lib.optional includeExtraConfig value.extraConfig
+          ++ lib.optionals includeMachineConfig value.machineModules
+          ++ lib.optional includeMachineConfig value.extraMachineConfig;
         };
     };
   };

@@ -13,5 +13,6 @@ in
     systemBuilder = inputs.nixpkgs.lib.nixosSystem;
     platformModules = cfg.modules.nixos;
     includeExtraConfig = true;
+    includeMachineConfig = true;
   }) cfg.hosts.nixos;
 }
