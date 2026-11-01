@@ -50,6 +50,38 @@ let
                 type = lib.types.deferredModule;
                 default = { };
               };
+              vm = lib.mkOption {
+                default = { };
+                type = lib.types.submodule {
+                  options = {
+                    enable = lib.mkEnableOption "a derived QEMU virtual machine";
+                    profiles = lib.mkOption {
+                      type = lib.types.listOf lib.types.str;
+                      default = [ ];
+                    };
+                    modules = lib.mkOption {
+                      type = lib.types.listOf lib.types.deferredModule;
+                      default = [ ];
+                    };
+                    extraConfig = lib.mkOption {
+                      type = lib.types.deferredModule;
+                      default = { };
+                    };
+                    memorySize = lib.mkOption {
+                      type = lib.types.ints.positive;
+                      default = 8192;
+                    };
+                    cores = lib.mkOption {
+                      type = lib.types.ints.positive;
+                      default = 8;
+                    };
+                    diskSize = lib.mkOption {
+                      type = lib.types.ints.positive;
+                      default = 32768;
+                    };
+                  };
+                };
+              };
             };
           }
         );
@@ -61,11 +93,13 @@ let
           platformModules,
           includeExtraConfig ? false,
           includeMachineConfig ? false,
+          systemKind ? "machine",
         }:
         name: value:
         systemBuilder {
           specialArgs = {
             hostName = name;
+            inherit systemKind;
             inherit (value) primaryUser;
           };
           modules = [
@@ -74,6 +108,7 @@ let
               nixpkgs = { inherit (value) hostPlatform; };
               home-manager.extraSpecialArgs = {
                 hostName = name;
+                inherit systemKind;
                 inherit (value) primaryUser;
               };
             }

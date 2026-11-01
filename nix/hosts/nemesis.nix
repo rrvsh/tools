@@ -10,6 +10,10 @@ in
       "graphical"
       "development"
     ];
+    vm = {
+      enable = true;
+      profiles = [ "graphical" ];
+    };
     modules = [ cfg.modules.nixos.user-primary ];
     extraConfig =
       { pkgs, ... }:
