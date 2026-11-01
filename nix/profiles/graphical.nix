@@ -246,6 +246,7 @@ in
           audio-config
           cursor-themes
           greetd-tuigreet
+          removable-media
         ];
         services.tuigreet = {
           enable = true;
