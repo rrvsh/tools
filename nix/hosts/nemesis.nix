@@ -13,17 +13,26 @@ in
     vm = {
       enable = true;
       profiles = [ "graphical" ];
-      extraConfig.boot = {
-        consoleLogLevel = 3;
-        initrd.verbose = false;
-        loader.timeout = 0;
-        kernelParams = [
-          "quiet"
-          "udev.log_level=3"
-          "systemd.show_status=auto"
-          "rd.systemd.show_status=auto"
-        ];
-      };
+      extraConfig =
+        { pkgs, ... }:
+        {
+          boot = {
+            consoleLogLevel = 3;
+            initrd.verbose = false;
+            loader.timeout = 0;
+            kernelParams = [
+              "quiet"
+              "udev.log_level=3"
+              "systemd.show_status=auto"
+              "rd.systemd.show_status=auto"
+            ];
+            plymouth = {
+              enable = true;
+              theme = "black";
+              themePackages = [ cfg.packages.${pkgs.stdenv.hostPlatform.system}.plymouth-theme-black ];
+            };
+          };
+        };
     };
     modules = [ cfg.modules.nixos.user-primary ];
     extraConfig =
