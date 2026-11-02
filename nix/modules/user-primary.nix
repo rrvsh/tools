@@ -29,6 +29,8 @@ in
   config.flake.modules.nixos.user-primary =
     {
       config,
+      hostName,
+      pkgs,
       primaryUser,
       systemKind,
       ...
@@ -50,8 +52,14 @@ in
         hashedPasswordFile = config.sops.secrets."${primaryUser.name}/password".path;
       }
       // lib.optionalAttrs (systemKind == "vm") {
-        # The VM is local-only and uses the documented test password `nemesis`.
-        initialHashedPassword = "$6$nemesisvm$Wig0v7GFj0w1YOaoEH3NkFq6wjTG8dlvvrbvkCWISRgR6nPCtj.V1uiRtfswXo2OxT8mR0EaNoFNKHFzfeBPU/";
+        hashedPasswordFile = "${pkgs.runCommand "${hostName}-password-hash"
+          { nativeBuildInputs = [ pkgs.mkpasswd ]; }
+          ''
+            hostname=${lib.escapeShellArg hostName}
+            salt=$(printf '%s' "$hostname" | sha256sum | cut -c1-16)
+            mkpasswd -m sha-512 -S "$salt" "$hostname" > "$out"
+          ''
+        }";
       };
     }
     // lib.optionalAttrs (systemKind == "machine") {
