@@ -13,26 +13,6 @@ in
     vm = {
       enable = true;
       profiles = [ "graphical" ];
-      extraConfig =
-        { pkgs, ... }:
-        {
-          boot = {
-            consoleLogLevel = 3;
-            initrd.verbose = false;
-            loader.timeout = 0;
-            kernelParams = [
-              "quiet"
-              "udev.log_level=3"
-              "systemd.show_status=auto"
-              "rd.systemd.show_status=auto"
-            ];
-            plymouth = {
-              enable = true;
-              theme = "black";
-              themePackages = [ cfg.packages.${pkgs.stdenv.hostPlatform.system}.plymouth-theme-black ];
-            };
-          };
-        };
     };
     modules = [ cfg.modules.nixos.user-primary ];
     extraConfig =
@@ -44,7 +24,16 @@ in
           }
         ];
         boot = {
+          consoleLogLevel = 3;
+          initrd.verbose = false;
+          kernelParams = [
+            "quiet"
+            "udev.log_level=3"
+            "systemd.show_status=auto"
+            "rd.systemd.show_status=auto"
+          ];
           loader = {
+            timeout = 0;
             systemd-boot = {
               enable = true;
               edk2-uefi-shell.enable = true;
@@ -52,6 +41,11 @@ in
             efi.canTouchEfiVariables = true;
           };
           kernelPackages = pkgs.linuxPackages_latest;
+          plymouth = {
+            enable = true;
+            theme = "black";
+            themePackages = [ cfg.packages.${pkgs.stdenv.hostPlatform.system}.plymouth-theme-black ];
+          };
         };
       };
     machineModules = [
