@@ -27,7 +27,14 @@ let
 in
 {
   config.flake.modules.nixos.user-primary =
-    { config, primaryUser, ... }:
+    {
+      config,
+      hostName,
+      pkgs,
+      primaryUser,
+      systemKind,
+      ...
+    }:
     {
       imports = [
         sharedOsConfig
@@ -40,8 +47,22 @@ in
         isNormalUser = true;
         extraGroups = [ "wheel" ];
         openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      }
+      // lib.optionalAttrs (systemKind == "machine") {
         hashedPasswordFile = config.sops.secrets."${primaryUser.name}/password".path;
+      }
+      // lib.optionalAttrs (systemKind == "vm") {
+        hashedPasswordFile = "${pkgs.runCommand "${hostName}-password-hash"
+          { nativeBuildInputs = [ pkgs.mkpasswd ]; }
+          ''
+            hostname=${lib.escapeShellArg hostName}
+            salt=$(printf '%s' "$hostname" | sha256sum | cut -c1-16)
+            mkpasswd -m sha-512 -S "$salt" "$hostname" > "$out"
+          ''
+        }";
       };
+    }
+    // lib.optionalAttrs (systemKind == "machine") {
       sops.secrets."${primaryUser.name}/password" = {
         sopsFile = root + "/sops/${primaryUser.name}.yaml";
         neededForUsers = true;
