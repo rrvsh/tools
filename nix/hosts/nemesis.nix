@@ -31,6 +31,8 @@ in
             "udev.log_level=3"
             "systemd.show_status=auto"
             "rd.systemd.show_status=auto"
+            "fbcon=nodefer"
+            "vt.global_cursor_default=0"
           ];
           loader = {
             timeout = 0;

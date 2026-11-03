@@ -59,6 +59,14 @@ sudo bash -lc 'for v in /sys/firmware/efi/efivars/LoaderEntryDefault-* /sys/firm
 
 Note: on this machine, unsetting from `boot.loader.systemd-boot.extraInstallCommands` did not persist (the variable reappeared by end of switch). The reliable approach here is to unset it after `nh os switch` completes (wired into `Justfile` `rb`).
 
+### Nemesis recovery console cursor
+
+Nemesis hides the default Linux virtual-console cursor during boot. If a recovery console has no visible cursor, restore it with:
+
+```bash
+setterm --cursor on
+```
+
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer
