@@ -54,6 +54,11 @@ in
               gaps_out = 0;
               border_size = 0;
             };
+            misc = {
+              disable_hyprland_logo = true;
+              disable_splash_rendering = true;
+              background_color = "rgba(000000ff)";
+            };
             plugin.dynamic_cursors = {
               mode = "tilt";
               tilt = {
