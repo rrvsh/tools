@@ -234,7 +234,12 @@ in
         ];
       };
     modules.nixos.profile-graphical =
-      { config, pkgs, ... }:
+      {
+        config,
+        lib,
+        pkgs,
+        ...
+      }:
       {
         imports = with cfg.modules.nixos; [
           graphicalKeybinds
@@ -251,7 +256,11 @@ in
         services.tuigreet = {
           enable = true;
           settings = {
-            session.command = "${config.programs.hyprland.package}/bin/start-hyprland";
+            # Keep Hyprland startup output off tty1 while retaining it in the journal.
+            session.command = "${pkgs.writeShellScript "start-hyprland-session" ''
+              exec ${config.programs.hyprland.package}/bin/start-hyprland \
+                > >(${lib.getExe' pkgs.systemd "systemd-cat"} --identifier=start-hyprland) 2>&1
+            ''}";
             layout.widgets.status_bar = {
               show_reset = false;
               show_command = false;
