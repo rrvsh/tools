@@ -13,8 +13,6 @@ let
         home.file = {
           ".pi/agent/skills/agent-browser/SKILL.md".source =
             cfg.paths.root + "/agents/skills/agent-browser/SKILL.md";
-          ".pi/agent/skills/issue-ticket-pr-writing/SKILL.md".source =
-            cfg.paths.root + "/agents/skills/issue-ticket-pr-writing/SKILL.md";
           ".pi/agent/skills/pr-babysit/SKILL.md".source =
             cfg.paths.root + "/agents/skills/pr-babysit/SKILL.md";
           ".pi/agent/skills/zmx/SKILL.md".source = cfg.paths.root + "/agents/skills/zmx/SKILL.md";
