@@ -18,6 +18,7 @@
               export SLSKD_PASS="$(<${config.sops.secrets."slskd/web-password".path})"
               export SLSKD_DOWNLOADS_PATH=${pkgs.lib.escapeShellArg "${config.users.users.${primaryUser.name}.home}/Library/Application Support/slskd/downloads"}
               export MUSIC_DIR=${pkgs.lib.escapeShellArg "${config.users.users.${primaryUser.name}.home}/Music/Mine"}
+              export LISTEN_ADDR=0.0.0.0
               export SINGLES_SUBDIR=.
               export ALBUMS_SUBDIR=.
               export SOURCE_SOULSEEK_ENABLED=true
