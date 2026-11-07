@@ -255,20 +255,32 @@ in
         ];
         services.tuigreet = {
           enable = true;
+          intro = "typewriter";
           settings = {
+            display.show_title = false;
             # Keep Hyprland startup output off tty1 while retaining it in the journal.
             session.command = "${pkgs.writeShellScript "start-hyprland-session" ''
               exec ${config.programs.hyprland.package}/bin/start-hyprland \
                 > >(${lib.getExe' pkgs.systemd "systemd-cat"} --identifier=start-hyprland) 2>&1
             ''}";
-            layout.widgets.status_bar = {
-              show_reset = false;
-              show_command = false;
-              show_session = false;
-              show_power = false;
-              show_background = false;
-              show_session_status = false;
-              show_caps_lock = false;
+            layout = {
+              width = 50;
+              widgets.status_bar = {
+                show_reset = false;
+                show_command = false;
+                show_session = false;
+                show_power = false;
+                show_background = false;
+                show_session_status = false;
+                show_caps_lock = false;
+              };
+            };
+            theme = {
+              border = "black";
+              container = "black";
+              input = "white";
+              prompt = "white";
+              text = "white";
             };
           };
         };

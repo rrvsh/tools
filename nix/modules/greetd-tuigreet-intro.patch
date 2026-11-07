@@ -1,0 +1,291 @@
+--- a/crates/tuigreet/src/greeter.rs
++++ b/crates/tuigreet/src/greeter.rs
+@@ -163,6 +163,9 @@
+   pub animation:     Option<Box<dyn Animation>>,
+   // Configured animation FPS, when an animation is active.
+   pub animation_fps: Option<u32>,
++  // Optional one-shot entrance animation for the login prompt.
++  pub intro_kind:    Option<String>,
++  pub intro_frame:   u32,
+   // Skip greetd socket and simulate auth flow locally for UI testing
+   pub mock:          bool,
+   // Menu for the on-the-fly background switcher (F4 by default).
+@@ -231,6 +234,8 @@
+       status_show_caps_lock:      true,
+       animation:                  None,
+       animation_fps:              None,
++      intro_kind:                 None,
++      intro_frame:                0,
+       mock:                       false,
+       backgrounds:                Menu::default(),
+       working:                    false,
+@@ -335,6 +340,16 @@
+         }
+       }
+ 
++      if let Ok(kind) = env::var("TUIGREET_INTRO")
++        && matches!(
++          kind.as_str(),
++          "typewriter" | "scanline" | "split" | "cursor-wake" | "flicker"
++        )
++      {
++        greeter.intro_kind = Some(kind);
++        greeter.animation_fps = Some(ANIMATION_DEFAULT_FPS);
++      }
++
+       greeter.logger = crate::init_logger(&greeter);
+       greeter.connect().await;
+     }
+@@ -1243,7 +1258,7 @@
+   }
+ 
+   /// Push the current frame rate to the event loop.
+-  fn push_frame_rate(&self) {
++  pub(crate) fn push_frame_rate(&self) {
+     if let Some(tx) = &self.events {
+       let fps = self.frame_rate();
+       let tx = tx.clone();
+--- a/crates/tuigreet/src/ui/mod.rs
++++ b/crates/tuigreet/src/ui/mod.rs
+@@ -5,6 +5,7 @@
+ mod command;
+ pub mod common;
+ mod i18n;
++mod intro;
+ pub mod power;
+ mod processing;
+ mod prompt;
+@@ -376,7 +377,24 @@
+       Mode::Processing => {
+         self::processing::draw_with_area(&mut greeter, f, main_area).ok()
+       },
+-      _ => self::prompt::draw_with_area(&mut greeter, f, main_area).ok(),
++      _ => {
++        let before = f.buffer_mut().clone();
++        let cursor =
++          self::prompt::draw_with_area(&mut greeter, f, main_area).ok();
++        let final_buffer = f.buffer_mut().clone();
++        if self::intro::apply(
++          &mut greeter,
++          f.buffer_mut(),
++          &before,
++          &final_buffer,
++          main_area,
++          cursor,
++        ) {
++          None
++        } else {
++          cursor
++        }
++      },
+     };
+ 
+     if !hide_cursor && let Some(cursor) = cursor {
+--- /dev/null
++++ b/crates/tuigreet/src/ui/intro.rs
+@@ -0,0 +1,205 @@
++use tui::{
++  buffer::Buffer,
++  layout::{Position, Rect},
++  style::Color,
++};
++
++use crate::{Greeter, ui::util::get_rect_bounds};
++
++fn restore_cell(current: &mut Buffer, before: &Buffer, x: u16, y: u16) {
++  let position = Position { x, y };
++  if let (Some(source), Some(target)) =
++    (before.cell(position).cloned(), current.cell_mut(position))
++  {
++    *target = source;
++  }
++}
++
++fn restore_where(
++  current: &mut Buffer,
++  before: &Buffer,
++  area: Rect,
++  mut hidden: impl FnMut(u16, u16) -> bool,
++) {
++  for y in area.y..area.y.saturating_add(area.height) {
++    for x in area.x..area.x.saturating_add(area.width) {
++      if hidden(x, y) {
++        restore_cell(current, before, x, y);
++      }
++    }
++  }
++}
++
++fn duration(kind: &str) -> u32 {
++  match kind {
++    "typewriter" => 12,
++    "scanline" | "split" => 14,
++    "cursor-wake" => 16,
++    "flicker" => 10,
++    _ => 0,
++  }
++}
++
++fn scanline(
++  greeter: &Greeter,
++  current: &mut Buffer,
++  before: &Buffer,
++  final_buffer: &Buffer,
++  area: Rect,
++  frame: u32,
++) {
++  let (x, y, width, height) = get_rect_bounds(greeter, area, 0);
++  let container = Rect::new(x, y, width, height);
++  let reveal = ((frame + 1) * u32::from(width) / duration("scanline"))
++    .min(u32::from(width)) as u16;
++  let edge = x.saturating_add(reveal.min(width.saturating_sub(1)));
++
++  restore_where(current, before, container, |cell_x, _| cell_x >= edge);
++  for cell_y in y..y.saturating_add(height) {
++    let position = Position::new(edge, cell_y);
++    if let Some(target) = current.cell_mut(position) {
++      target.set_char('▓');
++      target.set_fg(Color::White);
++      target.set_bg(Color::Black);
++    }
++  }
++
++  // Preserve the exact rendered prompt to the left of the moving scanline.
++  for cell_y in y..y.saturating_add(height) {
++    for cell_x in x..edge {
++      let position = Position::new(cell_x, cell_y);
++      if let (Some(source), Some(target)) = (
++        final_buffer.cell(position).cloned(),
++        current.cell_mut(position),
++      ) {
++        *target = source;
++      }
++    }
++  }
++}
++
++fn split(
++  greeter: &Greeter,
++  current: &mut Buffer,
++  before: &Buffer,
++  area: Rect,
++  frame: u32,
++) {
++  let (x, y, width, height) = get_rect_bounds(greeter, area, 0);
++  let container = Rect::new(x, y, width, height);
++  let center = x.saturating_add(width / 2);
++  let radius = ((frame + 1) * u32::from(width) / 2 / duration("split"))
++    .min(u32::from(width / 2)) as u16;
++  restore_where(current, before, container, |cell_x, _| {
++    cell_x.abs_diff(center) > radius
++  });
++}
++
++fn cursor_wake(
++  greeter: &Greeter,
++  current: &mut Buffer,
++  before: &Buffer,
++  area: Rect,
++  cursor: Option<(u16, u16)>,
++  frame: u32,
++) {
++  if frame >= 10 {
++    return;
++  }
++  let (x, y, width, height) = get_rect_bounds(greeter, area, 0);
++  restore_where(current, before, Rect::new(x, y, width, height), |_, _| true);
++  if frame % 4 < 2
++    && let Some((cursor_x, cursor_y)) = cursor
++    && let Some(cell) = current.cell_mut(Position::new(
++      cursor_x.saturating_sub(1),
++      cursor_y.saturating_sub(1),
++    ))
++  {
++    cell.set_char('█');
++    cell.set_fg(Color::White);
++    cell.set_bg(Color::Black);
++  }
++}
++
++fn flicker(
++  greeter: &Greeter,
++  current: &mut Buffer,
++  before: &Buffer,
++  area: Rect,
++  frame: u32,
++) {
++  let (x, y, width, height) = get_rect_bounds(greeter, area, 0);
++  let container = Rect::new(x, y, width, height);
++  if matches!(frame, 0 | 2 | 5) {
++    restore_where(current, before, container, |_, _| true);
++  } else if frame < 7 {
++    for cell_y in y..y.saturating_add(height) {
++      for cell_x in x..x.saturating_add(width) {
++        if let Some(cell) = current.cell_mut(Position::new(cell_x, cell_y)) {
++          cell.set_fg(Color::DarkGray);
++        }
++      }
++    }
++  }
++}
++
++pub fn apply(
++  greeter: &mut Greeter,
++  current: &mut Buffer,
++  before: &Buffer,
++  final_buffer: &Buffer,
++  area: Rect,
++  cursor: Option<(u16, u16)>,
++) -> bool {
++  let Some(kind) = greeter.intro_kind.clone() else {
++    return false;
++  };
++  let total = duration(&kind);
++  if total == 0 || greeter.intro_frame >= total {
++    return false;
++  }
++
++  if greeter.intro_frame == 0 {
++    greeter.animation_fps = Some(30);
++    greeter.push_frame_rate();
++  }
++
++  let frame = greeter.intro_frame;
++  match kind.as_str() {
++    "typewriter" => {
++      let (x, y, width, height) = get_rect_bounds(greeter, area, 0);
++      let container = Rect::new(x, y, width, height);
++      restore_where(current, before, container, |_, _| true);
++      let Some((cursor_x, cursor_y)) = cursor else {
++        return true;
++      };
++      let cursor_x = cursor_x.saturating_sub(1);
++      let cursor_y = cursor_y.saturating_sub(1);
++      let label_start = x.saturating_add(greeter.container_padding());
++      let label_width = cursor_x.saturating_sub(label_start);
++      let shown = ((frame + 1) * u32::from(label_width) / total)
++        .min(u32::from(label_width)) as u16;
++      for cell_x in label_start..label_start.saturating_add(shown) {
++        let position = Position::new(cell_x, cursor_y);
++        if let (Some(source), Some(target)) = (
++          final_buffer.cell(position).cloned(),
++          current.cell_mut(position),
++        ) {
++          *target = source;
++        }
++      }
++    },
++    "scanline" => scanline(greeter, current, before, final_buffer, area, frame),
++    "split" => split(greeter, current, before, area, frame),
++    "cursor-wake" => cursor_wake(greeter, current, before, area, cursor, frame),
++    "flicker" => flicker(greeter, current, before, area, frame),
++    _ => return false,
++  }
++
++  greeter.intro_frame += 1;
++  if greeter.intro_frame >= total {
++    greeter.animation_fps = None;
++    greeter.push_frame_rate();
++  }
++  true
++}
