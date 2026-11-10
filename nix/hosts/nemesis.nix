@@ -165,6 +165,9 @@ in
           };
           settings.main.no-auto-default = "74:56:3C:35:AB:E5";
         };
+        # Samba keeps its own password database. After rebuilding, check for an
+        # existing login with `sudo pdbedit -L -u rafiq`; if absent, set one
+        # with `sudo smbpasswd -a rafiq` (the same login password can be used).
         # The VM ownership hook stops this service before releasing the physical
         # Windows disk to QEMU and restores it after a clean guest shutdown.
         services.samba = {
