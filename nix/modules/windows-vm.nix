@@ -154,8 +154,9 @@
           case "$mode" in
             claim)
               if [[ -e ${lib.escapeShellArg windowsOwnershipState} ]]; then
-                echo "Windows disk is already reserved for zagreus" >&2
-                exit 1
+                ${diskSafetyCheck}
+                echo "Windows disk remains reserved for zagreus"
+                exit 0
               fi
               printf 'reserved for zagreus\n' >${lib.escapeShellArg windowsOwnershipState}
               chmod 0600 ${lib.escapeShellArg windowsOwnershipState}
