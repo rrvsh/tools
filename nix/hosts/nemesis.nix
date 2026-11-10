@@ -96,20 +96,6 @@ in
               "dmask=0077"
             ];
           };
-          "/mnt/windows" = {
-            device = "/dev/disk/by-uuid/0EA45F71A45F59F3";
-            fsType = "ntfs3";
-            options = [
-              "rw"
-              "uid=1000"
-              "umask=022"
-              "iocharset=utf8"
-              "windows_names"
-              "nofail"
-              "x-systemd.automount"
-              "x-systemd.idle-timeout=10min"
-            ];
-          };
         };
         networking.networkmanager = {
           ensureProfiles.profiles = {

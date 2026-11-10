@@ -351,20 +351,6 @@
         efiDeviceHandle = "HD0d";
       };
       environment = {
-        etc = {
-          "systemd/system/mnt-windows.mount.d/zagreus-ownership.conf".text = ''
-            [Unit]
-            ConditionPathExists=!${windowsOwnershipState}
-          '';
-          "systemd/system/mnt-windows.automount.d/zagreus-ownership.conf".text = ''
-            [Unit]
-            ConditionPathExists=!${windowsOwnershipState}
-          '';
-          "systemd/system/samba-smbd.service.d/zagreus-ownership.conf".text = ''
-            [Unit]
-            ConditionPathExists=!${windowsOwnershipState}
-          '';
-        };
         sessionVariables.LIBVIRT_DEFAULT_URI = "qemu:///system";
         systemPackages = [
           rebootToWindows
@@ -390,6 +376,57 @@
       ];
       users.users.${primaryUser.name}.extraGroups = [ "libvirtd" ];
 
+      systemd = {
+        automounts = [
+          {
+            description = "Automount the Windows filesystem while zagreus is stopped";
+            where = "/mnt/windows";
+            wantedBy = [ "multi-user.target" ];
+            automountConfig.TimeoutIdleSec = "10min";
+            unitConfig.ConditionPathExists = "!${windowsOwnershipState}";
+          }
+        ];
+        mounts = [
+          {
+            description = "Windows filesystem";
+            what = "/dev/disk/by-uuid/0EA45F71A45F59F3";
+            where = "/mnt/windows";
+            type = "ntfs3";
+            options = "rw,uid=1000,umask=022,iocharset=utf8,windows_names";
+            unitConfig.ConditionPathExists = "!${windowsOwnershipState}";
+          }
+        ];
+        services = {
+          samba-smbd.unitConfig.ConditionPathExists = "!${windowsOwnershipState}";
+          # Keep the XML declarative while leaving VM start/stop under explicit
+          # user control. Redefining an active domain only changes its next boot.
+          windows-vm-define = {
+            description = "Define the zagreus Windows VM";
+            wantedBy = [ "multi-user.target" ];
+            requires = [
+              "libvirtd-config.service"
+              "libvirtd.service"
+            ];
+            after = [
+              "libvirtd-config.service"
+              "libvirtd.service"
+            ];
+            path = [
+              config.virtualisation.libvirtd.package
+              pkgs.coreutils
+              pkgs.gawk
+              pkgs.gnugrep
+            ];
+            script = ''
+              virt-xml-validate ${windowsDomain}
+              virsh -c qemu:///system define ${windowsDomain}
+            '';
+            serviceConfig.Type = "oneshot";
+          };
+        };
+        tmpfiles.rules = [ "d /mnt/windows 0755 root root -" ];
+      };
+
       virtualisation.libvirtd = {
         enable = true;
         onBoot = "ignore";
@@ -398,34 +435,6 @@
         # The hook runs for every libvirt start path and rejects concurrent
         # Linux ownership before QEMU is allowed to open the physical disk.
         hooks.qemu.zagreus-disk-ownership = ownershipHook;
-      };
-
-      systemd.services = {
-        # Keep the XML declarative while leaving VM start/stop under explicit
-        # user control. Redefining an active domain only changes its next boot.
-        windows-vm-define = {
-          description = "Define the zagreus Windows VM";
-          wantedBy = [ "multi-user.target" ];
-          requires = [
-            "libvirtd-config.service"
-            "libvirtd.service"
-          ];
-          after = [
-            "libvirtd-config.service"
-            "libvirtd.service"
-          ];
-          path = [
-            config.virtualisation.libvirtd.package
-            pkgs.coreutils
-            pkgs.gawk
-            pkgs.gnugrep
-          ];
-          script = ''
-            virt-xml-validate ${windowsDomain}
-            virsh -c qemu:///system define ${windowsDomain}
-          '';
-          serviceConfig.Type = "oneshot";
-        };
       };
     };
 }
