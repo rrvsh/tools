@@ -67,6 +67,51 @@ Nemesis hides the default Linux virtual-console cursor during boot. If a recover
 setterm --cursor on
 ```
 
+## Nemesis Windows VM
+
+Nemesis can boot its dedicated Windows 11 installation either natively or as the `zagreus` libvirt VM. Both paths use the same physical NVMe disk. Never mount the Windows partitions manually while the VM is running.
+
+The VM does not start automatically. Start it with:
+
+```bash
+virsh start zagreus
+```
+
+The start hook fails closed. It stops the host Samba service, disables the `/mnt/windows` automount, unmounts NTFS, and verifies that no process or kernel holder is using the disk before QEMU can open it. If preparation fails, Linux access is restored and the VM does not start.
+
+Connect through RDP at `10.10.0.96` with:
+
+```bash
+zagreus-rdp
+```
+
+VNC on port `5900` remains available for firmware and recovery. The VM uses virtual VGA; GPU and Bluetooth passthrough are intentionally deferred.
+
+Request a clean shutdown with:
+
+```bash
+virsh shutdown zagreus
+```
+
+After a clean shutdown, the hook restores `/mnt/windows` automounting and the `windows-profile` Samba share. A forced stop or guest crash keeps Linux disk access blocked to avoid mounting potentially dirty NTFS. The VM may be started again while that reservation remains. To explicitly return the disk to Linux after confirming Windows is stopped, run:
+
+```bash
+reboot-to-windows --restore-linux
+```
+
+Avoid `virsh destroy zagreus` except for recovery. Windows hibernation and Fast Startup must remain disabled.
+
+The host normally connects through the declarative `br0` NetworkManager bridge so the VM has its own LAN address. The direct `wired` profile remains declared as a manual recovery path but does not autoconnect.
+
+Check native-boot readiness or reboot directly into Windows with:
+
+```bash
+reboot-to-windows --check
+reboot-to-windows
+```
+
+The Quickshell power menu uses the same guarded native-reboot command.
+
 ## acknowledgements
 
 - [ornicar](https://github.com/ornicar/dotfiles), for being my inspiration to start using Nix, open source, and being a full fledged software engineer

@@ -53,6 +53,7 @@ in
     machineModules = [
       cfg.modules.nixos.agent-browser-shared
       cfg.modules.nixos.nvidia-graphics
+      cfg.modules.nixos.windows-vm
       cfg.modules.nixos.xremap
       cfg.modules.nixos.steam
       cfg.modules.nixos.prismlauncher
@@ -81,10 +82,6 @@ in
             "sd_mod"
           ];
           kernelModules = [ "kvm-amd" ];
-          loader.systemd-boot.windows."11-pro" = {
-            title = "Windows 11 Pro";
-            efiDeviceHandle = "HD0d";
-          };
         };
         fileSystems = {
           "/" = {
@@ -99,36 +96,57 @@ in
               "dmask=0077"
             ];
           };
-          "/mnt/windows" = {
-            device = "/dev/disk/by-uuid/0EA45F71A45F59F3";
-            fsType = "ntfs3";
-            options = [
-              "rw"
-              "uid=1000"
-              "umask=022"
-              "iocharset=utf8"
-              "windows_names"
-              "nofail"
-              "x-systemd.automount"
-              "x-systemd.idle-timeout=10min"
-            ];
-          };
         };
         networking.networkmanager = {
-          ensureProfiles.profiles.wired = {
-            connection = {
-              id = "wired";
-              type = "ethernet";
-              interface-name = "enp12s0";
-              uuid = "221e9127-902c-483a-bbc4-7d2403b7dce9";
-              autoconnect = true;
-              autoconnect-priority = 100;
+          ensureProfiles.profiles = {
+            # Keep the direct profile as an explicit recovery path. The bridge
+            # is the normal host connection while zagreus is available.
+            wired = {
+              connection = {
+                id = "wired";
+                type = "ethernet";
+                interface-name = "enp12s0";
+                uuid = "221e9127-902c-483a-bbc4-7d2403b7dce9";
+                autoconnect = false;
+                autoconnect-priority = 50;
+              };
+              ethernet.mac-address = "74:56:3C:35:AB:E5";
+              ipv4.method = "auto";
+              ipv6 = {
+                method = "auto";
+                addr-gen-mode = "stable-privacy";
+              };
             };
-            ethernet.mac-address = "74:56:3C:35:AB:E5";
-            ipv4.method = "auto";
-            ipv6 = {
-              method = "auto";
-              addr-gen-mode = "stable-privacy";
+            lan-bridge = {
+              connection = {
+                id = "lan-bridge";
+                uuid = "90f94c60-a8ea-49c4-8867-12b7ec620f77";
+                type = "bridge";
+                interface-name = "br0";
+                autoconnect = true;
+                autoconnect-priority = 100;
+              };
+              bridge = {
+                stp = false;
+                mac-address = "74:56:3C:35:AB:E5";
+              };
+              ipv4.method = "auto";
+              ipv6 = {
+                method = "auto";
+                addr-gen-mode = "stable-privacy";
+              };
+            };
+            lan-bridge-port = {
+              connection = {
+                id = "lan-bridge-port";
+                uuid = "19af3f2e-63f4-47ff-a4a7-91eb30648b22";
+                type = "ethernet";
+                interface-name = "enp12s0";
+                autoconnect = true;
+                controller = "br0";
+                port-type = "bridge";
+              };
+              ethernet.mac-address = "74:56:3C:35:AB:E5";
             };
           };
           settings.main.no-auto-default = "74:56:3C:35:AB:E5";
@@ -136,6 +154,8 @@ in
         # Samba keeps its own password database. After rebuilding, check for an
         # existing login with `sudo pdbedit -L -u rafiq`; if absent, set one
         # with `sudo smbpasswd -a rafiq` (the same login password can be used).
+        # The VM ownership hook stops this service before releasing the physical
+        # Windows disk to QEMU and restores it after a clean guest shutdown.
         services.samba = {
           enable = true;
           openFirewall = true;
