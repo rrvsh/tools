@@ -238,6 +238,7 @@ in
         config,
         lib,
         pkgs,
+        primaryUser,
         ...
       }:
       {
@@ -269,6 +270,10 @@ in
               show_background = false;
               show_session_status = false;
               show_caps_lock = false;
+            };
+            remember = {
+              default_user = primaryUser.name;
+              username = true;
             };
           };
         };
