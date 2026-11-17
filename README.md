@@ -71,7 +71,7 @@ setterm --cursor on
 
 Nemesis can boot its dedicated Windows 11 installation either natively or as the `zagreus` libvirt VM. Both paths use the same physical NVMe disk. Never mount the Windows partitions manually while the VM is running.
 
-The VM does not start automatically. Start it with:
+The VM starts automatically when Nemesis boots. The host does not enable the `/mnt/windows` automount at boot; a clean VM shutdown restores it for Linux access. To start the VM manually after a shutdown, run:
 
 ```bash
 virsh start zagreus

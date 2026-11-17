@@ -381,7 +381,6 @@
           {
             description = "Automount the Windows filesystem while zagreus is stopped";
             where = "/mnt/windows";
-            wantedBy = [ "multi-user.target" ];
             automountConfig.TimeoutIdleSec = "10min";
             unitConfig.ConditionPathExists = "!${windowsOwnershipState}";
           }
@@ -398,8 +397,8 @@
         ];
         services = {
           samba-smbd.unitConfig.ConditionPathExists = "!${windowsOwnershipState}";
-          # Keep the XML declarative while leaving VM start/stop under explicit
-          # user control. Redefining an active domain only changes its next boot.
+          # Keep the XML declarative. Redefining an active domain only changes
+          # its next boot.
           windows-vm-define = {
             description = "Define the zagreus Windows VM";
             wantedBy = [ "multi-user.target" ];
@@ -420,6 +419,28 @@
             script = ''
               virt-xml-validate ${windowsDomain}
               virsh -c qemu:///system define ${windowsDomain}
+            '';
+            serviceConfig.Type = "oneshot";
+          };
+          windows-vm-start = {
+            description = "Start the zagreus Windows VM";
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network-online.target" ];
+            requires = [ "windows-vm-define.service" ];
+            after = [
+              "network-online.target"
+              "windows-vm-define.service"
+            ];
+            before = [ "samba-smbd.service" ];
+            path = [ config.virtualisation.libvirtd.package ];
+            script = ''
+              state=$(virsh -c qemu:///system domstate zagreus)
+              if [[ "$state" == "shut off" ]]; then
+                virsh -c qemu:///system start zagreus
+              elif [[ "$state" != "running" ]]; then
+                echo "Cannot start zagreus from state: $state" >&2
+                exit 1
+              fi
             '';
             serviceConfig.Type = "oneshot";
           };
