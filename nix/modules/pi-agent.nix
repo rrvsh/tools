@@ -232,6 +232,10 @@ in
             3. Use Browse.
             4. Use `agent_browser`.
 
+            The bare `browse` server controls the browser paired with the local host. A server named
+            `<hostname>-browse` controls that remote host's browser over SSH. Use the local browser by
+            default. Browser downloads, recordings, uploads, cookies, and handoffs belong to the selected host.
+
             ### Missing tools
 
             - If a command or binary is missing, try comma first: `, <command> [args...]`.

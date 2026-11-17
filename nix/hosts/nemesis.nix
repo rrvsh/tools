@@ -20,7 +20,10 @@ in
       {
         home-manager.sharedModules = [
           {
-            programs.ghostty.settings.font-size = 13;
+            programs = {
+              browse.remoteHosts = [ "kikir" ];
+              ghostty.settings.font-size = 13;
+            };
           }
         ];
         boot = {
