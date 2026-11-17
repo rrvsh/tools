@@ -236,6 +236,10 @@ in
             `<hostname>-browse` controls that remote host's browser over SSH. Use the local browser by
             default. Browser downloads, recordings, uploads, cookies, and handoffs belong to the selected host.
 
+            On macOS, always start Browse's paired Chrome without a visible window using
+            `open -gj -a "Google Chrome" --args --no-startup-window`. Run it on the browser host,
+            over SSH when remote. Never omit `--no-startup-window`.
+
             ### Missing tools
 
             - If a command or binary is missing, try comma first: `, <command> [args...]`.
