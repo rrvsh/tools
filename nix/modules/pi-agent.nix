@@ -225,15 +225,17 @@ in
 
             ### Web and browser tools
 
-            - For web content, use `web_search` or `fetch_content` first.
-            - Use `agent_browser` for login, account state, dynamic page state, or browser actions.
-            - Do not run `agent-browser` through `bash`.
+            - For public web content, use `web_search` or `fetch_content` first.
+            - Use the Browse MCP tools by default for login, account state, dynamic page state, screenshots, and browser actions.
+            - Browse may use only tabs it opened or tabs Rafiq explicitly lent through the extension. Do not inspect or adopt other browser tabs.
+            - Use Browse handoff for login, 2FA, CAPTCHA, passkeys, payments, or any other step that needs Rafiq. Continue only after the handoff completes, then verify the resulting page state.
             - Treat browser snapshot refs as stale after a rerender.
-            - Use `--headed` only when the browser task needs the user to act.
-            - Use the configured browser connection. Do not override its CDP endpoint, profile, or user-data directory unless troubleshooting requires it.
-            - Do not access or launch the normal human browser profile without explicit approval.
-            - When authentication must be refreshed, ask the user before changing browser service or profile state.
-            - Never copy browser profiles or credentials between hosts.
+            - Do not log out, switch accounts, clear browsing data, change extension pairing, or change the relay address without explicit approval.
+            - Browser credentials stay on the paired browser machine. Never copy browser profiles or credentials between hosts.
+            - A remote Browse connection must use Tailscale or WireGuard. Never expose its relay directly to the public internet.
+            - Use `agent_browser` only when the task requires true headless execution, an isolated browser profile, deterministic browser QA, Electron automation, or Browse is unavailable.
+            - Do not run `agent-browser` through `bash`.
+            - Use the configured `agent_browser` connection. Do not override its CDP endpoint, profile, or user-data directory unless troubleshooting requires it.
             - Rafiq explicitly authorizes final Stripe checkout submission when testing FileAI on a confirmed non-production origin in visibly confirmed Stripe test mode. This does not authorize live, ambiguous, refund, credit, or customer-affecting payment activity.
 
             ### Missing tools
@@ -269,7 +271,7 @@ in
 
             - Input fields must have placeholder text containing an example input.
               - Placeholder text must not contain instructions for that field.
-            - Use the agent browser tool to open up and screenshot the UI and inspect it.
+            - Use Browse to open, inspect, and screenshot the UI. Use `agent_browser` only when Browse cannot cover the required test.
 
             ## Writing code
 

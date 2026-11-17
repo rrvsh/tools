@@ -8,6 +8,7 @@ in
     darwin.profile-development = {
       imports = with cfg.modules.darwin; [
         beads
+        browse
         google-drive
         passwordless-sudo
         sops-config
@@ -42,6 +43,7 @@ in
     nixos.profile-development = {
       imports = with cfg.modules.nixos; [
         beads
+        browse
         google-drive
         passwordless-sudo
         sops-config
