@@ -114,6 +114,7 @@ Style constraints:
 - If a Nix module needs no arguments, use a plain attribute set. Omit `{ ... }:` and `_:`.
 - Declare variables at the narrowest scope where they are needed unless that hurts readability.
 - Inline values that have only one call site.
+- In Nix modules, always use `let cfg = config.flake; in` when accessing global flake configuration or other flake modules, even when `cfg` has only one call site.
 - Explain why a non-obvious environment or configuration override is needed.
 
 - One concern per module: one capability, policy, service, tool, or feature.
