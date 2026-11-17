@@ -32,6 +32,18 @@
             "$@"
         '';
       };
+      zagreusDesktop = pkgs.makeDesktopItem {
+        name = "zagreus";
+        desktopName = "Windows 11";
+        genericName = "Remote Desktop";
+        comment = "Connect to the zagreus Windows VM";
+        exec = lib.getExe zagreusRdp;
+        icon = "computer";
+        categories = [
+          "Network"
+          "RemoteAccess"
+        ];
+      };
       windowsDomain = pkgs.writeText "zagreus.xml" ''
         <domain type="kvm">
           <name>zagreus</name>
@@ -354,6 +366,7 @@
         sessionVariables.LIBVIRT_DEFAULT_URI = "qemu:///system";
         systemPackages = [
           rebootToWindows
+          zagreusDesktop
           zagreusRdp
         ];
       };
