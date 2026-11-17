@@ -225,16 +225,20 @@ in
 
             ### Web and browser tools
 
-            - For web content, use `web_search` or `fetch_content` first.
-            - Use `agent_browser` for login, account state, dynamic page state, or browser actions.
-            - Do not run `agent-browser` through `bash`.
-            - Treat browser snapshot refs as stale after a rerender.
-            - Use `--headed` only when the browser task needs the user to act.
-            - Use the configured browser connection. Do not override its CDP endpoint, profile, or user-data directory unless troubleshooting requires it.
-            - Do not access or launch the normal human browser profile without explicit approval.
-            - When authentication must be refreshed, ask the user before changing browser service or profile state.
-            - Never copy browser profiles or credentials between hosts.
-            - Rafiq explicitly authorizes final Stripe checkout submission when testing FileAI on a confirmed non-production origin in visibly confirmed Stripe test mode. This does not authorize live, ambiguous, refund, credit, or customer-affecting payment activity.
+            Use this fallback order for a URL:
+
+            1. Use an available service-specific MCP or CLI, such as `gh api` or the Datadog or Slack MCP.
+            2. Use `web_search` or `fetch_content`.
+            3. Use Browse.
+            4. Use `agent_browser`.
+
+            The bare `browse` server controls the browser paired with the local host. A server named
+            `<hostname>-browse` controls that remote host's browser over SSH. Use the local browser by
+            default. Browser downloads, recordings, uploads, cookies, and handoffs belong to the selected host.
+
+            On macOS, always start Browse's paired Chrome without a visible window using
+            `open -gj -a "Google Chrome" --args --no-startup-window`. Run it on the browser host,
+            over SSH when remote. Never omit `--no-startup-window`.
 
             ### Missing tools
 
@@ -269,7 +273,7 @@ in
 
             - Input fields must have placeholder text containing an example input.
               - Placeholder text must not contain instructions for that field.
-            - Use the agent browser tool to open up and screenshot the UI and inspect it.
+            - Follow the web and browser fallback order above to open, inspect, and screenshot the UI.
 
             ## Writing code
 

@@ -1,0 +1,193 @@
+diff --git a/rust/crates/browse-relay/src/presentation.rs b/rust/crates/browse-relay/src/presentation.rs
+index f804223..6e3304b 100644
+--- a/rust/crates/browse-relay/src/presentation.rs
++++ b/rust/crates/browse-relay/src/presentation.rs
+@@ -6,8 +6,12 @@ use std::sync::Arc;
+ use std::time::Duration;
+ 
+ use anyhow::bail;
++#[cfg(target_os = "macos")]
++use anyhow::anyhow;
+ use browse_core::HandoffResult;
+ use serde_json::{Value, json};
++#[cfg(target_os = "macos")]
++use tokio::process::Command;
+ use tokio::sync::oneshot;
+ 
+ use crate::link::Link;
+@@ -20,6 +24,72 @@ const CANCELLED: &str = "The call was cancelled by its client.";
+ /// How long a cancel that arrived before its call is remembered.
+ const CANCELLED_KEY_TTL: Duration = Duration::from_secs(60);
+ const IDLE_AFTER_CALL: Duration = Duration::from_millis(1500);
++#[cfg(target_os = "macos")]
++const MACOS_HANDOFF_APP: &str = "OPENCODE_BROWSER_MACOS_HANDOFF_APP";
++
++#[cfg(target_os = "macos")]
++fn macos_handoff_app() -> Option<String> {
++    std::env::var(MACOS_HANDOFF_APP).ok().map(|app| app.trim().to_string()).filter(|app| !app.is_empty())
++}
++
++#[cfg(not(target_os = "macos"))]
++fn macos_handoff_app() -> Option<String> {
++    None
++}
++
++#[cfg(target_os = "macos")]
++async fn macos_app_visible(app: &str) -> anyhow::Result<bool> {
++    let output = Command::new("/usr/bin/osascript")
++        .args([
++            "-e",
++            "on run argv",
++            "-e",
++            "tell application \"System Events\" to get visible of process (item 1 of argv)",
++            "-e",
++            "end run",
++            app,
++        ])
++        .output()
++        .await?;
++    if !output.status.success() {
++        return Err(anyhow!(String::from_utf8_lossy(&output.stderr).trim().to_string()));
++    }
++    match String::from_utf8_lossy(&output.stdout).trim() {
++        "true" => Ok(true),
++        "false" => Ok(false),
++        value => Err(anyhow!("unexpected visibility result: {value}")),
++    }
++}
++
++#[cfg(not(target_os = "macos"))]
++async fn macos_app_visible(_app: &str) -> anyhow::Result<bool> {
++    Ok(true)
++}
++
++#[cfg(target_os = "macos")]
++async fn hide_macos_app(app: &str) -> anyhow::Result<()> {
++    let output = Command::new("/usr/bin/osascript")
++        .args([
++            "-e",
++            "on run argv",
++            "-e",
++            "tell application \"System Events\" to set visible of process (item 1 of argv) to false",
++            "-e",
++            "end run",
++            app,
++        ])
++        .output()
++        .await?;
++    if !output.status.success() {
++        return Err(anyhow!(String::from_utf8_lossy(&output.stderr).trim().to_string()));
++    }
++    Ok(())
++}
++
++#[cfg(not(target_os = "macos"))]
++async fn hide_macos_app(_app: &str) -> anyhow::Result<()> {
++    Ok(())
++}
+ 
+ /// The page status, badge and group the extension should show. An agent tab is grouped by its `group` label (the
+ /// extension's Grouping setting decides whether that is a group of its own, the shared agent group or none); a lent
+@@ -276,7 +346,7 @@ impl Relay {
+         let message = if message.is_empty() { "Finish this step in the tab, then click Continue" } else { message };
+         let (done, outcome) = oneshot::channel();
+         let id = crate::util::random_hex(16);
+-        let status = {
++        let (status, first_handoff) = {
+             let mut st = self.st();
+             let Some(entry) = st.tabs.get(&tab) else { bail!("Tab {tab} isn't attached") };
+             let target_id = entry.target_id.clone();
+@@ -300,8 +370,16 @@ impl Relay {
+             presented.status = Some(status.clone());
+             presented.badge = Some(badge.clone());
+             self.ext_best_effort(tab, "action.setBadge", badge);
+-            status
++            (status, st.handoffs.len() == 1)
+         };
++        if first_handoff
++            && let Some(app) = macos_handoff_app() {
++                match macos_app_visible(&app).await {
++                    Ok(false) => self.st().hide_handoff_app = true,
++                    Ok(true) => {}
++                    Err(error) => rlog!("handoff.macos.visibility_failed", error = error.to_string()),
++                }
++            }
+         rlog!("handoff.started", tabId = tab);
+         // A call stopped while it waits (its client went away, the toolbar button) takes its card down with it.
+         let mut pending = PendingHandoff { relay: self.clone(), id: id.clone(), tab, armed: true };
+@@ -322,11 +400,19 @@ impl Relay {
+     }
+ 
+     fn finish_handoff_id(&self, tab: i64, id: &str, outcome: &'static str) {
+-        let mut st = self.st();
+-        if st.handoffs.get(&tab).is_some_and(|h| h.id == id)
+-            && let Some(mut handoff) = st.handoffs.remove(&tab) {
+-                handoff.done.take().map(|d| d.send(outcome));
+-            }
++        let finished = {
++            let mut st = self.st();
++            if st.handoffs.get(&tab).is_some_and(|h| h.id == id)
++                && let Some(mut handoff) = st.handoffs.remove(&tab) {
++                    handoff.done.take().map(|d| d.send(outcome));
++                    true
++                } else {
++                    false
++                }
++        };
++        if finished {
++            self.restore_handoff_app_if_idle();
++        }
+     }
+ 
+     /// Cancels the handoffs process `pid` waits for (it exited).
+@@ -344,9 +430,29 @@ impl Relay {
+             let Some(mut handoff) = st.handoffs.remove(&tab) else { return };
+             handoff.done.take().map(|d| d.send(outcome));
+         }
++        self.restore_handoff_app_if_idle();
+         self.refresh_presentation(tab, false);
+     }
+ 
++    fn restore_handoff_app_if_idle(&self) {
++        let should_hide = {
++            let mut st = self.st();
++            if st.handoffs.is_empty() && st.hide_handoff_app {
++                st.hide_handoff_app = false;
++                true
++            } else {
++                false
++            }
++        };
++        let Some(app) = should_hide.then(macos_handoff_app).flatten() else { return };
++        tokio::spawn(async move {
++            match hide_macos_app(&app).await {
++                Ok(()) => rlog!("handoff.macos.hidden", app = app),
++                Err(error) => rlog!("handoff.macos.hide_failed", error = error.to_string()),
++            }
++        });
++    }
++
+     /// The page's Continue button (`handoff.completed`): only the waiter named by its id and tab.
+     pub fn complete_handoff(self: &Arc<Self>, tab: i64, id: &str) {
+         let waiting = self.st().handoffs.get(&tab).is_some_and(|h| h.id == id);
+diff --git a/rust/crates/browse-relay/src/relay.rs b/rust/crates/browse-relay/src/relay.rs
+index 01d350d..cc14262 100644
+--- a/rust/crates/browse-relay/src/relay.rs
++++ b/rust/crates/browse-relay/src/relay.rs
+@@ -191,6 +191,8 @@ pub struct State {
+     pub clients: HashSet<u32>,
+     /// One handoff per tab.
+     pub handoffs: HashMap<i64, Handoff>,
++    /// Restore the configured macOS browser to hidden after the last pending handoff finishes.
++    pub hide_handoff_app: bool,
+     /// Tabs of a browser that disconnected, by target id, until it reconnects.
+     pub reconnect_owners: HashMap<String, KnownOwner>,
+     /// Agent tabs from the registry of the relay before this one, by target id, until their browser announces them.
+@@ -520,6 +522,7 @@ impl Relay {
+                 cancelled_calls: HashMap::new(),
+                 clients: HashSet::new(),
+                 handoffs: HashMap::new(),
++                hide_handoff_app: false,
+                 reconnect_owners: HashMap::new(),
+                 restorable: HashMap::new(),
+                 reserved_chosen: HashMap::new(),
