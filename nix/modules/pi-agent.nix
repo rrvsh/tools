@@ -225,18 +225,12 @@ in
 
             ### Web and browser tools
 
-            - For public web content, use `web_search` or `fetch_content` first.
-            - Use the Browse MCP tools by default for login, account state, dynamic page state, screenshots, and browser actions.
-            - Browse may use only tabs it opened or tabs Rafiq explicitly lent through the extension. Do not inspect or adopt other browser tabs.
-            - Use Browse handoff for login, 2FA, CAPTCHA, passkeys, payments, or any other step that needs Rafiq. Continue only after the handoff completes, then verify the resulting page state.
-            - Treat browser snapshot refs as stale after a rerender.
-            - Do not log out, switch accounts, clear browsing data, change extension pairing, or change the relay address without explicit approval.
-            - Browser credentials stay on the paired browser machine. Never copy browser profiles or credentials between hosts.
-            - A remote Browse connection must use Tailscale or WireGuard. Never expose its relay directly to the public internet.
-            - Use `agent_browser` only when the task requires true headless execution, an isolated browser profile, deterministic browser QA, Electron automation, or Browse is unavailable.
-            - Do not run `agent-browser` through `bash`.
-            - Use the configured `agent_browser` connection. Do not override its CDP endpoint, profile, or user-data directory unless troubleshooting requires it.
-            - Rafiq explicitly authorizes final Stripe checkout submission when testing FileAI on a confirmed non-production origin in visibly confirmed Stripe test mode. This does not authorize live, ambiguous, refund, credit, or customer-affecting payment activity.
+            Use this fallback order for a URL:
+
+            1. Use an available service-specific MCP or CLI, such as `gh api` or the Datadog or Slack MCP.
+            2. Use `web_search` or `fetch_content`.
+            3. Use Browse.
+            4. Use `agent_browser`.
 
             ### Missing tools
 
@@ -271,7 +265,7 @@ in
 
             - Input fields must have placeholder text containing an example input.
               - Placeholder text must not contain instructions for that field.
-            - Use Browse to open, inspect, and screenshot the UI. Use `agent_browser` only when Browse cannot cover the required test.
+            - Follow the web and browser fallback order above to open, inspect, and screenshot the UI.
 
             ## Writing code
 

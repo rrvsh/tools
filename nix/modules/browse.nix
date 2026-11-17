@@ -2,16 +2,16 @@
 let
   cfg = config.flake;
   extensionId = "mfnicocicmmlkpjnaffgihfjhdgjkdjg";
-  osModule = {
-    home-manager.sharedModules = [ cfg.modules.homeManager.browse ];
-  };
 in
 {
   config.flake.modules = {
-    darwin.browse = lib.recursiveUpdate osModule {
+    darwin.browse = {
+      home-manager.sharedModules = [ cfg.modules.homeManager.browse ];
       homebrew.casks = [ "google-chrome" ];
     };
-    nixos.browse = osModule;
+    nixos.browse = {
+      home-manager.sharedModules = [ cfg.modules.homeManager.browse ];
+    };
     homeManager.browse =
       { pkgs, ... }:
       let
