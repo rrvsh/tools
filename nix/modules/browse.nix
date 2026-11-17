@@ -8,6 +8,7 @@ in
     darwin.browse = {
       home-manager.sharedModules = [ cfg.modules.homeManager.browse ];
       homebrew.casks = [ "google-chrome" ];
+      environment.variables.OPENCODE_BROWSER_MACOS_HANDOFF_APP = "Google Chrome";
     };
     nixos.browse = {
       home-manager.sharedModules = [ cfg.modules.homeManager.browse ];

@@ -21,7 +21,10 @@
         buildAndTestSubdir = "rust";
         cargoHash = "sha256-Dv8bZ3qJpvGsIclV8hM7chJXuxBwqOJ51ZBcV0zSAIg=";
 
-        patches = [ ./patches/browse-test-legacy-get-without-body.patch ];
+        patches = [
+          ./patches/browse-test-legacy-get-without-body.patch
+          ./patches/browse-macos-hide-after-handoff.patch
+        ];
 
         cargoBuildFlags = [
           "-p"
