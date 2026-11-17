@@ -105,8 +105,15 @@ in
             id = "4WDU7B4-WFIUQXA-AQZ5ZXH-XAJ5F22-RZ6OQGO-NJVCMV3-I3BRRHW-XG4PXQM";
             addresses = [ "tcp://100.98.114.23:22000" ];
           };
+          perseus = {
+            id = "NCH4L5E-7QXMZ6K-DSRVSA6-62AT2LC-X4OCIPR-RWWE6ZH-XZNZF6Z-G3SI4AO";
+            addresses = [ "tcp://100.73.47.28:22000" ];
+          };
         };
         remoteSyncthingDevices = lib.filterAttrs (name: _: name != hostName) syncthingDevices;
+        remoteComputerSyncthingDevices = lib.filterAttrs (
+          name: _: name != "perseus"
+        ) remoteSyncthingDevices;
         # Backport the standalone scrollback restoration fix from
         # https://github.com/neurosnap/zmx/pull/271 until it reaches a ZMX release.
         zmx = pkgs.zmx.overrideAttrs (old: {
@@ -214,7 +221,7 @@ in
               id = "agents";
               label = "Agents";
               type = "sendreceive";
-              devices = builtins.attrNames remoteSyncthingDevices;
+              devices = builtins.attrNames remoteComputerSyncthingDevices;
               maxConflicts = 20;
               minDiskFree = syncthingMinDiskFree;
               versioning = {
@@ -230,11 +237,31 @@ in
               id = "pi-sessions";
               label = "Pi sessions";
               type = "sendreceive";
-              devices = builtins.attrNames remoteSyncthingDevices;
+              devices = builtins.attrNames remoteComputerSyncthingDevices;
               ignorePerms = true;
               maxConflicts = 20;
               minDiskFree = syncthingMinDiskFree;
               # Syncthing versioning stays disabled because each append could retain a full JSONL copy.
+            };
+            obsidian = {
+              path = "${config.home.homeDirectory}/Garden/obsidian";
+              id = "obsidian";
+              label = "Obsidian";
+              type = "sendreceive";
+              devices = builtins.attrNames remoteSyncthingDevices;
+              ignorePatterns = [
+                "/.obsidian/workspace.json"
+                "/.obsidian/workspace-mobile.json"
+              ];
+              maxConflicts = 20;
+              minDiskFree = syncthingMinDiskFree;
+              versioning = {
+                type = "staggered";
+                params = {
+                  cleanInterval = "3600";
+                  maxAge = "2592000";
+                };
+              };
             };
           };
         };
