@@ -1,0 +1,164 @@
+diff --git a/rust/crates/browse-relay/src/presentation.rs b/rust/crates/browse-relay/src/presentation.rs
+index 6e3304b..9080d44 100644
+--- a/rust/crates/browse-relay/src/presentation.rs
++++ b/rust/crates/browse-relay/src/presentation.rs
+@@ -6,11 +6,11 @@ use std::sync::Arc;
+ use std::time::Duration;
+
+ use anyhow::bail;
+-#[cfg(target_os = "macos")]
++#[cfg(any(target_os = "linux", target_os = "macos"))]
+ use anyhow::anyhow;
+ use browse_core::HandoffResult;
+ use serde_json::{Value, json};
+-#[cfg(target_os = "macos")]
++#[cfg(any(target_os = "linux", target_os = "macos"))]
+ use tokio::process::Command;
+ use tokio::sync::oneshot;
+
+@@ -91,6 +91,79 @@ async fn hide_macos_app(_app: &str) -> anyhow::Result<()> {
+     Ok(())
+ }
+
++#[cfg(target_os = "linux")]
++const HYPRLAND_HANDOFF_WORKSPACE: &str = "OPENCODE_BROWSER_HYPRLAND_HANDOFF_WORKSPACE";
++
++#[cfg(target_os = "linux")]
++fn hyprland_handoff_workspace() -> Option<String> {
++    std::env::var(HYPRLAND_HANDOFF_WORKSPACE)
++        .ok()
++        .map(|workspace| workspace.trim().to_string())
++        .filter(|workspace| {
++            !workspace.is_empty()
++                && workspace.chars().all(|char| char.is_ascii_alphanumeric() || matches!(char, '-' | '_'))
++        })
++}
++
++#[cfg(not(target_os = "linux"))]
++fn hyprland_handoff_workspace() -> Option<String> {
++    None
++}
++
++#[cfg(target_os = "linux")]
++async fn hyprland_workspace_visible(workspace: &str) -> anyhow::Result<bool> {
++    let output = Command::new("hyprctl").args(["--instance", "0", "monitors", "-j"]).output().await?;
++    if !output.status.success() {
++        return Err(anyhow!(
++            "hyprctl monitors failed: {}{}",
++            String::from_utf8_lossy(&output.stdout).trim(),
++            String::from_utf8_lossy(&output.stderr).trim()
++        ));
++    }
++    let monitors: Value = serde_json::from_slice(&output.stdout)?;
++    let target = format!("special:{workspace}");
++    Ok(monitors.as_array().is_some_and(|monitors| {
++        monitors.iter().any(|monitor| monitor.pointer("/specialWorkspace/name").and_then(Value::as_str) == Some(&target))
++    }))
++}
++
++#[cfg(not(target_os = "linux"))]
++async fn hyprland_workspace_visible(_workspace: &str) -> anyhow::Result<bool> {
++    Ok(true)
++}
++
++#[cfg(target_os = "linux")]
++async fn toggle_hyprland_workspace(workspace: &str) -> anyhow::Result<()> {
++    let script = format!(r#"hl.dispatch(hl.dsp.workspace.toggle_special("{workspace}"))"#);
++    let output = Command::new("hyprctl").args(["--instance", "0", "eval", &script]).output().await?;
++    if !output.status.success() {
++        return Err(anyhow!(
++            "hyprctl toggle failed: {}{}",
++            String::from_utf8_lossy(&output.stdout).trim(),
++            String::from_utf8_lossy(&output.stderr).trim()
++        ));
++    }
++    Ok(())
++}
++
++#[cfg(not(target_os = "linux"))]
++async fn toggle_hyprland_workspace(_workspace: &str) -> anyhow::Result<()> {
++    Ok(())
++}
++
++#[cfg(target_os = "linux")]
++async fn hide_hyprland_workspace(workspace: &str) -> anyhow::Result<()> {
++    if hyprland_workspace_visible(workspace).await? {
++        toggle_hyprland_workspace(workspace).await?;
++    }
++    Ok(())
++}
++
++#[cfg(not(target_os = "linux"))]
++async fn hide_hyprland_workspace(_workspace: &str) -> anyhow::Result<()> {
++    Ok(())
++}
++
+ /// The page status, badge and group the extension should show. An agent tab is grouped by its `group` label (the
+ /// extension's Grouping setting decides whether that is a group of its own, the shared agent group or none); a lent
+ /// tab stays where the user has it. The status names the group as `sessionId`, which the extension shows as the
+@@ -380,6 +453,20 @@ impl Relay {
+                     Err(error) => rlog!("handoff.macos.visibility_failed", error = error.to_string()),
+                 }
+             }
++        if first_handoff
++            && let Some(workspace) = hyprland_handoff_workspace() {
++                match self.debugger(tab, None, "Page.bringToFront", json!({}), Some(Duration::from_secs(3))).await {
++                    Ok(_) => match hyprland_workspace_visible(&workspace).await {
++                        Ok(false) => match toggle_hyprland_workspace(&workspace).await {
++                            Ok(()) => self.st().hide_handoff_app = true,
++                            Err(error) => rlog!("handoff.hyprland.show_failed", error = error.to_string()),
++                        },
++                        Ok(true) => {}
++                        Err(error) => rlog!("handoff.hyprland.visibility_failed", error = error.to_string()),
++                    },
++                    Err(error) => rlog!("handoff.hyprland.activate_failed", error = error.to_string()),
++                }
++            }
+         rlog!("handoff.started", tabId = tab);
+         // A call stopped while it waits (its client went away, the toolbar button) takes its card down with it.
+         let mut pending = PendingHandoff { relay: self.clone(), id: id.clone(), tab, armed: true };
+@@ -444,13 +531,24 @@ impl Relay {
+                 false
+             }
+         };
+-        let Some(app) = should_hide.then(macos_handoff_app).flatten() else { return };
+-        tokio::spawn(async move {
+-            match hide_macos_app(&app).await {
+-                Ok(()) => rlog!("handoff.macos.hidden", app = app),
+-                Err(error) => rlog!("handoff.macos.hide_failed", error = error.to_string()),
+-            }
+-        });
++        if !should_hide {
++            return;
++        }
++        if let Some(app) = macos_handoff_app() {
++            tokio::spawn(async move {
++                match hide_macos_app(&app).await {
++                    Ok(()) => rlog!("handoff.macos.hidden", app = app),
++                    Err(error) => rlog!("handoff.macos.hide_failed", error = error.to_string()),
++                }
++            });
++        } else if let Some(workspace) = hyprland_handoff_workspace() {
++            tokio::spawn(async move {
++                match hide_hyprland_workspace(&workspace).await {
++                    Ok(()) => rlog!("handoff.hyprland.hidden", workspace = workspace),
++                    Err(error) => rlog!("handoff.hyprland.hide_failed", error = error.to_string()),
++                }
++            });
++        }
+     }
+
+     /// The page's Continue button (`handoff.completed`): only the waiter named by its id and tab.
+diff --git a/rust/crates/browse-relay/src/relay.rs b/rust/crates/browse-relay/src/relay.rs
+index cc14262..d4983d3 100644
+--- a/rust/crates/browse-relay/src/relay.rs
++++ b/rust/crates/browse-relay/src/relay.rs
+@@ -191,7 +191,7 @@ pub struct State {
+     pub clients: HashSet<u32>,
+     /// One handoff per tab.
+     pub handoffs: HashMap<i64, Handoff>,
+-    /// Restore the configured macOS browser to hidden after the last pending handoff finishes.
++    /// Restore the configured browser to its hidden state after the last pending handoff finishes.
+     pub hide_handoff_app: bool,
+     /// Tabs of a browser that disconnected, by target id, until it reconnects.
+     pub reconnect_owners: HashMap<String, KnownOwner>,

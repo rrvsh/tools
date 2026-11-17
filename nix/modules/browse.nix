@@ -70,6 +70,14 @@ in
             }
           ];
           home.packages = [ browse ];
+          wayland.windowManager.hyprland.extraConfig = ''
+            hl.on("hyprland.start", function()
+              hl.exec_cmd("${lib.getExe config.programs.chromium.package}", {
+                workspace = "special:browse silent",
+                no_initial_focus = true
+              })
+            end)
+          '';
           programs = {
             chromium = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
               enable = true;
@@ -84,6 +92,7 @@ in
               browse = {
                 command = lib.getExe browse;
                 args = [ "mcp" ];
+                env.OPENCODE_BROWSER_HYPRLAND_HANDOFF_WORKSPACE = "browse";
                 description = "Control the browser paired with the local host, including human handoffs";
                 exposure = "direct";
                 timeout = 900;

@@ -24,6 +24,7 @@
         patches = [
           ./patches/browse-test-legacy-get-without-body.patch
           ./patches/browse-macos-hide-after-handoff.patch
+          ./patches/browse-hyprland-handoff.patch
         ];
 
         cargoBuildFlags = [
