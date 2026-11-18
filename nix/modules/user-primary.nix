@@ -20,7 +20,6 @@ let
         programs.git.settings = {
           user.name = primaryUser.fullName;
           user.email = primaryUser.email;
-          init.defaultBranch = primaryUser.gitDefaultBranch;
         };
       };
     };

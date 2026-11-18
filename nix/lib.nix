@@ -15,10 +15,6 @@ let
                     name = lib.mkOption { type = lib.types.str; };
                     fullName = lib.mkOption { type = lib.types.str; };
                     email = lib.mkOption { type = lib.types.str; };
-                    gitDefaultBranch = lib.mkOption {
-                      type = lib.types.str;
-                      default = "main";
-                    };
                     sshAuthorizedKeys = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
                       default = [ ];
