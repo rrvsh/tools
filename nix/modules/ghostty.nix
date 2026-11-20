@@ -73,6 +73,9 @@ in
                 }=${ghosttyActions.${action}}"
               ) cfg.graphicalKeybinds.applications.ghostty;
           }
+          // lib.optionalAttrs pkgs.stdenv.isDarwin {
+            "macos-auto-secure-input" = false;
+          }
           // lib.optionalAttrs pkgs.stdenv.isLinux {
             "link-url-modifier" = "super";
           };
