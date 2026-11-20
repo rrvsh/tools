@@ -1,4 +1,9 @@
-{ config, lib, ... }:
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
 let
   cfg = config.flake;
   extensionId = "mfnicocicmmlkpjnaffgihfjhdgjkdjg";
@@ -21,7 +26,14 @@ in
         ...
       }:
       let
-        browse = cfg.packages.${pkgs.stdenv.hostPlatform.system}.browse;
+        browse =
+          inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.opencode-browse.overrideAttrs
+            (old: {
+              patches = (old.patches or [ ]) ++ [
+                ../packages/patches/browse-macos-hide-after-handoff.patch
+                ../packages/patches/browse-hyprland-handoff.patch
+              ];
+            });
         remoteBrowseServers = builtins.listToAttrs (
           map (remoteHost: {
             name = "${remoteHost}-browse";

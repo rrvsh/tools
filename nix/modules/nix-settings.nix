@@ -14,8 +14,14 @@ let
     max-jobs = "auto"; # Build one job per CPU.
     builders-use-substitutes = true; # Let remote builders use their own configured caches.
     allow-import-from-derivation = false; # Disallow building derivations during evaluation.
-    substituters = [ "https://cache.nixos-cuda.org" ];
-    trusted-public-keys = [ "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M=" ];
+    substituters = [
+      "https://cache.nixos-cuda.org"
+      "https://cache.numtide.com"
+    ];
+    trusted-public-keys = [
+      "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
+    ];
   };
   module = {
     nix.settings = commonSettings;

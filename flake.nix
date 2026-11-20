@@ -7,6 +7,7 @@
       "https://nix-community.cachix.org"
       "https://hyprland.cachix.org"
       "https://pi.cachix.org"
+      "https://cache.numtide.com"
     ];
     extra-trusted-public-keys = [
       "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
@@ -14,6 +15,7 @@
       "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
       "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="
       "pi.cachix.org-1:lGeoGJaZ5ZDabuRzkcD5EBTNnDM4HJ1vqeOxlWk1Flk="
+      "niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g="
     ];
   };
   outputs =
@@ -32,7 +34,6 @@
       # agent-browser still uses the pre-module import-tree API.
       inputs.import-tree.url = "github:vic/import-tree/d321337efd0f23a9eb14a42adb7b2c29313ab274";
     };
-    beads.url = "github:gastownhall/beads/v1.2.2";
     flake-parts.inputs.nixpkgs-lib.follows = "nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -73,6 +74,7 @@
       flake = false;
     };
     mac-app-util.url = "github:hraban/mac-app-util";
+    llm-agents.url = "github:numtide/llm-agents.nix";
     musicgrabber = {
       url = "github:rrvsh/musicgrabber-nix";
       inputs.nixpkgs.follows = "nixpkgs";

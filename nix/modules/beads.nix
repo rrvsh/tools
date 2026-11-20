@@ -10,7 +10,7 @@ in
       { hostName, pkgs, ... }:
       {
         home = {
-          packages = [ inputs.beads.packages.${pkgs.stdenv.hostPlatform.system}.default ];
+          packages = [ inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.beads ];
           sessionVariables = {
             BD_DISABLE_EVENT_FLUSH = "1";
             BD_DISABLE_METRICS = "1";

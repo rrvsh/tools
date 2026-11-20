@@ -10,7 +10,7 @@
     {
       home-manager.sharedModules = [
         {
-          home.packages = [ pkgs.claude-code ];
+          home.packages = [ inputs.llm-agents.packages.${system}.claude-code ];
           programs.pi-coding-agent.settings.packages = [ bridge.passthru.packagePath ];
         }
       ];
