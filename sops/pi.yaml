@@ -1,0 +1,17 @@
+pi:
+    venice-api-key: ENC[AES256_GCM,data:YNVQyOnFsK0J2beL45avooi/xKO6TGKS+pkysg7C7kmixesY+I0aoY9XgvqRD3a2WOCYkcGpzlUfKU6gLc9y,iv:gFj+df4XzT0aXFGrMS0kUx0BDGXiXC405nL9j+Upoe8=,tag:h2MyJ1tAVNL9xfVqO8syGA==,type:str]
+sops:
+    age:
+        - enc: |
+            -----BEGIN AGE ENCRYPTED FILE-----
+            YWdlLWVuY3J5cHRpb24ub3JnL3YxCi0+IFgyNTUxOSBtZ3dDZ1c0aFBRYk5nQ2l0
+            VEx1SDc1QTVaT2pFVUYvY3hDcTh0OEEyZ2o4CkF4T096UzNjMldDQ1AwcTBsU0xN
+            M1FwRnpxZ3ZMUC8zRUZNN0ZhYTdhQU0KLS0tIE5yN05Wb1VtdnQxK1M3NnlBZnRY
+            Z1BOT3U0R2dPL2ptSE1Kbk1RVC83Q2sKj8U4S9T5vhKbPWCERsvJdzkryLYg/rcZ
+            DA+i1B6xZYZvnkMjX+a0p+srP+nEdUU136D7zOyZO7N6qCrX6b955A==
+            -----END AGE ENCRYPTED FILE-----
+          recipient: age12l33pas8eptwjc7ewux3d8snyzfzwz0tn9qg5kw8le79fswmjgjqdjgyy6
+    lastmodified: "2026-11-20T06:05:52Z"
+    mac: ENC[AES256_GCM,data:YODxg9mzl0rQt0XNH5EoJhEtEay8D+Ey4rK9Lk0MJ6pj34A9P85C0syfL2BAAnLthwpfCLlEEEcGHAvE92hhRW1A+Gdx0YKkr6Qxzpcg968P3zXV3qMWgxTKjkPON+0O0oPx5eapCAm7vHpoN6VrIRsPk7f5yemyl4VkZBz66o4=,iv:utycZqQhR6MoiY3/N/YltY1AfRrSo25mzsEJ8RuPmd8=,tag:95qBDQl3yh3H73nI1ER2Gw==,type:str]
+    unencrypted_suffix: _unencrypted
+    version: 3.13.3

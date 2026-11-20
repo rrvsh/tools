@@ -6,22 +6,29 @@
 }:
 let
   cfg = config.flake;
-  osModule = {
-    home-manager.sharedModules = [
-      cfg.modules.homeManager.pi-agent
-      {
-        home.file = {
-          ".pi/agent/skills/agent-browser/SKILL.md".source =
-            cfg.paths.root + "/agents/skills/agent-browser/SKILL.md";
-          ".pi/agent/skills/pr-babysit/SKILL.md".source =
-            cfg.paths.root + "/agents/skills/pr-babysit/SKILL.md";
-          ".pi/agent/skills/zmx/SKILL.md".source = cfg.paths.root + "/agents/skills/zmx/SKILL.md";
-          ".pi/agent/skills/zmx/scripts/kill-current.sh".source =
-            cfg.paths.root + "/agents/skills/zmx/scripts/kill-current.sh";
-        };
-      }
-    ];
-  };
+  osModule =
+    { primaryUser, ... }:
+    {
+      sops.secrets."pi/venice-api-key" = {
+        sopsFile = cfg.paths.root + "/sops/pi.yaml";
+        owner = primaryUser.name;
+        mode = "0400";
+      };
+      home-manager.sharedModules = [
+        cfg.modules.homeManager.pi-agent
+        {
+          home.file = {
+            ".pi/agent/skills/agent-browser/SKILL.md".source =
+              cfg.paths.root + "/agents/skills/agent-browser/SKILL.md";
+            ".pi/agent/skills/pr-babysit/SKILL.md".source =
+              cfg.paths.root + "/agents/skills/pr-babysit/SKILL.md";
+            ".pi/agent/skills/zmx/SKILL.md".source = cfg.paths.root + "/agents/skills/zmx/SKILL.md";
+            ".pi/agent/skills/zmx/scripts/kill-current.sh".source =
+              cfg.paths.root + "/agents/skills/zmx/scripts/kill-current.sh";
+          };
+        }
+      ];
+    };
 in
 {
   config.flake.modules = {
@@ -198,6 +205,7 @@ in
             ];
             extensions = [
               (root + "/pi/extensions/persisted-model.ts")
+              (root + "/pi/extensions/venice-provider.ts")
               (root + "/pi/extensions/hostname-context.ts")
               (root + "/pi/extensions/system-prompt-viewer.ts")
               (root + "/pi/extensions/codex-usage.ts")
