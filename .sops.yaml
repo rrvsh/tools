@@ -1,7 +1,9 @@
 keys:
   - &rafiq age12l33pas8eptwjc7ewux3d8snyzfzwz0tn9qg5kw8le79fswmjgjqdjgyy6
+  - &kikir age1v54pgefxv9mld0qa7t2dchp6fjkkr0s6lwdfypkcjl98cwpeeqks275hxj
 creation_rules:
   - path_regex: \.(yaml)$
     key_groups:
     - age:
       - *rafiq
+      - *kikir
