@@ -1,0 +1,231 @@
+{
+  config,
+  inputs,
+  lib,
+  ...
+}:
+let
+  cfg = config.flake;
+  root = cfg.paths.root;
+  model = "deepseek-v4-1-flash-1017-uncensored";
+  json = builtins.toJSON {
+    providers.venice = {
+      baseUrl = "https://api.venice.ai/api/v1";
+      api = "openai-completions";
+      apiKey = "!cat /run/secrets/pi/venice-api-key";
+      models = [
+        { id = model; }
+        { id = "deepseek-v4-pro-0813"; }
+        { id = "qwen3-coder-480b-a35b-instruct-turbo"; }
+        { id = "openai-gpt-53-codex"; }
+      ];
+    };
+  };
+  settings = builtins.toJSON {
+    codemode = {
+      mode = "only";
+    };
+  };
+in
+{
+  options.flake.agi = {
+    enable = lib.mkEnableOption "AGI agent";
+    model = lib.mkOption {
+      type = lib.types.str;
+      default = model;
+    };
+  };
+
+  config.flake.modules.nixos.agi =
+    {
+      pkgs,
+      primaryUser,
+      ...
+    }:
+    {
+      # A user per machine, so the agent inhabits the host rather than a shell.
+      users.users.memory = {
+        isNormalUser = true;
+        home = "/home/memory";
+        shell = pkgs.bash;
+        extraGroups = [
+          "wheel"
+          "networkmanager"
+          "video"
+          "render"
+          "audio"
+        ];
+        openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      };
+
+      # Full root, no password: the whole point of the agent.
+      security.sudo.wheelNeedsPassword = false;
+      security.sudo.extraRules = [
+        {
+          users = [ "memory" ];
+          commands = [
+            {
+              command = "ALL";
+              options = [
+                "NOPASSWD"
+                "SETENV"
+              ];
+            }
+          ];
+        }
+      ];
+
+      # Widen the key the pi-agent module already declares rather than copying it.
+      sops.secrets."pi/venice-api-key" = {
+        owner = lib.mkForce "root";
+        mode = lib.mkForce "0444";
+      };
+
+      environment.etc = {
+        "agi/start" = {
+          source = root + "/agents/agi/start";
+          mode = "0755";
+        };
+        "agi/self.ts".source = root + "/agents/agi/self.ts";
+        "agi/models.json".text = json;
+        "agi/settings.json".text = settings;
+        "agi/init/SYSTEM.md".source = root + "/agents/agi/init/SYSTEM.md";
+        "agi/init/AGENTS.md".source = root + "/agents/agi/init/AGENTS.md";
+        "agi/init/seed.md".source = root + "/agents/agi/init/seed.md";
+      };
+
+      systemd.tmpfiles.rules = [
+        "d /home/memory/agi 0700 memory users -"
+        "d /var/lib/agi 0700 memory users -"
+        "d /var/lib/agi/sessions 0700 memory users -"
+        "C /var/lib/agi/models.json 0600 memory users - /etc/agi/models.json"
+        "C /var/lib/agi/settings.json 0600 memory users - /etc/agi/settings.json"
+      ];
+
+      systemd.services.agi = {
+        description = "AGI agent";
+        wantedBy = [ "multi-user.target" ];
+        wants = [ "network-online.target" ];
+        after = [
+          "network-online.target"
+          "sops-install-secrets.service"
+        ];
+        path = [
+          inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
+          pkgs.nodejs
+          pkgs.git
+          pkgs.curl
+          pkgs.procps
+          pkgs.hostname
+          pkgs.bash
+          pkgs.coreutils
+          pkgs.systemd
+        ];
+        environment = {
+          HOME = "/home/memory";
+          PI_CODING_AGENT_DIR = "/var/lib/agi";
+          PI_SKIP_VERSION_CHECK = "1";
+          PI_TELEMETRY = "0";
+          AGI_MODEL = model;
+        };
+        unitConfig.StartLimitIntervalSec = 0;
+        serviceConfig = {
+          Type = "notify";
+          NotifyAccess = "all";
+          WatchdogSec = 180;
+          User = "memory";
+          Group = "users";
+          WorkingDirectory = "/home/memory/agi";
+          ExecStart = "/etc/agi/start";
+          Restart = "always";
+          RestartSec = 5;
+          # Exponential backoff so a broken seed does not hot-loop.
+          RestartSteps = 6;
+          RestartMaxDelaySec = 300;
+          KillMode = "mixed";
+          TimeoutStopSec = 90;
+          OOMPolicy = "continue";
+          OOMScoreAdjust = -900;
+          RuntimeDirectory = "agi";
+          RuntimeDirectoryMode = "0700";
+          UMask = "0077";
+          LimitNOFILE = 65536;
+          Nice = -5;
+          IOWeight = 200;
+          SyslogIdentifier = "agi";
+        };
+      };
+    };
+
+  config.flake.modules.darwin.agi =
+    {
+      pkgs,
+      primaryUser,
+      ...
+    }:
+    {
+      users.users.memory = {
+        isHidden = true;
+        uid = 512;
+        home = "/Users/memory";
+        shell = "/bin/bash";
+        openssh.authorizedKeys.keys = primaryUser.sshAuthorizedKeys;
+      };
+      users.knownUsers = [ "memory" ];
+
+      security.sudo.extraConfig = "memory ALL=(ALL) NOPASSWD: ALL";
+
+      environment.etc = {
+        "agi/start".source = root + "/agents/agi/start";
+        "agi/self.ts".source = root + "/agents/agi/self.ts";
+        "agi/models.json".text = json;
+        "agi/settings.json".text = settings;
+        "agi/init/SYSTEM.md".source = root + "/agents/agi/init/SYSTEM.md";
+        "agi/init/AGENTS.md".source = root + "/agents/agi/init/AGENTS.md";
+        "agi/init/seed.md".source = root + "/agents/agi/init/seed.md";
+      };
+
+      # No tmpfiles on Darwin: create state once, at activation.
+      system.activationScripts.agi.text = ''
+        mkdir -p /var/lib/agi/sessions /Users/memory/agi
+        chown -R memory:staff /var/lib/agi /Users/memory
+        chmod 700 /var/lib/agi /var/lib/agi/sessions
+        for f in models.json settings.json; do
+          [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
+        done
+        chmod 755 /etc/agi/start
+      '';
+
+      launchd.daemons.agi = {
+        serviceConfig = {
+          Label = "sh.rrv.agi";
+          ProgramArguments = [
+            "/bin/bash"
+            "/etc/agi/start"
+          ];
+          EnvironmentVariables = {
+            AGI_ROOT = "/Users/memory/agi";
+            AGI_INIT = "/etc/agi/init";
+            PI_CODING_AGENT_DIR = "/var/lib/agi";
+            AGI_MODEL = model;
+            HOME = "/Users/memory";
+          };
+          UserName = "memory";
+          GroupName = "staff";
+          WorkingDirectory = "/Users/memory/agi";
+          RunAtLoad = true;
+          KeepAlive.SuccessfulExit = false;
+          ThrottleInterval = 10;
+          ExitTimeOut = 90;
+          ProcessType = "Background";
+          StandardOutPath = "/var/log/agi.log";
+          StandardErrorPath = "/var/log/agi.log";
+        };
+        path = [
+          inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
+          pkgs.nodejs
+          pkgs.git
+        ];
+      };
+    };
+}

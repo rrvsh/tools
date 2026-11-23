@@ -14,7 +14,10 @@ in
       enable = true;
       profiles = [ "graphical" ];
     };
-    modules = [ cfg.modules.nixos.user-primary ];
+    modules = [
+      cfg.modules.nixos.agi
+      cfg.modules.nixos.user-primary
+    ];
     extraConfig =
       { pkgs, ... }:
       {

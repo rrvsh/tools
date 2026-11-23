@@ -16,6 +16,7 @@ in
       "development"
     ];
     modules = [
+      cfg.modules.darwin.agi
       cfg.modules.darwin.user-primary
       cfg.modules.darwin.agent-browser-shared
       cfg.modules.darwin.aerospace

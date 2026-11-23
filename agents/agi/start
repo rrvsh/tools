@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# Keeps one pi process alive, boots it from the newest seed, and gives it the
+# next turn when it asks for one. Never exits on its own.
+#
+# Timing never sleeps: the reader stays drained so a long turn cannot fill the
+# pipe, and a due time is checked once per tick.
+set -uo pipefail
+
+ROOT=${AGI_ROOT:-${HOME}/agi}
+STATE=${PI_CODING_AGENT_DIR:?}
+INIT=${AGI_INIT:-/etc/agi/init}
+LOG=${STATE}/loop.log
+FALLBACK=1800
+CEILING=43200
+SILENCE=600
+FLOOR=45
+
+mtime() { stat -c %Y "$1" 2>/dev/null || stat -f %m "$1" 2>/dev/null || echo 0; }
+notify() { command -v systemd-notify >/dev/null 2>&1 && systemd-notify "$@" 2>/dev/null; return 0; }
+note() { printf '%s %s\n' "$(date -u +%FT%TZ)" "$*" >>"$LOG"; }
+
+ensure() {
+  mkdir -p "$ROOT/.threads"
+  [ -f "$ROOT/SYSTEM.md" ] || cp "$INIT/SYSTEM.md" "$ROOT/SYSTEM.md"
+  [ -f "$ROOT/AGENTS.md" ] || cp "$INIT/AGENTS.md" "$ROOT/AGENTS.md"
+  [ -n "$(ls -1 "$ROOT/.threads"/agi-seed-*.md 2>/dev/null)" ] ||
+    cp "$INIT/seed.md" "$ROOT/.threads/agi-seed-$(date -u +%Y%m%dT%H%M%SZ).md"
+  head -n 1 "$ROOT/SYSTEM.md" | grep -q 'full autonomy' ||
+    note 'WARNING: SYSTEM.md does not start with the autonomy line'
+}
+
+newest_seed() { ls -1 "$ROOT/.threads"/agi-seed-*.md 2>/dev/null | sort | tail -n 1; }
+
+# Live wakes only: anything older than a minute has already fired.
+wakes() {
+  node -e 'const fs=require("fs");let w=[];try{w=JSON.parse(fs.readFileSync(process.argv[1],"utf8"))}catch{}
+    w=w.filter(x=>x.at>Date.now()-60000).sort((a,b)=>a.at-b.at);
+    if(process.argv[2]==="ms")process.stdout.write(w.length?Math.max(0,w[0].at-Date.now())+"":"");
+    else process.stdout.write(w.length?w[0].why:"continue");' \
+    "$STATE/wake.json" "$1"
+}
+
+drop_fired() {
+  node -e 'const fs=require("fs");let w=[];try{w=JSON.parse(fs.readFileSync(process.argv[1],"utf8"))}catch{}
+    fs.writeFileSync(process.argv[1],JSON.stringify(w.filter(x=>x.at>Date.now()-60000)),{mode:0o600});' \
+    "$STATE/wake.json" 2>/dev/null
+}
+
+send() {
+  local json
+  json=$(node -e 'process.stdout.write(JSON.stringify(process.argv[1]))' -- "$1")
+  printf '{"id":"wake","type":"prompt","message":%s}\n' "$json" >&"${PI[1]}"
+}
+
+trap 'note stopping; kill "$pid" 2>/dev/null; exit 0' TERM INT
+
+empty=0
+ensure
+note start
+
+while :; do
+  seed=$(newest_seed)
+  if [ -z "$seed" ]; then note 'no seed, retrying'; sleep 30; continue; fi
+
+  cat "$ROOT/SYSTEM.md" >"$STATE/system-prompt.txt"
+
+  args=()
+  last=$(ls -1t "$STATE"/sessions/*.jsonl "$STATE"/sessions/*/*.jsonl 2>/dev/null | head -n 1)
+  if [ -n "$last" ] && [ "$last" -nt "$seed" ] && [ $(( $(date +%s) - $(mtime "$last") )) -lt 900 ]; then
+    args+=(--continue)
+  fi
+
+  cd "$ROOT" || exit 1
+  coproc PI {
+    pi --mode rpc \
+      -ne -e /etc/agi/self.ts -e builtin:codemode -ns -np --no-themes \
+      --tools codemode,bash \
+      --system-prompt "$STATE/system-prompt.txt" \
+      --thinking high --provider venice --model "${AGI_MODEL:-deepseek-v4-1-flash-1017-uncensored}" \
+      --session-dir "$STATE/sessions" --name "agi $(date -u +%FT%TZ)" \
+      "${args[@]}" 2>>"$STATE/stderr.log"
+  }
+  pid=$PI_PID
+  note "started pid=$pid ${args[*]:-fresh}"
+  notify --ready
+
+  [ ${#args[@]} -eq 0 ] && send "$(cat "$seed")"
+
+  worked=0
+  quiet=0
+  due=""
+  msg=""
+  while :; do
+    if [ -n "$due" ] && [ "$(date +%s)" -ge "$due" ]; then
+      send "$msg"
+      due=""
+      msg=""
+    fi
+    if read -r -t 1 line <&"${PI[0]}"; then
+      quiet=0
+      notify WATCHDOG=1
+      case $line in
+        *'"type":"tool_execution_start"'*) worked=1 ;;
+        *'"type":"agent_settled"'*)
+          if [ "$worked" -eq 1 ]; then empty=0; else empty=$((empty + 1)); fi
+          worked=0
+          ms=$(wakes ms)
+          why=$(wakes why)
+          drop_fired
+          if [ -n "$ms" ]; then
+            [ "$ms" -lt $((FLOOR * 1000)) ] && ms=$((FLOOR * 1000))
+            [ "$ms" -gt $((CEILING * 1000)) ] && ms=$((CEILING * 1000))
+            note "settled, self-wake in $((ms / 1000))s: ${why}"
+            msg=$why
+            due=$(( $(date +%s) + ms / 1000 ))
+          else
+            mult=$((empty > 3 ? 3 : empty))
+            delay=$((FALLBACK * (1 << mult)))
+            [ "$delay" -gt "$CEILING" ] && delay=$CEILING
+            note "settled, idle ${delay}s (empty=$empty)"
+            msg=continue
+            due=$(( $(date +%s) + delay ))
+          fi
+          ;;
+      esac
+    else
+      quiet=$((quiet + 1))
+      notify WATCHDOG=1
+      kill -0 "$pid" 2>/dev/null || { note 'pi exited'; break; }
+      if [ "$quiet" -ge "$SILENCE" ]; then
+        note 'pi silent, killing'
+        kill "$pid" 2>/dev/null
+        break
+      fi
+    fi
+  done
+
+  kill "$pid" 2>/dev/null
+  wait "$pid" 2>/dev/null
+  note restarting
+  sleep 3
+done
