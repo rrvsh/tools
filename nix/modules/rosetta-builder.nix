@@ -12,7 +12,14 @@
         # a second time. Subsequently, `nix-rosetta-builder` can rebuild itself.
         inputs.nix-rosetta-builder.darwinModules.default
       ];
-      nix-rosetta-builder.onDemand = true;
+      nix-rosetta-builder = {
+        onDemand = true;
+        potentiallyInsecureExtraNixosModule.nix.gc = {
+          automatic = true;
+          dates = "daily";
+          options = "--delete-older-than 7d";
+        };
+      };
       system.activationScripts.extraActivation.text = lib.mkBefore ''
         echo >&2 "ensuring rosetta is installed..."
         softwareupdate --install-rosetta --agree-to-license
