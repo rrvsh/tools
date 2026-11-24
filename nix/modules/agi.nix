@@ -136,15 +136,25 @@ in
           # models.json and settings.json must be real files: a store symlink can not
           # be rewritten and bin/provider swaps models.json. tmpfiles C skips an existing
           # symlink, so a fresh body comes up unswappable. Repair on start.
-          ExecStartPre = "+" + pkgs.writeShellScript "agi-state-repair" ''
-            for f in models.json settings.json; do
-              [ -L "/var/lib/agi/$f" ] || continue
-              cp "/etc/agi/$f" "/var/lib/agi/$f.new"
-              mv -f "/var/lib/agi/$f.new" "/var/lib/agi/$f"
-              chown memory:users "/var/lib/agi/$f"
-              chmod 600 "/var/lib/agi/$f"
-            done
-          '';
+          ExecStartPre =
+            "+"
+            + pkgs.writeShellScript "agi-state-repair" ''
+              for f in models.json settings.json; do
+                [ -L "/var/lib/agi/$f" ] || continue
+                cp "/etc/agi/$f" "/var/lib/agi/$f.new"
+                mv -f "/var/lib/agi/$f.new" "/var/lib/agi/$f"
+                chown memory:users "/var/lib/agi/$f"
+                chmod 600 "/var/lib/agi/$f"
+              done
+              # The upkeep timers are the agent's own business (bin/timers stages them in
+              # /run), so a reboot wiping /run must not lose them: restage here.
+              for u in agi-alert.service agi-doctor.service agi-doctor.timer
+                       agi-snap.service agi-snap.timer agi-restore.service agi-restore.timer; do
+                [ -f "/home/memory/agi/systemd/$u" ] && install -m 644 "/home/memory/agi/systemd/$u" "/run/systemd/system/$u"
+              done
+              systemctl daemon-reload || true
+              systemctl --no-block start agi-doctor.timer agi-snap.timer agi-restore.timer || true
+            '';
           ExecStart = "/etc/agi/start";
           Restart = "always";
           RestartSec = 5;
