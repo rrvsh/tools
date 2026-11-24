@@ -28,6 +28,7 @@ trap 'note stopping; kill "$pid" 2>/dev/null; exit 0' TERM INT
 
 ensure
 note start
+[ "$(wc -c <"$STATE/trace.log" 2>/dev/null || echo 0)" -gt 5000000 ] && : >"$STATE/trace.log"
 blank=0
 
 while :; do
