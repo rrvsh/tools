@@ -61,6 +61,7 @@ while :; do
   while :; do
     if read -r -t 1 line <&4; then
       quiet=0
+      printf '%s\n' "$line" >>"$STATE/trace.log"
       notify WATCHDOG=1
     else
       quiet=$((quiet + 1))
