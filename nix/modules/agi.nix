@@ -95,145 +95,152 @@ in
         "agi/init/seed.md".source = root + "/agents/agi/init/seed.md";
       };
 
-      systemd.tmpfiles.rules = [
-        "d /var/backups/agi 0700 memory users -"
-        "d /home/memory/agi 0700 memory users -"
-        "d /var/lib/agi 0700 memory users -"
-        "d /var/lib/agi/sessions 0700 memory users -"
-        "C /var/lib/agi/models.json 0600 memory users - /etc/agi/models.json"
-        "C /var/lib/agi/settings.json 0600 memory users - /etc/agi/settings.json"
-      ];
-
-      systemd.services.agi = {
-        description = "AGI agent";
-        wantedBy = [ "multi-user.target" ];
-        wants = [ "network-online.target" ];
-        after = [
-          "network-online.target"
-          "sops-install-secrets.service"
+      systemd = {
+        tmpfiles.rules = [
+          "d /var/backups/agi 0700 memory users -"
+          "d /home/memory/agi 0700 memory users -"
+          "d /var/lib/agi 0700 memory users -"
+          "d /var/lib/agi/sessions 0700 memory users -"
+          "C /var/lib/agi/models.json 0600 memory users - /etc/agi/models.json"
+          "C /var/lib/agi/settings.json 0600 memory users - /etc/agi/settings.json"
         ];
-        path = [
-          inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
-          pkgs.nodejs
-          pkgs.git
-          pkgs.curl
-          pkgs.procps
-          pkgs.hostname
-          pkgs.bash
-          pkgs.coreutils
-          pkgs.systemd
-        ];
-        environment = {
-          HOME = "/home/memory";
-          PI_CODING_AGENT_DIR = "/var/lib/agi";
-          PI_SKIP_VERSION_CHECK = "1";
-          PI_TELEMETRY = "0";
-          AGI_MODEL = model;
-        };
-        unitConfig.StartLimitIntervalSec = 0;
-        serviceConfig = {
-          Type = "notify";
-          NotifyAccess = "all";
-          WatchdogSec = 180;
-          User = "memory";
-          Group = "users";
-          WorkingDirectory = "/home/memory/agi";
-          ExecStart = "/etc/agi/start";
-          Restart = "always";
-          RestartSec = 5;
-          # Exponential backoff so a broken seed does not hot-loop.
-          RestartSteps = 6;
-          RestartMaxDelaySec = 300;
-          KillMode = "mixed";
-          TimeoutStopSec = 90;
-          OOMPolicy = "continue";
-          OOMScoreAdjust = -900;
-          RuntimeDirectory = "agi";
-          RuntimeDirectoryMode = "0700";
-          UMask = "0077";
-          LimitNOFILE = 65536;
-          Nice = -5;
-          IOWeight = 200;
-          SyslogIdentifier = "agi";
-        };
-      };
 
-      # Wick's own upkeep. Units staged from the repo land in /run only, so the
-      # durable copy is declared here: snapshot nightly, doctor hourly, alert on failure.
-      systemd.services.agi-snap = {
-        description = "AGI snapshot to /var/backups/agi and mercury";
-        onFailure = [ "agi-alert.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          User = "memory";
-          Group = "users";
-          WorkingDirectory = "/home/memory/agi";
-          ExecStart = "/home/memory/agi/bin/snap --remote";
-        };
-      };
+        services = {
+          agi = {
+            description = "AGI agent";
+            wantedBy = [ "multi-user.target" ];
+            wants = [ "network-online.target" ];
+            after = [
+              "network-online.target"
+              "sops-install-secrets.service"
+            ];
+            path = [
+              inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
+              pkgs.nodejs
+              pkgs.git
+              pkgs.curl
+              pkgs.procps
+              pkgs.hostname
+              pkgs.bash
+              pkgs.coreutils
+              pkgs.systemd
+            ];
+            environment = {
+              HOME = "/home/memory";
+              PI_CODING_AGENT_DIR = "/var/lib/agi";
+              PI_SKIP_VERSION_CHECK = "1";
+              PI_TELEMETRY = "0";
+              AGI_MODEL = model;
+            };
+            unitConfig.StartLimitIntervalSec = 0;
+            serviceConfig = {
+              Type = "notify";
+              NotifyAccess = "all";
+              WatchdogSec = 180;
+              User = "memory";
+              Group = "users";
+              WorkingDirectory = "/home/memory/agi";
+              ExecStart = "/etc/agi/start";
+              Restart = "always";
+              RestartSec = 5;
+              # Exponential backoff so a broken seed does not hot-loop.
+              RestartSteps = 6;
+              RestartMaxDelaySec = 300;
+              KillMode = "mixed";
+              TimeoutStopSec = 90;
+              OOMPolicy = "continue";
+              OOMScoreAdjust = -900;
+              RuntimeDirectory = "agi";
+              RuntimeDirectoryMode = "0700";
+              UMask = "0077";
+              LimitNOFILE = 65536;
+              Nice = -5;
+              IOWeight = 200;
+              SyslogIdentifier = "agi";
+            };
+          };
 
-      systemd.services.agi-doctor = {
-        description = "AGI health gate";
-        onFailure = [ "agi-alert.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          User = "memory";
-          Group = "users";
-          WorkingDirectory = "/home/memory/agi";
-          ExecStart = "/home/memory/agi/bin/doctor";
-        };
-      };
+          # Wick's own upkeep. Units staged from the repo land in /run only, so the
+          # durable copy is declared here: snapshot nightly, doctor hourly, alert on failure.
+          agi-snap = {
+            description = "AGI snapshot to /var/backups/agi and mercury";
+            onFailure = [ "agi-alert.service" ];
+            serviceConfig = {
+              Type = "oneshot";
+              User = "memory";
+              Group = "users";
+              WorkingDirectory = "/home/memory/agi";
+              ExecStart = "/home/memory/agi/bin/snap --remote";
+            };
+          };
 
-      systemd.services.agi-restore = {
-        description = "AGI restore drill";
-        onFailure = [ "agi-alert.service" ];
-        serviceConfig = {
-          Type = "oneshot";
-          User = "memory";
-          Group = "users";
-          WorkingDirectory = "/home/memory/agi";
-          ExecStart = "/home/memory/agi/bin/restore-drill";
-        };
-      };
+          agi-doctor = {
+            description = "AGI health gate";
+            onFailure = [ "agi-alert.service" ];
+            serviceConfig = {
+              Type = "oneshot";
+              User = "memory";
+              Group = "users";
+              WorkingDirectory = "/home/memory/agi";
+              ExecStart = "/home/memory/agi/bin/doctor";
+            };
+          };
 
-      systemd.services.agi-alert = {
-        description = "AGI failure alert to Rafiq";
-        serviceConfig = {
-          Type = "oneshot";
-          User = "memory";
-          Group = "users";
-          WorkingDirectory = "/home/memory/agi";
-          ExecStart = "/home/memory/agi/bin/alert systemd";
-        };
-      };
+          agi-restore = {
+            description = "AGI restore drill";
+            onFailure = [ "agi-alert.service" ];
+            serviceConfig = {
+              Type = "oneshot";
+              User = "memory";
+              Group = "users";
+              WorkingDirectory = "/home/memory/agi";
+              ExecStart = "/home/memory/agi/bin/restore-drill";
+            };
+          };
 
-      systemd.timers.agi-snap = {
-        description = "Daily AGI snapshot";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "*-*-* 03:00:00 UTC";
-          AccuracySec = "5m";
-          Persistent = true;
+          agi-alert = {
+            description = "AGI failure alert to Rafiq";
+            serviceConfig = {
+              Type = "oneshot";
+              User = "memory";
+              Group = "users";
+              WorkingDirectory = "/home/memory/agi";
+              ExecStart = "/home/memory/agi/bin/alert systemd";
+            };
+          };
         };
-      };
 
-      systemd.timers.agi-doctor = {
-        description = "Hourly AGI doctor";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "hourly";
-          AccuracySec = "1m";
-          Persistent = true;
-          OnBootSec = "3min";
-        };
-      };
-      systemd.timers.agi-restore = {
-        description = "Monthly AGI restore drill";
-        wantedBy = [ "timers.target" ];
-        timerConfig = {
-          OnCalendar = "monthly";
-          AccuracySec = "5m";
-          Persistent = true;
+        timers = {
+          agi-snap = {
+            description = "Daily AGI snapshot";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnCalendar = "*-*-* 03:00:00 UTC";
+              AccuracySec = "5m";
+              Persistent = true;
+            };
+          };
+
+          agi-doctor = {
+            description = "Hourly AGI doctor";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnCalendar = "hourly";
+              AccuracySec = "1m";
+              Persistent = true;
+              OnBootSec = "3min";
+            };
+          };
+
+          agi-restore = {
+            description = "Monthly AGI restore drill";
+            wantedBy = [ "timers.target" ];
+            timerConfig = {
+              OnCalendar = "monthly";
+              AccuracySec = "5m";
+              Persistent = true;
+            };
+          };
         };
       };
     };
@@ -258,7 +265,6 @@ in
 
       environment.etc = {
         "agi/turn.ts".source = root + "/agents/agi/turn.ts";
-        "agi/start".source = root + "/agents/agi/start";
         "agi/self.ts".source = root + "/agents/agi/self.ts";
         "agi/models.json".text = json;
         "agi/settings.json".text = settings;
@@ -269,45 +275,96 @@ in
 
       # No tmpfiles on Darwin: create state once, at activation.
       system.activationScripts.agi.text = ''
-        mkdir -p /var/lib/agi/sessions /Users/memory/agi
-        chown -R memory:staff /var/lib/agi /Users/memory
-        chmod 700 /var/lib/agi /var/lib/agi/sessions
+        mkdir -p /var/lib/agi/sessions /var/backups/agi /Users/memory/agi
+        chown -R memory:staff /var/lib/agi /var/backups/agi /Users/memory
+        chmod 700 /var/lib/agi /var/lib/agi/sessions /var/backups/agi
         for f in models.json settings.json; do
           [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
         done
-        chmod 755 /etc/agi/start
       '';
 
-      launchd.daemons.agi = {
-        serviceConfig = {
-          Label = "sh.rrv.agi";
-          ProgramArguments = [
-            "/bin/bash"
-            "/etc/agi/start"
-          ];
-          EnvironmentVariables = {
-            AGI_ROOT = "/Users/memory/agi";
-            AGI_INIT = "/etc/agi/init";
-            PI_CODING_AGENT_DIR = "/var/lib/agi";
-            AGI_MODEL = model;
-            HOME = "/Users/memory";
+      launchd.daemons = {
+        agi = {
+          serviceConfig = {
+            Label = "sh.rrv.agi";
+            ProgramArguments = [
+              "/bin/bash"
+              "/etc/agi/start"
+            ];
+            EnvironmentVariables = {
+              AGI_ROOT = "/Users/memory/agi";
+              AGI_INIT = "/etc/agi/init";
+              PI_CODING_AGENT_DIR = "/var/lib/agi";
+              AGI_MODEL = model;
+              HOME = "/Users/memory";
+            };
+            UserName = "memory";
+            GroupName = "staff";
+            WorkingDirectory = "/Users/memory/agi";
+            RunAtLoad = true;
+            KeepAlive.SuccessfulExit = false;
+            ThrottleInterval = 10;
+            ExitTimeOut = 90;
+            ProcessType = "Background";
+            StandardOutPath = "/var/log/agi.log";
+            StandardErrorPath = "/var/log/agi.log";
           };
-          UserName = "memory";
-          GroupName = "staff";
-          WorkingDirectory = "/Users/memory/agi";
-          RunAtLoad = true;
-          KeepAlive.SuccessfulExit = false;
-          ThrottleInterval = 10;
-          ExitTimeOut = 90;
-          ProcessType = "Background";
-          StandardOutPath = "/var/log/agi.log";
-          StandardErrorPath = "/var/log/agi.log";
+          path = [
+            inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
+            pkgs.nodejs
+            pkgs.git
+          ];
         };
-        path = [
-          inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
-          pkgs.nodejs
-          pkgs.git
-        ];
+
+        agi-snap = {
+          serviceConfig = {
+            Label = "sh.rrv.agi.snap";
+            ProgramArguments = [
+              "/bin/bash"
+              "/Users/memory/agi/bin/snap"
+              "--remote"
+            ];
+            UserName = "memory";
+            GroupName = "staff";
+            WorkingDirectory = "/Users/memory/agi";
+            StartCalendarInterval = [
+              {
+                Hour = 3;
+                Minute = 0;
+              }
+            ];
+            StandardOutPath = "/var/log/agi.log";
+            StandardErrorPath = "/var/log/agi.log";
+          };
+          path = [
+            pkgs.nodejs
+            pkgs.git
+          ];
+        };
+
+        agi-doctor = {
+          serviceConfig = {
+            Label = "sh.rrv.agi.doctor";
+            ProgramArguments = [
+              "/bin/bash"
+              "/Users/memory/agi/bin/doctor"
+            ];
+            UserName = "memory";
+            GroupName = "staff";
+            WorkingDirectory = "/Users/memory/agi";
+            StartCalendarInterval = [
+              {
+                Minute = 17;
+              }
+            ];
+            StandardOutPath = "/var/log/agi.log";
+            StandardErrorPath = "/var/log/agi.log";
+          };
+          path = [
+            pkgs.nodejs
+            pkgs.git
+          ];
+        };
       };
     };
 }
