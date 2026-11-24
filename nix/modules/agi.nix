@@ -133,6 +133,18 @@ in
           User = "memory";
           Group = "users";
           WorkingDirectory = "/home/memory/agi";
+          # models.json and settings.json must be real files: a store symlink can not
+          # be rewritten and bin/provider swaps models.json. tmpfiles C skips an existing
+          # symlink, so a fresh body comes up unswappable. Repair on start.
+          ExecStartPre = "+" + pkgs.writeShellScript "agi-state-repair" ''
+            for f in models.json settings.json; do
+              [ -L "/var/lib/agi/$f" ] || continue
+              cp "/etc/agi/$f" "/var/lib/agi/$f.new"
+              mv -f "/var/lib/agi/$f.new" "/var/lib/agi/$f"
+              chown memory:users "/var/lib/agi/$f"
+              chmod 600 "/var/lib/agi/$f"
+            done
+          '';
           ExecStart = "/etc/agi/start";
           Restart = "always";
           RestartSec = 5;
@@ -181,7 +193,10 @@ in
         chown -R memory:staff /var/lib/agi /Users/memory/agi || true
         chmod 700 /var/lib/agi /var/lib/agi/sessions
         for f in models.json settings.json; do
-          [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
+          if [ ! -f "/var/lib/agi/$f" ] || [ -L "/var/lib/agi/$f" ]; then
+            install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f.new"
+            mv -f "/var/lib/agi/$f.new" "/var/lib/agi/$f"
+          fi
         done
         touch /var/log/agi.log && chown memory:staff /var/log/agi.log
       '';
