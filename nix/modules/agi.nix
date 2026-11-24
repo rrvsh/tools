@@ -99,7 +99,8 @@ in
         tmpfiles.rules = [
           "d /var/backups/agi 0700 memory users -"
           "d /home/memory/agi 0700 memory users -"
-          "d /var/lib/agi 0700 memory users -"
+          "d /var/lib/agi 0711 memory users -"
+          "f /var/lib/agi/heartbeat 0644 memory users -"
           "d /var/lib/agi/sessions 0700 memory users -"
           "C /var/lib/agi/models.json 0600 memory users - /etc/agi/models.json"
           "C /var/lib/agi/settings.json 0600 memory users - /etc/agi/settings.json"
@@ -284,8 +285,10 @@ in
       # No tmpfiles on Darwin: create state once, at activation.
       system.activationScripts.postActivation.text = lib.mkAfter ''
         mkdir -p /var/lib/agi/sessions /var/backups/agi /Users/memory/agi
+        touch /var/lib/agi/heartbeat && chown memory:staff /var/lib/agi/heartbeat
         chown memory:staff /var/lib/agi /var/lib/agi/sessions /var/backups/agi /Users/memory || true
-        chmod 700 /var/lib/agi /var/lib/agi/sessions /var/backups/agi
+        chmod 711 /var/lib/agi
+        chmod 700 /var/lib/agi/sessions /var/backups/agi
         touch /var/log/agi.log && chown memory:staff /var/log/agi.log
         for f in models.json settings.json; do
           [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
