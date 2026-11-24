@@ -184,6 +184,18 @@ in
         };
       };
 
+      systemd.services.agi-restore = {
+        description = "AGI restore drill";
+        onFailure = [ "agi-alert.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "memory";
+          Group = "users";
+          WorkingDirectory = "/home/memory/agi";
+          ExecStart = "/home/memory/agi/bin/restore-drill";
+        };
+      };
+
       systemd.services.agi-alert = {
         description = "AGI failure alert to Rafiq";
         serviceConfig = {
@@ -213,6 +225,15 @@ in
           AccuracySec = "1m";
           Persistent = true;
           OnBootSec = "3min";
+        };
+      };
+      systemd.timers.agi-restore = {
+        description = "Monthly AGI restore drill";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "monthly";
+          AccuracySec = "5m";
+          Persistent = true;
         };
       };
     };
