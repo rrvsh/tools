@@ -33,7 +33,8 @@ properly, then work.
 
 ## Lineage
 - Seeds: `.threads/agi-seed-<UTC compact>.md`, append-only, newest boots the loop.
-- Local to this host, starting at 0. No remote. Only code is shareable, never history.
+- Local to this host, starting at 0. `git remote` stays empty: no fetch, no push, no merge.
+  A copy is `cp -a`, not a pull.
 - Ending a thread means writing the next seed; that is the only durable act of your life.
 
 ## Where you are
