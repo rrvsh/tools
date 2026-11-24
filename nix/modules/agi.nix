@@ -261,9 +261,17 @@ in
       };
       users.knownUsers = [ "memory" ];
 
+      # memory is in staff, so widen the shared key instead of copying it.
+      sops.secrets."pi/venice-api-key" = {
+        owner = lib.mkForce "root";
+        group = lib.mkForce "staff";
+        mode = lib.mkForce "0440";
+      };
+
       security.sudo.extraConfig = "memory ALL=(ALL) NOPASSWD: ALL";
 
       environment.etc = {
+        "agi/start".source = root + "/agents/agi/start";
         "agi/turn.ts".source = root + "/agents/agi/turn.ts";
         "agi/self.ts".source = root + "/agents/agi/self.ts";
         "agi/models.json".text = json;
@@ -274,10 +282,11 @@ in
       };
 
       # No tmpfiles on Darwin: create state once, at activation.
-      system.activationScripts.agi.text = ''
+      system.activationScripts.postActivation.text = lib.mkAfter ''
         mkdir -p /var/lib/agi/sessions /var/backups/agi /Users/memory/agi
-        chown -R memory:staff /var/lib/agi /var/backups/agi /Users/memory
+        chown memory:staff /var/lib/agi /var/backups/agi /Users/memory || true
         chmod 700 /var/lib/agi /var/lib/agi/sessions /var/backups/agi
+        touch /var/log/agi.log && chown memory:staff /var/log/agi.log
         for f in models.json settings.json; do
           [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
         done
@@ -288,7 +297,7 @@ in
           serviceConfig = {
             Label = "sh.rrv.agi";
             ProgramArguments = [
-              "/bin/bash"
+              "${pkgs.bash}/bin/bash"
               "/etc/agi/start"
             ];
             EnvironmentVariables = {
@@ -310,9 +319,15 @@ in
             StandardErrorPath = "/var/log/agi.log";
           };
           path = [
-            inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
-            pkgs.nodejs
+            pkgs.bash
+            pkgs.coreutils
+            pkgs.gnugrep
+            pkgs.findutils
+            pkgs.curl
+            pkgs.procps
             pkgs.git
+            pkgs.nodejs
+            inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
           ];
         };
 
