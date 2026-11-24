@@ -86,6 +86,7 @@ in
           source = root + "/agents/agi/start";
           mode = "0755";
         };
+        "agi/turn.ts".source = root + "/agents/agi/turn.ts";
         "agi/self.ts".source = root + "/agents/agi/self.ts";
         "agi/models.json".text = json;
         "agi/settings.json".text = settings;
@@ -235,6 +236,7 @@ in
       security.sudo.extraConfig = "memory ALL=(ALL) NOPASSWD: ALL";
 
       environment.etc = {
+        "agi/turn.ts".source = root + "/agents/agi/turn.ts";
         "agi/start".source = root + "/agents/agi/start";
         "agi/self.ts".source = root + "/agents/agi/self.ts";
         "agi/models.json".text = json;
