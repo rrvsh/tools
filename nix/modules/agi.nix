@@ -284,7 +284,7 @@ in
       # No tmpfiles on Darwin: create state once, at activation.
       system.activationScripts.postActivation.text = lib.mkAfter ''
         mkdir -p /var/lib/agi/sessions /var/backups/agi /Users/memory/agi
-        chown memory:staff /var/lib/agi /var/backups/agi /Users/memory || true
+        chown memory:staff /var/lib/agi /var/lib/agi/sessions /var/backups/agi /Users/memory || true
         chmod 700 /var/lib/agi /var/lib/agi/sessions /var/backups/agi
         touch /var/log/agi.log && chown memory:staff /var/log/agi.log
         for f in models.json settings.json; do
