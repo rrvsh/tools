@@ -298,6 +298,11 @@ in
       '';
 
       launchd.daemons = {
+        # One body per lineage: mercury owns the branch and the loop, so alpha's
+        # agent daemon is commented out. Uncomment (or boot it in by hand) only
+        # after booting the mercury service out, or both push. nix-darwin here
+        # has no launchd "enable" option, so commenting is the only off switch.
+        /*
         agi = {
           serviceConfig = {
             Label = "sh.rrv.agi";
@@ -337,6 +342,7 @@ in
             inputs.pi.packages.${pkgs.stdenv.hostPlatform.system}.pi-coding-agent
           ];
         };
+        */
 
         agi-snap = {
           serviceConfig = {
