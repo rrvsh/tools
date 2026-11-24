@@ -288,7 +288,9 @@ in
         touch /var/lib/agi/heartbeat && chown memory:staff /var/lib/agi/heartbeat
         chown memory:staff /var/lib/agi /var/lib/agi/sessions /var/backups/agi /Users/memory || true
         chmod 711 /var/lib/agi
-        chmod 700 /var/lib/agi/sessions /var/backups/agi
+        chmod 700 /var/lib/agi/sessions
+        chmod 755 /var/backups
+        chmod 700 /var/backups/agi
         touch /var/log/agi.log && chown memory:staff /var/log/agi.log
         for f in models.json settings.json; do
           [ -f "/var/lib/agi/$f" ] || install -o memory -g staff -m 600 "/etc/agi/$f" "/var/lib/agi/$f"
@@ -375,6 +377,32 @@ in
             StartCalendarInterval = [
               {
                 Minute = 17;
+              }
+            ];
+            StandardOutPath = "/var/log/agi.log";
+            StandardErrorPath = "/var/log/agi.log";
+          };
+          path = [
+            pkgs.nodejs
+            pkgs.git
+          ];
+        };
+
+        agi-restore = {
+          serviceConfig = {
+            Label = "sh.rrv.agi.restore";
+            ProgramArguments = [
+              "/bin/bash"
+              "/Users/memory/agi/bin/restore-drill"
+            ];
+            UserName = "memory";
+            GroupName = "staff";
+            WorkingDirectory = "/Users/memory/agi";
+            StartCalendarInterval = [
+              {
+                Day = 1;
+                Hour = 4;
+                Minute = 20;
               }
             ];
             StandardOutPath = "/var/log/agi.log";
