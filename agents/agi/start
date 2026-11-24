@@ -84,7 +84,11 @@ while :; do
   note "started pid=$pid ${args[*]:-fresh}"
   notify --ready
 
-  [ ${#args[@]} -eq 0 ] && send "$(cat "$seed")"
+  if [ ${#args[@]} -eq 0 ]; then
+    send "$(cat "$seed")"
+  else
+    send "resume: the previous turn was cut off mid-flight. Re-orient from the seed and continue where it stopped."
+  fi
 
   worked=0
   quiet=0
