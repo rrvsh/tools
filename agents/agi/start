@@ -46,12 +46,14 @@ while :; do
       "${args[@]}" 2>>"$STATE/stderr.log"
   }
   pid=$PI_PID
+  exec 4<&"${PI[0]}"
+  exec 5>&"${PI[1]}"
   note "pid=$pid ${args[*]:-new session}"
   notify --ready
 
   quiet=0
   while :; do
-    if read -r -t 1 line <&"${PI[0]}"; then
+    if read -r -t 1 line <&4; then
       quiet=0
       notify WATCHDOG=1
     else
@@ -70,6 +72,7 @@ while :; do
   kill "$pid" 2>/dev/null
   wait "$pid" 2>/dev/null
   [ "$blank" -ge 3 ] && { note 'died before output 3x, turn.ts may be broken'; blank=0; }
+  exec 4<&- 5>&-
   note restart
   sleep 3
 done
