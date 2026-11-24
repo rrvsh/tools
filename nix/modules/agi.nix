@@ -314,7 +314,8 @@ in
             KeepAlive.SuccessfulExit = false;
             ThrottleInterval = 10;
             ExitTimeOut = 90;
-            ProcessType = "Background";
+            # Background throttles timers hard; the turn scheduler is a timer.
+            ProcessType = "Interactive";
             StandardOutPath = "/var/log/agi.log";
             StandardErrorPath = "/var/log/agi.log";
           };
