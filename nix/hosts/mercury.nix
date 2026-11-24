@@ -7,7 +7,10 @@ in
     hostPlatform = "x86_64-linux";
     primaryUser = primaryUsers.rafiq;
     profiles = [ "development" ];
-    modules = [ cfg.modules.nixos.user-primary ];
+    modules = [
+      cfg.modules.nixos.agi
+      cfg.modules.nixos.user-primary
+    ];
     extraConfig = {
       home-manager.sharedModules = [
         { services.google-drive.localBrowser = false; }
