@@ -25,7 +25,10 @@ async function save(list: Note[]): Promise<void> {
   await writeFile(schedule(), JSON.stringify(list), { mode: 0o600 });
 }
 
+const dbg = (m: string) => { if (process.env.AGI_DEBUG) console.error(`turn: ${m}`); };
+
 export default function (pi: ExtensionAPI) {
+  dbg("loaded");
   let timer: ReturnType<typeof setTimeout> | undefined;
   let lastActive = Date.now();
   let delay = FALLBACK;
@@ -45,6 +48,7 @@ export default function (pi: ExtensionAPI) {
   }
 
   async function fire() {
+    dbg("fire");
     if (running) { arm(2_000); return; }
     const list = await notes();
     const next = list[0];
@@ -69,6 +73,7 @@ export default function (pi: ExtensionAPI) {
     cold = false;
     if (next) await save(list.slice(1));
 
+    dbg("send");
     pi.sendMessage({ customType: "turn", content: body, display: false }, { triggerTurn: true });
   }
 

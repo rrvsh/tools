@@ -302,6 +302,7 @@ in
             ];
             EnvironmentVariables = {
               AGI_ROOT = "/Users/memory/agi";
+            AGI_DEBUG = "1";
               AGI_INIT = "/etc/agi/init";
               PI_CODING_AGENT_DIR = "/var/lib/agi";
               AGI_MODEL = model;
