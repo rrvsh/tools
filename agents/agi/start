@@ -55,6 +55,8 @@ while :; do
   if [ -n "$last" ]; then state=resume; else state=cold; fi
   printf '{"id":"boot","type":"prompt","message":"<turn>\\nkind: system\\nstate: %s\\nnote: none\\ndo: read %s in full, then take the next open loop\\n</turn>"}\n' "$state" "$seed" >&"${PI[1]}"
 
+  if read -r -t 4 first <&4; then note "reply: ${first:0:160}"; else note "no reply"; fi
+
   quiet=0
   while :; do
     if read -r -t 1 line <&4; then
