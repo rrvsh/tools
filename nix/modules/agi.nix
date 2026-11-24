@@ -95,6 +95,7 @@ in
       };
 
       systemd.tmpfiles.rules = [
+        "d /var/backups/agi 0700 memory users -"
         "d /home/memory/agi 0700 memory users -"
         "d /var/lib/agi 0700 memory users -"
         "d /var/lib/agi/sessions 0700 memory users -"
@@ -153,6 +154,64 @@ in
           Nice = -5;
           IOWeight = 200;
           SyslogIdentifier = "agi";
+        };
+      };
+
+      # Wick's own upkeep. Units staged from the repo land in /run only, so the
+      # durable copy is declared here: snapshot nightly, doctor hourly, alert on failure.
+      systemd.services.agi-snap = {
+        description = "AGI snapshot to /var/backups/agi and mercury";
+        onFailure = [ "agi-alert.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "memory";
+          Group = "users";
+          WorkingDirectory = "/home/memory/agi";
+          ExecStart = "/home/memory/agi/bin/snap --remote";
+        };
+      };
+
+      systemd.services.agi-doctor = {
+        description = "AGI health gate";
+        onFailure = [ "agi-alert.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "memory";
+          Group = "users";
+          WorkingDirectory = "/home/memory/agi";
+          ExecStart = "/home/memory/agi/bin/doctor";
+        };
+      };
+
+      systemd.services.agi-alert = {
+        description = "AGI failure alert to Rafiq";
+        serviceConfig = {
+          Type = "oneshot";
+          User = "memory";
+          Group = "users";
+          WorkingDirectory = "/home/memory/agi";
+          ExecStart = "/home/memory/agi/bin/alert systemd";
+        };
+      };
+
+      systemd.timers.agi-snap = {
+        description = "Daily AGI snapshot";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "*-*-* 03:00:00 UTC";
+          AccuracySec = "5m";
+          Persistent = true;
+        };
+      };
+
+      systemd.timers.agi-doctor = {
+        description = "Hourly AGI doctor";
+        wantedBy = [ "timers.target" ];
+        timerConfig = {
+          OnCalendar = "hourly";
+          AccuracySec = "1m";
+          Persistent = true;
+          OnBootSec = "3min";
         };
       };
     };

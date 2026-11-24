@@ -74,7 +74,7 @@ while :; do
   coproc PI {
     pi --mode rpc \
       -ne -e /etc/agi/self.ts -e builtin:codemode -ns -np --no-themes \
-      --tools codemode,bash \
+      --tools codemode,bash,self \
       --system-prompt "$STATE/system-prompt.txt" \
       --thinking high --provider venice --model "${AGI_MODEL:-deepseek-v4-1-flash-1017-uncensored}" \
       --session-dir "$STATE/sessions" --name "agi $(date -u +%FT%TZ)" \
