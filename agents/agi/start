@@ -51,6 +51,10 @@ while :; do
   note "pid=$pid ${args[*]:-new session}"
   notify --ready
 
+  seed=$(cat "$STATE/seed-path" 2>/dev/null || ls -1 "$ROOT/.threads"/agi-seed-*.md | sort | tail -1)
+  if [ -n "$last" ]; then state=resume; else state=cold; fi
+  printf '{"id":"boot","type":"prompt","message":"<turn>\\nkind: system\\nstate: %s\\nnote: none\\ndo: read %s in full, then take the next open loop\\n</turn>"}\n' "$state" "$seed" >&"${PI[1]}"
+
   quiet=0
   while :; do
     if read -r -t 1 line <&4; then

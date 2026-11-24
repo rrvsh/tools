@@ -85,9 +85,6 @@ export default function (pi: ExtensionAPI) {
     worked = true;
   });
 
-  // session_start can race extension loading, so the first turn is opened here.
-  setTimeout(() => arm(500), 2_000);
-
   pi.on("session_start", (_event, ctx) => {
     cold = ctx.sessionManager.getBranch().length === 0;
   });
