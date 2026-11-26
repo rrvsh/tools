@@ -1257,6 +1257,23 @@
         "type": "github"
       }
     },
+    "nt": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786810875,
+        "narHash": "sha256-Ynv3YAp4rRvMdhTsfg8ySXbIEJ5tsX770igiQ4lTPZ4=",
+        "owner": "navbytes",
+        "repo": "nt",
+        "rev": "41f034111be6e80be8e57fe539724b2a8a2557f2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "navbytes",
+        "ref": "v0.31.0",
+        "repo": "nt",
+        "type": "github"
+      }
+    },
     "pi": {
       "inputs": {
         "flake-parts": "flake-parts_7",
@@ -1457,6 +1474,7 @@
         "nix-rosetta-builder": "nix-rosetta-builder",
         "nixpkgs": "nixpkgs_9",
         "nixpkgs-firefox-darwin": "nixpkgs-firefox-darwin",
+        "nt": "nt",
         "pi": "pi",
         "pi-claude-bridge": "pi-claude-bridge",
         "pi-marginalia": "pi-marginalia",

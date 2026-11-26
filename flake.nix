@@ -59,6 +59,10 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
+    nt = {
+      url = "github:navbytes/nt/v0.31.0";
+      flake = false;
+    };
     sops-nix.inputs.nixpkgs.follows = "nixpkgs";
     sops-nix.url = "github:Mic92/sops-nix";
     nix-rosetta-builder = {
