@@ -49,6 +49,7 @@
       url = "github:tuigreet/tuigreet";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    unkernel.url = "github:rrvsh/unkernel/nixos-browser";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
     nix-darwin.url = "github:nix-darwin/nix-darwin/master";
     nix-homebrew.url = "github:zhaofengli/nix-homebrew";

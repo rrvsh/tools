@@ -1129,6 +1129,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_11": {
+      "locked": {
+        "lastModified": 1795234589,
+        "narHash": "sha256-f/VVvxf5RsQgWVhUtefoca5ktVg0DA2bnkMOcmSnozo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "2786a2a72088ecf32aea5b3ec52099e6a7cff78f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "nixpkgs_2": {
       "locked": {
         "lastModified": 1768127708,
@@ -1463,7 +1479,8 @@
         "pi-session-drain": "pi-session-drain",
         "pi-slopchop": "pi-slopchop",
         "sops-nix": "sops-nix",
-        "tuigreet": "tuigreet"
+        "tuigreet": "tuigreet",
+        "unkernel": "unkernel"
       }
     },
     "rust-overlay": {
@@ -1643,6 +1660,25 @@
       "original": {
         "owner": "tuigreet",
         "repo": "tuigreet",
+        "type": "github"
+      }
+    },
+    "unkernel": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_11"
+      },
+      "locked": {
+        "lastModified": 1795592317,
+        "narHash": "sha256-KXAsAHd/ZtiJemB28a1OsZAjHNiOTDVlEoiSi7ywlmA=",
+        "owner": "rrvsh",
+        "repo": "unkernel",
+        "rev": "e3cb48839649edbfcf806c81caffde68e3336c61",
+        "type": "github"
+      },
+      "original": {
+        "owner": "rrvsh",
+        "ref": "nixos-browser",
+        "repo": "unkernel",
         "type": "github"
       }
     },
