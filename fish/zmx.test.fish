@@ -73,4 +73,59 @@ assert_equal (printf 'test\t\t\ttest: reachable · 3 sessions') "$remote_status"
 assert_equal (printf 'test\t\t\ttest: connecting') "$connecting_status" 'connecting host row has no icon'
 assert_equal (printf 'test\t\t\ttest: unreachable') "$unreachable_status" 'unreachable host row has no icon'
 
+set -l zmx_log "$stub_directory/zmx.log"
+printf '#!/bin/sh\nprintf "marker=%%s args=%%s\\n" "${ZMX_STARTUP_EPHEMERAL:-}" "$*" >>"$ZMX_TEST_LOG"\ncase "$1" in\n  attach) exit 0 ;;\n  list) printf "sample\\nnormal\\n" ;;\n  set) [ "${ZMX_TEST_SET_FAIL:-}" != 1 ] ;;\nesac\n' >"$stub_directory/zmx"
+command chmod +x "$stub_directory/zmx"
+set -lx ZMX_TEST_LOG "$zmx_log"
+set -lx XDG_RUNTIME_DIR "$stub_directory/runtime"
+
+zmx-new --ephemeral sample
+assert_equal 0 $status 'ephemeral session attaches successfully'
+set -l ephemeral_attach (string match '*args=attach*' (string split \n -- (string collect <"$zmx_log")))
+assert_equal 'marker=1 args=attach --labels startup_ephemeral=1 sample' "$ephemeral_attach" 'ephemeral session is labelled atomically'
+
+printf '' >"$zmx_log"
+zmx-new normal
+assert_equal 0 $status 'normal session attaches successfully'
+set -l normal_attach (string match '*args=attach*' (string split \n -- (string collect <"$zmx_log")))
+assert_equal 'marker= args=attach normal' "$normal_attach" 'explicit session is not ephemeral'
+
+set -l current_host (hostname -s)
+printf '#!/bin/sh\nprintf "args=%%s\\n" "$*" >>"$ZMX_TEST_LOG"\ncase "$1" in\n  attach|kill) exit 0 ;;\n  set) [ "${ZMX_TEST_SET_FAIL:-}" != 1 ] ;;\n  list)\n    if [ "$2" = --short ]; then\n      printf "source\\ntarget\\n"\n    elif [ "${ZMX_TEST_EPHEMERAL:-}" = 1 ]; then\n      printf "  name=source\\tpid=1\\tclients=0\\tstartup_ephemeral=1\\n  name=target\\tpid=2\\tclients=0\\n"\n    else\n      printf "  name=source\\tpid=1\\tclients=0\\n  name=target\\tpid=2\\tclients=0\\n"\n    fi\n    ;;\nesac\n' >"$stub_directory/zmx"
+printf '#!/bin/sh\nprintf "%%s\\t%s\\tdGFyZ2V0\\t  target\\t\\ttarget\\n" "$ZMX_TEST_HOST"\n' target >"$stub_directory/fzf"
+printf '#!/bin/sh\nexit 1\n' >"$stub_directory/ssh"
+command chmod +x "$stub_directory/zmx" "$stub_directory/fzf" "$stub_directory/ssh"
+set -lx ZMX_TEST_HOST "$current_host"
+set -e ZMX_SESSION
+
+printf '' >"$zmx_log"
+set -lx ZMX_TEST_EPHEMERAL 1
+zmx-select "$current_host/source"
+assert_equal 0 $status 'picker attaches to a selected local session'
+set -l unused_kill (string match 'args=kill source' (string split \n -- (string collect <"$zmx_log")))
+assert_equal 'args=kill source' "$unused_kill" 'switching removes an unused startup session'
+
+printf '' >"$zmx_log"
+set -e ZMX_TEST_EPHEMERAL
+zmx-select "$current_host/source"
+assert_equal 0 $status 'picker attaches after a startup session is promoted'
+set -l promoted_kill (string match 'args=kill source' (string split \n -- (string collect <"$zmx_log")))
+assert_equal 0 (count $promoted_kill) 'switching preserves a promoted startup session'
+
+printf '' >"$zmx_log"
+set -gx ZMX_SESSION sample
+set -gx ZMX_STARTUP_EPHEMERAL 1
+set -lx ZMX_TEST_SET_FAIL 1
+__zmx_promote_startup_session_on_command true 2>/dev/null
+assert_equal 1 "$ZMX_STARTUP_EPHEMERAL" 'failed promotion retains the shell marker'
+assert_equal 1 (functions --query __zmx_promote_startup_session_on_command; and echo 1; or echo 0) 'failed promotion retains the event handler'
+
+set -e ZMX_TEST_SET_FAIL
+__zmx_promote_startup_session_on_command true
+assert_equal 0 (set -q ZMX_STARTUP_EPHEMERAL; and echo 1; or echo 0) 'successful promotion clears the shell marker'
+assert_equal 0 (functions --query __zmx_promote_startup_session_on_command; and echo 1; or echo 0) 'successful promotion removes the event handler'
+set -l promotion_calls (string match '*args=set . startup_ephemeral=' (string split \n -- (string collect <"$zmx_log")))
+assert_equal 2 (count $promotion_calls) 'promotion retries after a failure'
+set -e ZMX_SESSION
+
 printf 'zmx fish tests passed\n'

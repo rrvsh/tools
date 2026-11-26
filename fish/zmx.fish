@@ -20,6 +20,11 @@ end
 
 function __zmx_attach
   set -l session $argv[1]
+  set -l attach_arguments "$session"
+  if test "$argv[2]" = true
+    set attach_arguments --labels startup_ephemeral=1 "$session"
+    set -fx ZMX_STARTUP_EPHEMERAL 1
+  end
   set -l token "$fish_pid-"(random)"-"(random)"-"(date +%s)
   set -l murder_dir (__zmx_murder_dir)
   set -l marker "$murder_dir/$token"
@@ -32,7 +37,7 @@ function __zmx_attach
     ZMX_MURDER_TOKEN="$token" \
     ZMX_TRACK_ENV="$__zmx_tracked_envs" \
     ZMX_SESSION_PREFIX= \
-    zmx attach "$session"
+    zmx attach $attach_arguments
   set -l attach_status $status
   set -l sessions (env ZMX_SESSION_PREFIX= zmx list --short 2>/dev/null)
 
@@ -46,6 +51,24 @@ function __zmx_attach
   end
 
   return $attach_status
+end
+
+function __zmx_promote_startup_session_on_command --on-event fish_preexec
+  if not set -q ZMX_SESSION ZMX_STARTUP_EPHEMERAL
+    if set -q ZMX_SESSION
+      functions --erase __zmx_promote_startup_session_on_command
+    end
+    return
+  end
+
+  env ZMX_SESSION_PREFIX= zmx set . startup_ephemeral=
+  if test $status -ne 0
+    echo "zmx: could not preserve startup session '$ZMX_SESSION'" >&2
+    return
+  end
+
+  set -e ZMX_STARTUP_EPHEMERAL
+  functions --erase __zmx_promote_startup_session_on_command
 end
 
 function __zmx-cycle
@@ -429,6 +452,9 @@ function __zmx-new-session-name
 end
 
 function zmx-new
+  argparse 'e/ephemeral' -- $argv
+  or return
+
   set -l session $argv[1]
   set -l prefix "$ZMX_SESSION_PREFIX"
   if test -z "$session"
@@ -436,8 +462,13 @@ function zmx-new
     set session (__zmx-new-session-name "$prefix" $sessions)
   end
   set -l effective_session "$prefix$session"
+  set -l startup_ephemeral false
+  if set -q _flag_ephemeral
+    set startup_ephemeral true
+  end
+
   set -g __zmx_selected_session (hostname -s)"/$effective_session"
-  __zmx_attach "$effective_session"
+  __zmx_attach "$effective_session" "$startup_ephemeral"
 end
 
 function zmx-murder
@@ -676,11 +707,11 @@ end
 
       set -l rename_output
       if test "$host" = "$current_host"
-        set rename_output (env ZMX_SESSION_PREFIX= zmx set "$session" "title=$title" 2>&1)
+        set rename_output (env ZMX_SESSION_PREFIX= zmx set "$session" "title=$title" startup_ephemeral= 2>&1)
       else
         set -l encoded_session (printf '%s' "$session" | base64 | string join '')
         set -l encoded_title (printf '%s' "$title" | base64 | string join '')
-        set -l remote_command "set session (printf '%s' '$encoded_session' | base64 --decode); set title (printf '%s' '$encoded_title' | base64 --decode); env ZMX_SESSION_PREFIX= zmx set \"\$session\" \"title=\$title\""
+        set -l remote_command "set session (printf '%s' '$encoded_session' | base64 --decode); set title (printf '%s' '$encoded_title' | base64 --decode); env ZMX_SESSION_PREFIX= zmx set \"\$session\" \"title=\$title\" startup_ephemeral="
         set rename_output (
           ssh \
             -o BatchMode=yes \
@@ -715,7 +746,33 @@ end
       set session (__zmx-new-session-name '' $session_names)
     end
 
-    set -g __zmx_selected_session "$host/$session"
+    set -l selected_session "$host/$session"
+    if test -n "$anchor"; and test "$selected_session" != "$anchor"
+      set -l anchor_fields (string split -m 1 / -- "$anchor")
+      if test "$anchor_fields[1]" = "$current_host"
+        set -l anchor_session "$anchor_fields[2]"
+        set -l local_sessions (env ZMX_SESSION_PREFIX= zmx list 2>/dev/null)
+        if test $status -eq 0
+          for metadata in $local_sessions
+            set -l candidate (string match -r -g 'name=([^\t]+)' -- "$metadata")
+            if test "$candidate" != "$anchor_session"
+              continue
+            end
+
+            set -l clients (string match -r -g '(?:^|\t)clients=([0-9]+)' -- "$metadata")
+            set -l ephemeral (string match -r -g '(?:^|\t)startup_ephemeral=([^\t]*)' -- "$metadata")
+            set -l title (string match -r -g '(?:^|\t)title=([^\t]+)' -- "$metadata")
+            set -l pi_state (string match -r -g '(?:^|\t)pi_state=([^\t]+)' -- "$metadata")
+            if test "$clients" = 0; and test "$ephemeral" = 1; and test -z "$title"; and test -z "$pi_state"
+              env ZMX_SESSION_PREFIX= zmx kill "$anchor_session"
+            end
+            break
+          end
+        end
+      end
+    end
+
+    set -g __zmx_selected_session "$selected_session"
     if test "$host" = "$current_host"
       __zmx_attach "$session"
     else
@@ -787,6 +844,11 @@ function __zmx_auto_attach --on-event fish_prompt
   end
 
   set -g __zmx_selected_session
+  zmx-new --ephemeral
+  if test $status -ne 0
+    return
+  end
+
   while true
     zmx-select "$__zmx_selected_session"
     if test $status -eq 130
