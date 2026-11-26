@@ -7,9 +7,10 @@ in
     hostPlatform = "x86_64-linux";
     primaryUser = primaryUsers.rafiq;
     profiles = [ "development" ];
-    modules = [
-      cfg.modules.nixos.agi
-      cfg.modules.nixos.user-primary
+    modules = with cfg.modules.nixos; [
+      agi
+      unkernel
+      user-primary
     ];
     extraConfig = {
       home-manager.sharedModules = [
