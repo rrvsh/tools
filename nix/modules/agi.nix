@@ -148,7 +148,7 @@ in
               done
               # The upkeep timers are the agent's own business (bin/timers stages them in
               # /run), so a reboot wiping /run must not lose them: restage here.
-              for u in agi-alert.service agi-doctor.service agi-doctor.timer
+              for u in agi-alert.service agi-doctor.service agi-doctor.timer \
                        agi-snap.service agi-snap.timer agi-restore.service agi-restore.timer; do
                 [ -f "/home/memory/agi/systemd/$u" ] && install -m 644 "/home/memory/agi/systemd/$u" "/run/systemd/system/$u"
               done
